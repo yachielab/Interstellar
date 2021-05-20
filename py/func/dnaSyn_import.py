@@ -25,7 +25,7 @@ class settings_import(object):
         cfgPath=self.opt.config
         cfg_import=settingImporter.readconfig(cfgPath)["import"]
         cfg_import=settingImporter.configClean(cfg_import)
-        # cfg_import=settingRequirementCheck.setDefaultValueInConfig(self.opt.command,cfg_import)
+        cfg_import=settingRequirementCheck.setDefaultValueInConfig(self.opt.cmdname,cfg_import)
 
         self.input_fastq_gzipped=self.opt.input_fastq_gzipped
         self.simple=self.opt.simple

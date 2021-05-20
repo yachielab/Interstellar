@@ -15,6 +15,7 @@ from func import dnaSyn_bc_sort
 from func import dnaSyn_export
 from func import dnaSyn_demultiplex
 from func import dnaSyn_tag
+from func import dnaSyn_streamline
 
 '''
 Current available commands
@@ -64,7 +65,6 @@ if __name__=="__main__":
         else:
             print("\nextraction method: Regular expression\n",flush=True)
             baristaImport.extractComponents()
-            #baristaImport.countEachSegment()
             print("export extracted file...",flush=True)
             baristaImport.exportExtractedComponents()
 
@@ -78,14 +78,14 @@ if __name__=="__main__":
 
     elif cmd=="to_bt":
         print("\ndnaSynergizer to_bt",flush=True)
-        s=dnaSyn_to_bt.settings_to_bt(cmd)
+        s=dnaSyn_to_bt.settings_to_bt(opt)
         s.settingGetter()
         obj_to_bt=dnaSyn_to_bt.BARISTA_TO_BT(s)
         obj_to_bt.to_bt()
 
     elif cmd=="correct":
         print("\ndnaSynergizer correct",flush=True)
-        s=dnaSyn_correct.settings_correct(cmd)
+        s=dnaSyn_correct.settings_correct(opt)
         s.settingGetter()
         obj_correct=dnaSyn_correct.BARISTA_CORRECT(s)
         obj_correct.importExtractedComponents()
@@ -100,7 +100,7 @@ if __name__=="__main__":
 
     elif cmd=="mk_sval":
         print("\ndnaSynergizer mk_sval",flush=True)
-        s=dnaSyn_mk_sval.settings_make_s(cmd)
+        s=dnaSyn_mk_sval.settings_make_s(opt)
         s.settingGetter()
         obj_s=dnaSyn_mk_sval.BARISTA_MAKE_S(s)
         obj_s.make_s_seq()
@@ -110,34 +110,34 @@ if __name__=="__main__":
             
     elif cmd=="buildTree":
         print("\ndnaSynergizer buildTree",flush=True)
-        s=dnaSyn_buildTree.settings_buildTree(cmd)
+        s=dnaSyn_buildTree.settings_buildTree(opt)
         s.settingGetter()
         baristaTree=dnaSyn_buildTree.BARISTA_BUILDTREE(s)
         baristaTree.buildTree()        
 
     elif cmd=="mergeTree":
         print("\ndnaSynergizer mergeTree",flush=True)
-        s=dnaSyn_mergeTree.settings_mergetree(cmd)
+        s=dnaSyn_mergeTree.settings_mergetree(opt)
         s.settingGetter()
         baristaMergetree=dnaSyn_mergeTree.BARISTA_MERGETREE(s)
         baristaMergetree.mergeTree_v2()
 
     elif cmd=="convert":
         print("\ndnaSynergizer convert",flush=True)
-        s=dnaSyn_convert.settings_convert(cmd)
+        s=dnaSyn_convert.settings_convert(opt)
         s.settingGetter()
         baristaConvert=dnaSyn_convert.BARISTA_CONVERT(s)
         baristaConvert.convert()
 
     elif cmd=="bc_sort":
         print("\ndnaSynergizer bc_sort",flush=True)
-        barista_bc_sort=dnaSyn_bc_sort.BARISTA_BC_SORT(cmd)
+        barista_bc_sort=dnaSyn_bc_sort.BARISTA_BC_SORT(opt)
         barista_bc_sort.bc_sort_settingGetter()
         barista_bc_sort.bc_sort()
 
     elif cmd=="export":
         print("\ndnaSynergizer export",flush=True)
-        s=dnaSyn_export.settings_export(cmd)
+        s=dnaSyn_export.settings_export(opt)
         s.settingGetter()
 
         baristaExport=dnaSyn_export.BARISTA_EXPORT(s)
@@ -146,7 +146,7 @@ if __name__=="__main__":
 
     elif cmd=="demultiplex":
         print("\ndnaSynergizer demultiplex",flush=True)
-        s=dnaSyn_demultiplex.settings_demultiplex(cmd)
+        s=dnaSyn_demultiplex.settings_demultiplex(opt)
         s.settingGetter()
 
         baristaDemulti=dnaSyn_demultiplex.BARISTA_DEMULTIPLEX(s)
@@ -154,9 +154,21 @@ if __name__=="__main__":
 
     elif cmd=="tag":
         print("\ndnaSynergizer tag",flush=True)
-        s=dnaSyn_tag.settings_tag(cmd)
+        s=dnaSyn_tag.settings_tag(opt)
         s.settingGetter()
 
         batistaTag=dnaSyn_tag.BARISTA_TAG(s)
         batistaTag.tag()
+
+    elif cmd=="streamline":
+        print("\ndnaSynergizer streamline",flush=True)
+        
+        s=dnaSyn_streamline.STREAMLINE_SETTINGS(opt)
+        s.settingGetter()
+
+        streamline=dnaSyn_streamline.STREAMLINE_EXE(s)
+        streamline.generateShellScripts()
+        streamline.run()
+
+    print("DONE!",flush=True)
 

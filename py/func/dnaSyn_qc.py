@@ -12,7 +12,7 @@ class settings_qc(object):
         self.opt=opt
     def settingGetter(self):
         cfgPath=self.opt.config
-        cfg_qc=settingImporter.readconfig(cfgPath)["QC"]
+        cfg_qc=settingImporter.readconfig(cfgPath)["import"]
         cfg_qc=settingImporter.configClean(cfg_qc)
         self.qc_targets=cfg_qc["qc_targets"].split(",")
         self.seq=self.opt.rawSeq

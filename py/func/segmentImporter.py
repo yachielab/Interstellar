@@ -10,7 +10,7 @@ def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
     else:
         flash=flash.replace("R","Read")
         flash=flash.replace("I","Index")
-        merge_reads=[i+"_src" for i in flash.split(",")]
+        merge_reads=[i+"_src" for i in flash.split("-")]
         if gzipped:
             print("gzipped read decompressing...",flush=True)
             decompressed_fastq=[]
