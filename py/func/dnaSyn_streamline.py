@@ -18,7 +18,7 @@ def setUpWorkDir(workdir,cmds):
 
 def checkRequiredFile(key,flist):
     for f in flist:
-        if re.match(key,f):
+        if re.search(key,f):
             return True
     return False
     # print(targetdir,"doesn't have required files for",cmd)
@@ -187,32 +187,32 @@ def generateShellTemplate(template,cmdline,shelloutdir,shelloutname,):
 def judgeEndFix(input_files):
     for n,f in enumerate(input_files):
         if n==0:
-            if re.match(r"fastq$",f):
+            if re.search(r"fastq$",f):
                 flg_file=1
                 endfix="fastq"
-            elif re.match(r"fastq.gz$",f):
+            elif re.search(r"fastq.gz$",f):
                 flg_file=1
                 endfix="fastq.gz"
-            elif re.match(r"fq$",f):
+            elif re.search(r"fq$",f):
                 flg_file=1
                 endfix="fq"
-            elif re.match(r"fq.gz$",f):
+            elif re.search(r"fq.gz$",f):
                 flg_file=1
                 endfix="fq.gz"
             else:
                 flg_file=0
                 endfix="dir"
         else:
-            if re.match(r"fastq$",f):
+            if re.search(r"fastq$",f):
                 flg_file_now=1
                 endfix_now="fastq"
-            elif re.match(r"fastq.gz$",f):
+            elif re.search(r"fastq.gz$",f):
                 flg_file=1
                 endfix_now="fastq.gz"
-            elif re.match(r"fq$",f):
+            elif re.search(r"fq$",f):
                 flg_file=1
                 endfix_now="fq"
-            elif re.match(r"fq.gz$",f):
+            elif re.search(r"fq.gz$",f):
                 flg_file=1
                 endfix_now="fq.gz"
             else:
@@ -593,13 +593,13 @@ class STREAMLINE_EXE(object):
                 else:
                     #Inputs are directories containing already-split files
                     for f in glob.glob(input_file_list[0]):
-                        if re.match(r"fastq$",f):
+                        if re.search(r"fastq$",f):
                             endfix="fastq"
-                        elif re.match(r"fastq.gz$",f):
+                        elif re.search(r"fastq.gz$",f):
                             endfix="fastq.gz"
-                        elif re.match(r"fq$",f):
+                        elif re.search(r"fq$",f):
                             endfix="fq"
-                        elif re.match(r"fq.gz$",f):
+                        elif re.search(r"fq.gz$",f):
                             endfix="fq.gz"
                         else:
                             raise ArguementError("Input files should be fastq or fastq.gz")
