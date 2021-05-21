@@ -9,7 +9,7 @@ def pathExistCheck(check_list):
         try:
             actual_path[0]
         except IndexError:
-            raise EmptyError(path+" is not found!")
+            raise EmptyError(path+" is not found.")
 
 def setDefaultValueInConfig(cmd,config,distribute=False):
     if cmd=="import":

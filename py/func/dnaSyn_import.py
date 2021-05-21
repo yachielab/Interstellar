@@ -14,6 +14,9 @@ import csv
 import shutil
 
 
+class InputError(Exception):
+    pass
+
 
 class settings_import(object):
     def __init__(self,opt):
@@ -27,7 +30,18 @@ class settings_import(object):
         cfg_import=settingImporter.configClean(cfg_import)
         cfg_import=settingRequirementCheck.setDefaultValueInConfig(self.opt.cmdname,cfg_import)
 
-        self.input_fastq_gzipped=self.opt.input_fastq_gzipped
+        flg_file=0
+        for i in [self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2]:
+            if not i=="":
+                if flg_file==0:
+                    flg_gz=1 if regex.match(r"gz$",i) else 0
+                    flg_file=1
+                else:
+                    flg_gz_tmp=1 if regex.match(r"gz$",i) else 0
+                    if not flg_gz==flg_gz_tmp:
+                        raise InputError("All files should be commonly gzipped or ungzipped.")
+                    
+        self.input_fastq_gzipped=True if flg_gz==1 else False
         self.simple=self.opt.simple
         self.components=cfg_import["src_raw_components"].split(",")
         self.barcodes=cfg_import["barcodes"].split(",")
