@@ -553,7 +553,7 @@ class STREAMLINE_EXE(object):
 
         #qsub mode
         else:
-            today_now=str(datetime.datetime.today())
+            today_now=str(datetime.datetime.today()).replace(" ","_")
             
             if input_file_list:
                 #Judge input format: file or directory / endfix determination
@@ -569,6 +569,7 @@ class STREAMLINE_EXE(object):
                         for i in glob.glob(self.settings.outdir+"/sh/seqkit*"):
                             qcmd_now=qcmd_base+["-N","seqkitsplit"+today_now,i]
                             qcmd_now=" ".join(qcmd_now)
+                            print(qcmd_now)
                             s=subprocess.run(qcmd_now,shell=True)
                             used_commands.append(qcmd_now)
                             if s.returncode != 0:
@@ -638,6 +639,7 @@ class STREAMLINE_EXE(object):
                         infile_now=[infile[i] for i in range(len(input_file_list))]
                         qcmd_now+=[self.settings.outdir+"/sh/import.sh",infile_now[0].replace("."+endfix,"")]+infile_now
                         qcmd_now=" ".join(qcmd_now)
+                        print(qcmd_now)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
