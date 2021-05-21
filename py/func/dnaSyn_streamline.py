@@ -553,7 +553,10 @@ class STREAMLINE_EXE(object):
 
         #qsub mode
         else:
-            today_now=str(datetime.datetime.today()).replace(" ","_")
+            today_now=str(datetime.datetime.today()).replace(" ","")
+            today_now=today_now.replace(":","")
+            today_now=today_now.replace(".","")
+            today_now=today_now.replace("-","")
             
             if input_file_list:
                 #Judge input format: file or directory / endfix determination
