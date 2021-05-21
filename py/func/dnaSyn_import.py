@@ -76,7 +76,7 @@ class settings_import(object):
         srcReadPaths=[i for i in [self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2] if i!=""]
         readPathDict={k:v for k,v in zip(srcReadKeys,srcReadPaths) if v!=""}
         self.flash_gzipped_reads=[]
-        self.flash_gzipped_reads,self.src_readPathDict=segmentImporter.merge_reads_flash2(readPathDict,self.opt.flash,self.opt.input_fastq_gzipped,tmpdir,cfg_import)
+        self.flash_gzipped_reads,self.src_readPathDict=segmentImporter.merge_reads_flash2(readPathDict,self.opt.flash,self.input_fastq_gzipped,tmpdir,cfg_import)
         
         if self.simple:
             patternDict={}
