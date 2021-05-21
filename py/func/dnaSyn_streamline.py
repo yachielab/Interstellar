@@ -325,7 +325,7 @@ class STREAMLINE_EXE(object):
             nfile_divmod=divmod(len(input_read_files),2)
             fileindex=0
             for n in range(nfile_divmod[0]):
-                files_now=["-1",input_read_files[2*n],"-2",input_read_files[2*n+2]]
+                files_now=["-1",input_read_files[2*n],"-2",input_read_files[2*n+1]]
                 sh_cmd_list=sh_cmd_list_template+files_now
                 sh_cmd_line=" ".join(sh_cmd_list)
                 generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","seqkit_split"+str(fileindex))
