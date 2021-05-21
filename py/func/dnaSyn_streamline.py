@@ -325,7 +325,7 @@ class STREAMLINE_EXE(object):
             nfile_divmod=divmod(len(input_read_files),2)
             fileindex=0
             for n in range(nfile_divmod[0]):
-                files_now=[input_read_files[i] for i in range(2*n,2*n+2)]
+                files_now=["-1",input_read_files[2*n],"-2",input_read_files[2*n+2]]
                 sh_cmd_list=sh_cmd_list_template+files_now
                 sh_cmd_line=" ".join(sh_cmd_list)
                 generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","seqkit_split"+str(fileindex))
@@ -582,7 +582,7 @@ class STREAMLINE_EXE(object):
                         flg=0
                         while flg==0:
                             time.sleep(3)
-                            s=subprocess.run("qstat -j seqkitsplit"+today_now+" | grep job_state | wc -l",encoding='utf-8', stdout=subprocess.PIPE)
+                            s=subprocess.run("qstat -j seqkitsplit"+today_now+" | grep job_state | wc -l",encoding='utf-8', stdout=subprocess.PIPE,shell=True)
                             njob_all=int(s.stdout)
                             if njob_all==0:
                                 flg==1
@@ -615,11 +615,11 @@ class STREAMLINE_EXE(object):
             for n_cmd,cmd in enumerate(self.settings.pipeline):
                 do_qhold=True if n_cmd>0 else False
                 qoption=self.settings.config["qoption"]
-                jid_now=cmd+"_"+today_now
+                jid_now=cmd+today_now
                 qcmd_base=["qsub","-e",self.settings.outdir+"/qlog","-o",self.settings.outdir+"/qlog","-cwd","-N",jid_now]
 
                 if cmd=="import":
-                    jid_prev=cmd+"_"+today_now
+                    jid_prev=cmd+today_now
                     qoption=qoption.replace("<mem>",self.settings.config["mem_import"])
                     qcmd_now=qcmd_base+[qoption]
                     
