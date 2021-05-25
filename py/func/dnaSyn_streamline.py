@@ -244,8 +244,11 @@ def extractOutnameFromDirectory(targetdir,endfix):
 
 def jobCheck(jid,outdir,n_jobs):
     s=subprocess.run("qacct -j "+jid+" | grep -E 'failed|exit_status' > "+outdir+"/qlog.tmp",shell=True)
-    stat_table = pd.read_csv(outdir+"/qlog.tmp",sep="\t",header=None)
-    os.remove(outdir+"/qlog.tmp")
+    stat_table = pd.read_csv(outdir+"/qlog.tmp",delim_whitespace=True,header=None)
+    if s.returncode != 0:
+        print("streamline: job check failed.', file=sys.stderr")
+        sys.exit(1)
+    # os.remove(outdir+"/qlog.tmp")
     if sum(stat_table[1])>0:
         raise UnknownError("qsub seems failed.")
     elif stat_table.shape[0]==2*n_jobs:
