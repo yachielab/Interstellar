@@ -622,7 +622,7 @@ class STREAMLINE_EXE(object):
                 input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
             else:
                 input_file_list=[]
-                
+
             if input_file_list:
                 #Judge input format: file or directory / endfix determination
                 endfix_input,flg_file=judgeEndFix(input_file_list)
@@ -721,7 +721,7 @@ class STREAMLINE_EXE(object):
                 elif cmd=="qc":
                     print("Runnning qsub jobs...: qc",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_qc"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/qc.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/qc.sh"]
                     file_pool=[i for i in glob.glob(self.settings.outdir+"/import/*") if re.search("_srcSeq.tsv.gz",i)]
                     for f in file_pool:
                         outname_now=re.sub("_srcSeq.tsv.gz","",os.path.basename(f))
@@ -741,7 +741,7 @@ class STREAMLINE_EXE(object):
                 elif cmd=="to_bt":
                     print("Runnning qsub jobs...: to_bt",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_to_bt"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/to_bt.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/to_bt.sh"]
                     is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))
                     if is_qc:
                         outname_now="streamline"
@@ -765,7 +765,7 @@ class STREAMLINE_EXE(object):
                 elif cmd=="correct":
                     print("Runnning qsub jobs...: correct",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_correct"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/correct.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/correct.sh"]
                     is_qc=checkRequiredFile("_srcCount.QC.pkl.gz",glob.glob(self.settings.outdir+"/qc/*"))
                     if is_qc:
                         outname_now="streamline"
@@ -789,7 +789,7 @@ class STREAMLINE_EXE(object):
                 elif cmd=="mk_sval":
                     print("Runnning qsub jobs...: mk_sval",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_mk_sval"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/mk_sval.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/mk_sval.sh"]
 
                     is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))
                     if is_qc:
@@ -817,9 +817,9 @@ class STREAMLINE_EXE(object):
                 elif cmd=="buildTree":
                     print("Runnning qsub jobs...: buildTree",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_buildTree"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/buildTree.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/buildTree.sh"]
                       
-                    file_endfix="_srcValue.tsv.gz"
+                    file_endfix="_correct_srcValue.tsv.gz"
                     file_pool=[i for i in glob.glob(self.settings.outdir+"/mk_sval/*") if re.search(file_endfix,i)]    
                         
                     for f in file_pool:
@@ -840,7 +840,7 @@ class STREAMLINE_EXE(object):
                 elif cmd=="mergeTree":
                     print("Runnning qsub jobs...: mergeTree",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_mergeTree"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/mergeTree.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/mergeTree.sh"]
                     outname_now="streamline"
                     qcmd_now=qcmd_base+[outname_now,'"'+self.settings.outdir+"/buildTree/*_Tree.pkl.gz"+'"']
 
@@ -859,15 +859,15 @@ class STREAMLINE_EXE(object):
                 elif cmd=="convert":
                     print("Runnning qsub jobs...: convert",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_convert"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/convert.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/convert.sh"]
                       
-                    file_endfix="_srcValue.tsv.gz"
+                    file_endfix="_correct_srcValue.tsv.gz"
                     file_pool=[i for i in glob.glob(self.settings.outdir+"/mk_sval/*") if re.search(file_endfix,i)]
                     mergetree=glob.glob(self.settings.outdir+"/mergeTree/*_mergeTree.pkl.gz")[0]
                         
                     for f in file_pool:
                         outname_now=re.sub(file_endfix,"",os.path.basename(f))
-                        qcmd_now=qcmd_base+[outname_now,mergetree,f,re.sub(file_endfix,"_srcQual.tsv.gz",f)]
+                        qcmd_now=qcmd_base+[outname_now,mergetree,f,re.sub(file_endfix,"_correct_srcQual.tsv.gz",f)]
                         qcmd_now=" ".join(qcmd_now)
                         print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
@@ -883,7 +883,7 @@ class STREAMLINE_EXE(object):
                 elif cmd=="bc_sort":
                     print("Runnning qsub jobs...: bc_sort",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_bc_sort"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/bc_sort.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/bc_sort.sh"]
                     outname_now="streamline"
                     mergetree=glob.glob(self.settings.outdir+"/mergeTree/*_mergeTree.pkl.gz")[0]
                     s2v=glob.glob(self.settings.outdir+"/mk_sval/*_sseq_to_svalue.pkl.gz")[0]
@@ -905,7 +905,7 @@ class STREAMLINE_EXE(object):
                 elif cmd=="export":
                     print("Runnning qsub jobs...: export",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_export"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/export.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/export.sh"]
 
                     is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))
                     if is_qc:
@@ -941,7 +941,7 @@ class STREAMLINE_EXE(object):
                 elif cmd=="demultiplex":
                     print("Runnning qsub jobs...: demultiplex",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_demultiplex"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/demultiplex.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/demultiplex.sh"]
                     is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))                    
                     file_prefix=[os.path.basename(i.replace("_correct_result.tsv.gz","")) for i in glob.glob(self.settings.outdir+"/mk_sval/*") if re.search("_correct_result.tsv.gz",i)]
 
@@ -968,7 +968,7 @@ class STREAMLINE_EXE(object):
                 elif cmd=="tag":
                     print("Runnning qsub jobs...: tag",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_tag"])
-                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/tag.sh"]
+                    qcmd_base=qcmd_base+[qoption,self.settings.outdir+"/sh/tag.sh"]
                     is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))                    
                     file_prefix=[os.path.basename(i.replace("_correct_result.tsv.gz","")) for i in glob.glob(self.settings.outdir+"/mk_sval/*") if re.search("_correct_result.tsv.gz",i)]
 
