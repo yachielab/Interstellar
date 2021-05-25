@@ -679,7 +679,6 @@ class STREAMLINE_EXE(object):
                 if cmd=="import":
                     print("Runnning qsub jobs...: import",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_import"])
-                    qcmd_now=qcmd_base+[qoption]
                     
                     if self.settings.split:
                         file_pool=[]
