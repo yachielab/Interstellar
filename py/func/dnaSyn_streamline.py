@@ -246,7 +246,7 @@ def jobCheck(jid,outdir,n_jobs):
     s=subprocess.run("qacct -j "+jid+" | grep -E 'failed|exit_status' > "+outdir+"/qlog.tmp",shell=True)
     if os.path.getsize(outdir+"/qlog.tmp")==0:
         return False
-        
+
     stat_table = pd.read_csv(outdir+"/qlog.tmp",delim_whitespace=True,header=None)
     if s.returncode != 0:
         print("streamline: job check failed.', file=sys.stderr")
@@ -698,8 +698,9 @@ class STREAMLINE_EXE(object):
 
                     for infile in zip(*file_pool):
                         infile_now=[infile[i] for i in range(len(input_file_list))]
-                        qcmd_now+=[self.settings.outdir+"/sh/import.sh",infile_now[0].replace("."+endfix,"")]+infile_now
+                        qcmd_now=qcmd_base+[qoption,self.settings.outdir+"/sh/import.sh",infile_now[0].replace("."+endfix,"")]+infile_now
                         qcmd_now=" ".join(qcmd_now)
+                        print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
@@ -719,6 +720,7 @@ class STREAMLINE_EXE(object):
                         outname_now=re.sub("_srcSeq.tsv.gz","",os.path.basename(f))
                         qcmd_now=qcmd_base+[outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f)]
                         qcmd_now=" ".join(qcmd_now)
+                        print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
@@ -742,6 +744,7 @@ class STREAMLINE_EXE(object):
                         qcmd_now=qcmd_base+[outname_now,'"'+self.settings.outdir+"/import/*_srcSeq.tsv.gz"+'"']
 
                     qcmd_now=" ".join(qcmd_now)
+                    print(qcmd_now,flush=True)
                     s=subprocess.run(qcmd_now,shell=True)
                     used_commands.append(qcmd_now)
                     if s.returncode != 0:
@@ -765,6 +768,7 @@ class STREAMLINE_EXE(object):
                         qcmd_now=qcmd_base+[outname_now,'"'+self.settings.outdir+"/import/*_srcCount.pkl.gz"+'"']
 
                     qcmd_now=" ".join(qcmd_now)
+                    print(qcmd_now,flush=True)
                     s=subprocess.run(qcmd_now,shell=True)
                     used_commands.append(qcmd_now)
                     if s.returncode != 0:
@@ -792,6 +796,7 @@ class STREAMLINE_EXE(object):
                         outname_now=re.sub(file_endfix,"",os.path.basename(f))
                         qcmd_now=qcmd_base+[outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f),self.settings.outdir+"/correct/streamline_srcCorrect.pkl.gz"]
                         qcmd_now=" ".join(qcmd_now)
+                        print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
@@ -814,6 +819,7 @@ class STREAMLINE_EXE(object):
                         outname_now=re.sub(file_endfix,"",os.path.basename(f))
                         qcmd_now=qcmd_base+[outname_now,f]
                         qcmd_now=" ".join(qcmd_now)
+                        print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
@@ -832,6 +838,7 @@ class STREAMLINE_EXE(object):
                     qcmd_now=qcmd_base+[outname_now,'"'+self.settings.outdir+"/buildTree/*_Tree.pkl.gz"+'"']
 
                     qcmd_now=" ".join(qcmd_now)
+                    print(qcmd_now,flush=True)
                     s=subprocess.run(qcmd_now,shell=True)
                     used_commands.append(qcmd_now)
                     if s.returncode != 0:
@@ -855,6 +862,7 @@ class STREAMLINE_EXE(object):
                         outname_now=re.sub(file_endfix,"",os.path.basename(f))
                         qcmd_now=qcmd_base+[outname_now,mergetree,f,re.sub(file_endfix,"_srcQual.tsv.gz",f)]
                         qcmd_now=" ".join(qcmd_now)
+                        print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
@@ -875,6 +883,7 @@ class STREAMLINE_EXE(object):
                     qcmd_now=qcmd_base+[outname_now,mergetree,s2v]
 
                     qcmd_now=" ".join(qcmd_now)
+                    print(qcmd_now,flush=True)
                     s=subprocess.run(qcmd_now,shell=True)
                     used_commands.append(qcmd_now)
                     if s.returncode != 0:
@@ -911,6 +920,7 @@ class STREAMLINE_EXE(object):
                         sizedict=self.settings.outdir+"/mergeTree/streamline_size_info.pkl.gz"
                         qcmd_now=qcmd_base+[outname_now,dval,dqual,sseq,squal,sizedict]
                         qcmd_now=" ".join(qcmd_now)
+                        print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
@@ -937,6 +947,7 @@ class STREAMLINE_EXE(object):
                             squal=self.settings.outdir+"/import/"+outname_now+"_srcQual.tsv.gz"
                         qcmd_now=qcmd_base+[outname_now,result,cqual,squal]
                         qcmd_now=" ".join(qcmd_now)
+                        print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
@@ -963,6 +974,7 @@ class STREAMLINE_EXE(object):
                             squal=self.settings.outdir+"/import/"+outname_now+"_srcQual.tsv.gz"
                         qcmd_now=qcmd_base+[outname_now,result,cqual,squal]
                         qcmd_now=" ".join(qcmd_now)
+                        print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
