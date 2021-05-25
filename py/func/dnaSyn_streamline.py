@@ -392,7 +392,7 @@ class STREAMLINE_EXE(object):
                     sh_cmd_line=" ".join(sh_cmd_list)
                     generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","seqkit_split"+str(fileindex))
 
-        if not "import" om self.settings.pipeline:
+        if not "import" in self.settings.pipeline:
             self.input_read_files=[]
             
         for cmd in self.settings.pipeline:
