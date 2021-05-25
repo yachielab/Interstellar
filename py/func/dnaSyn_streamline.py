@@ -903,10 +903,10 @@ class STREAMLINE_EXE(object):
                     is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))
                     if is_qc:
                         file_endfix="_srcSeq.QC.tsv.gz"
-                        file_prefix=[os.path.basename(i).replace(endfix,"") for i in glob.glob(self.settings.outdir+"/qc/*") if re.search(endfix,i)]
+                        file_prefix=[os.path.basename(i).replace(file_endfix,"") for i in glob.glob(self.settings.outdir+"/qc/*") if re.search(endfix,i)]
                     else:
                         file_endfix="_srcSeq.tsv.gz"
-                        file_prefix=[os.path.basename(i.replace(endfix,"")) for i in glob.glob(self.settings.outdir+"/import/*") if re.search(endfix,i)]
+                        file_prefix=[os.path.basename(i.replace(file_endfix,"")) for i in glob.glob(self.settings.outdir+"/import/*") if re.search(endfix,i)]
                     
                     for outname_now in file_prefix:
                         dval=self.settings.outdir+"/convert/"+outname_now+"_converted_value.tsv.gz"
