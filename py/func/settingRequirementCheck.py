@@ -1,4 +1,5 @@
 import glob
+import os
 
 class EmptyError(Exception):
     pass
@@ -40,7 +41,6 @@ def setDefaultValueInConfig(cmd,config,distribute=False):
         for i in required_parameters:
             if i=="qoption" and not distribute:
                 continue
-
             try:
                 config[i]
                 if config[i]=="":
@@ -48,16 +48,14 @@ def setDefaultValueInConfig(cmd,config,distribute=False):
             except (KeyError,EmptyError):
                 err_msg="The parameter "+i+" is not found in the config file."
                 raise KeyError(err_msg)
+        config["template_shellscript"]=os.path.expanduser(config["template_shellscript"])
         
-
         for i in ["mem_max","chunksize"]:
             try:
                 config[i]
                 if config[i]=="":
                     raise EmptyError
             except (KeyError,EmptyError):
-                # if i== "distribute":
-                #     config["distribute"]="off"
                 if i=="mem_max":
                     config["mem_max"]='128'
                 if i=="chunksize":

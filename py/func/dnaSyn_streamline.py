@@ -7,6 +7,7 @@ import re
 import sys
 import datetime
 import time
+import pandas as pd
 
 def setUpWorkDir(workdir,cmds):
     cmds=cmds.split(",")
@@ -241,6 +242,55 @@ def extractOutnameFromDirectory(targetdir,endfix):
     return outnamelist
 
 
+def jobCheck(jid,outdir,n_jobs):
+    s=subprocess.run("qacct -j "+jid+" grep -E 'failed|exit_status' > "+outdir+"/qlog.tmp",shell=True)
+    stat_table = pd.read_csv(outdir+"/qlog.tmp",sep="\t",header=None)
+    os.remove(outdir+"/qlog.tmp")
+    if sum(stat_table[1])>0:
+        raise UnknownError("qsub seems failed.")
+    elif stat_table.shape[0]==2*n_jobs:
+        return True
+    else:
+        return False
+
+
+def job_wait(cmd,jid_now,outdir,njobs):
+    status_ok=False
+    print("Waiting for the jobs...:",cmd,flush=True)
+    while not status_ok:
+        time.sleep(10)
+        status_ok=jobCheck(jid_now,outdir+"/qlog",njobs)
+    print("Jobs completed:",cmd,flush=True)
+    return
+
+
+def configRewrite(cfgpath,outdir):
+    with open(cfgpath,mode="rt") as r:
+        cfg_orig=[i.replace("\n","") for i in r]
+    for wl in glob.glob(outdir+"/*_sorted_whitelist.tsv"):
+        target_segment_name=os.path.basename(wl)
+        target_segment_name=re.sub(r"_sorted_whitelist\.tsv$","",wl)
+        target_segment_name=re.sub(r"^streamline_","",wl)
+        flg=0
+        flg_target=0
+        for n,l in enumerate(cfg_orig):
+            if re.search(r"\[export\]",l):
+                flg=1
+            elif re.search(r"^\[",l):
+                flg=0
+
+            if flg==1:
+                if "d_val:"+target_segment_name+",":
+                    flg_target=1
+                if flg_target==1:
+                    if "whitelist:" in l:
+                        cfg_orig[n]=re.sub(r"whitelist:.+[^,]","whiteslist:"+wl,l)
+                        flg_target=0
+    with open(outdir+"/sorted.conf",mode="wt") as w:
+        cfg_orig="\n".join(cfg_orig)+"\n"
+        w.write(cfg_orig)
+
+
 class UnknownError(Exception):
     pass
 
@@ -426,7 +476,10 @@ class STREAMLINE_EXE(object):
                 generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","bc_sort")
 
             elif cmd=="export":
-                sh_cmd_list=["dnaSynergizer","export","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6"]
+                if not "bc_sort" in self.settings.pipeline:
+                    sh_cmd_list=["dnaSynergizer","export","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6"]
+                else:
+                    sh_cmd_list=["dnaSynergizer","export","-conf",self.settings.outdir+"/bc_sort/sorted.conf","-d",self.settings.outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6"]
                 if self.settings.export_opt["export_bclist"]:
                     sh_cmd_list.append("-export_bclist")
                 sh_cmd_line=" ".join(sh_cmd_list)
@@ -566,6 +619,7 @@ class STREAMLINE_EXE(object):
                 if flg_file==1: #split or not
                     if self.settings.split:
                         #fastq split
+                        print("Runnning qsub jobs...: file split",flush=True)
                         qoption=self.settings.config["qoption"]
                         qoption=qoption.replace("<mem>",self.settings.config["mem_max"])
                         qcmd_base=["qsub",qoption,"-e",self.settings.outdir+"/qlog","-o",self.settings.outdir+"/qlog","-cwd"]
@@ -579,20 +633,18 @@ class STREAMLINE_EXE(object):
                                 print("streamline: qsub for seqkit split failed.', file=sys.stderr")
                                 sys.exit(1)
                         time.sleep(30)
-                        flg=0
-                        while flg==0:
-                            time.sleep(3)
-                            s=subprocess.run("qstat -j seqkitsplit"+today_now+" | grep job_state | wc -l",encoding='utf-8', stdout=subprocess.PIPE,shell=True)
-                            njob_all=int(s.stdout)
-                            if njob_all==0:
-                                flg==1
-                        
-                        filename_to_search=basename_list[0].replace("."+endfix,"")
-                        judgeNumFiles(filename_to_search,self.settings.outdir+"/filesplit",len(glob.glob(self.settings.outdir+"/filesplit"))/len(input_files))
-                        outname_list=[os.path.basename(i).replace("."+endfix) for i in glob.glob(self.settings.outdir+"/filesplit/"+filename_to_search)]
-                    else:
+                        status_ok=False
+                        print("Waiting for the jobs...: file split",flush=True)
+                        while not status_ok:
+                            time.sleep(10)
+                            status_ok=jobCheck("seqkitsplit"+today_now,self.settings.outdir+"/qlog",len(glob.glob(self.settings.outdir+"/sh/seqkit*")))
+                        print("Jobs completed: file split")
+                        # filename_to_search=basename_list[0].replace("."+endfix,"")
+                        # judgeNumFiles(filename_to_search,self.settings.outdir+"/filesplit",len(glob.glob(self.settings.outdir+"/filesplit"))/len(input_files))
+                        # outname_list=[os.path.basename(i).replace("."+endfix) for i in glob.glob(self.settings.outdir+"/filesplit/"+filename_to_search)]
+                    # else:
                         #no split
-                        outname_list=[basename_list[0]]
+                        # outname_list=[basename_list[0]]
                 
                 else:
                     #Inputs are directories containing already-split files
@@ -609,17 +661,17 @@ class STREAMLINE_EXE(object):
                             raise ArguementError("Input files should be fastq or fastq.gz")
                         break
 
-                    outname_list=extractOutnameFromDirectory(input_file_list[0],endfix)
+                    # outname_list=extractOutnameFromDirectory(input_file_list[0],endfix)
             
             jid_prev=""
             for n_cmd,cmd in enumerate(self.settings.pipeline):
-                do_qhold=True if n_cmd>0 else False
+                # do_qhold=True if n_cmd>0 else False
                 qoption=self.settings.config["qoption"]
                 jid_now=cmd+today_now
                 qcmd_base=["qsub","-e",self.settings.outdir+"/qlog","-o",self.settings.outdir+"/qlog","-cwd","-N",jid_now]
 
                 if cmd=="import":
-                    jid_prev=cmd+today_now
+                    print("Runnning qsub jobs...: import",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_import"])
                     qcmd_now=qcmd_base+[qoption]
                     
@@ -638,97 +690,283 @@ class STREAMLINE_EXE(object):
                             for f_name in input_file_list:
                                 file_pool.append([glob.glob(f_name+"/"+p+"*")[0] for p in prefix_pool])
 
-                    for infile in file_pool:
+                    for infile in zip(*file_pool):
                         infile_now=[infile[i] for i in range(len(input_file_list))]
                         qcmd_now+=[self.settings.outdir+"/sh/import.sh",infile_now[0].replace("."+endfix,"")]+infile_now
                         qcmd_now=" ".join(qcmd_now)
-                        print(qcmd_now)
                         s=subprocess.run(qcmd_now,shell=True)
                         used_commands.append(qcmd_now)
                         if s.returncode != 0:
-                            print("streamline: qsub for seqkit split failed.', file=sys.stderr")
+                            print("qsub failed: import', file=sys.stderr")
                             sys.exit(1)
 
+                    njobs=len(file_pool[0])
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now 
+                    
                 elif cmd=="qc":
-                    sh_cmd_list=["dnaSynergizer","qc","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/qc","-o","$1","-rs","$2","-rq","$3"]
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","qc")
+                    print("Runnning qsub jobs...: qc",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_qc"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/qc.sh"]
+                    file_pool=[i for i in glob.glob(self.settings.outdir+"/import/*") if re.search("_srcSeq.tsv.gz",i)]
+                    for f in file_pool:
+                        outname_now=re.sub("_srcSeq.tsv.gz","",os.path.basename(f))
+                        qcmd_now=qcmd_base+[outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f)]
+                        qcmd_now=" ".join(qcmd_now)
+                        s=subprocess.run(qcmd_now,shell=True)
+                        used_commands.append(qcmd_now)
+                        if s.returncode != 0:
+                            print("qsub failed: qc', file=sys.stderr")
+                            sys.exit(1)
+                    
+                    njobs=len(file_pool)
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now
 
                 elif cmd=="to_bt":
-                    sh_cmd_list=["dnaSynergizer","to_bt","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/to_bt","-o","$1","-rs","$2"]
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","to_bt")
-                
+                    print("Runnning qsub jobs...: to_bt",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_to_bt"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/to_bt.sh"]
+                    is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))
+                    if is_qc:
+                        outname_now="streamline"
+                        qcmd_now=qcmd_base+[outname_now,'"'+self.settings.outdir+"/qc/*_srcSeq.QC.tsv.gz"+'"']                        
+                    else:
+                        outname_now="streamline"
+                        qcmd_now=qcmd_base+[outname_now,'"'+self.settings.outdir+"/import/*_srcSeq.tsv.gz"+'"']
+
+                    qcmd_now=" ".join(qcmd_now)
+                    s=subprocess.run(qcmd_now,shell=True)
+                    used_commands.append(qcmd_now)
+                    if s.returncode != 0:
+                        print("qsub failed: to_bt', file=sys.stderr")
+                        sys.exit(1)
+
+                    njobs=1
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now 
+
                 elif cmd=="correct":
-                    sh_cmd_list=["dnaSynergizer","correct","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/correct","-o","$1","-ip","$2","-yscale",self.settings.correct_opt["yaxis_scale"]]
-                    if self.settings.correct_opt["no_show_summary"]:
-                        sh_cmd_list.append("-no_show_summary")
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","correct")
-                
+                    print("Runnning qsub jobs...: correct",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_correct"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/correct.sh"]
+                    is_qc=checkRequiredFile("_srcCount.QC.pkl.gz",glob.glob(self.settings.outdir+"/qc/*"))
+                    if is_qc:
+                        outname_now="streamline"
+                        qcmd_now=qcmd_base+[outname_now,'"'+self.settings.outdir+"/qc/*_srcCount.QC.pkl.gz"+'"']
+                    else:
+                        outname_now="streamline"
+                        qcmd_now=qcmd_base+[outname_now,'"'+self.settings.outdir+"/import/*_srcCount.pkl.gz"+'"']
+
+                    qcmd_now=" ".join(qcmd_now)
+                    s=subprocess.run(qcmd_now,shell=True)
+                    used_commands.append(qcmd_now)
+                    if s.returncode != 0:
+                        print("qsub failed: correct', file=sys.stderr")
+                        sys.exit(1)
+
+                    njobs=1
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now       
+                         
                 elif cmd=="mk_sval":
-                    sh_cmd_list=["dnaSynergizer","mk_sval","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/mk_sval","-o","$1","-rs","$2","-rq","$3","-crp","$4"]
-                    if self.settings.mk_sval_opt["resultonly"]:
-                        sh_cmd_list.append("-resultonly")
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","mk_sval")
+                    print("Runnning qsub jobs...: mk_sval",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_mk_sval"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/mk_sval.sh"]
+
+                    is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))
+                    if is_qc:
+                        file_endfix="_srcSeq.QC.tsv.gz"
+                        file_pool=[i for i in glob.glob(self.settings.outdir+"/qc/*") if re.search("_srcSeq.QC.tsv.gz",i)]              
+                    else:
+                        file_endfix="_srcSeq.tsv.gz"
+                        file_pool=[i for i in glob.glob(self.settings.outdir+"/import/*") if re.search("_srcSeq.tsv.gz",i)]
+                        
+                    for f in file_pool:
+                        outname_now=re.sub(file_endfix,"",os.path.basename(f))
+                        qcmd_now=qcmd_base+[outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f),self.settings.outdir+"/correct/streamline_srcCorrect.pkl.gz"]
+                        qcmd_now=" ".join(qcmd_now)
+                        s=subprocess.run(qcmd_now,shell=True)
+                        used_commands.append(qcmd_now)
+                        if s.returncode != 0:
+                            print("qsub failed: mk_sval', file=sys.stderr")
+                            sys.exit(1)
+
+                    njobs=len(file_pool)
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now   
                 
                 elif cmd=="buildTree":
-                    sh_cmd_list=["dnaSynergizer","buildTree","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/buildTree","-o","$1","-sv","$2"]
-                    if self.settings.convert_opt["samplemerge"]:
-                        if self.settings.convert_opt["samplesheet"]=="":
-                            raise KeyError("Samplesheet is required for samplemerge")
+                    print("Runnning qsub jobs...: buildTree",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_buildTree"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/buildTree.sh"]
+                      
+                    file_endfix="_srcValue.tsv.gz"
+                    file_pool=[i for i in glob.glob(self.settings.outdir+"/mk_sval/*") if re.search(file_endfix,i)]    
                         
-                        sh_cmd_list.append("-samplemerge")
-                        sh_cmd_list+=["-samplesheet",self.settings.convert_opt["samplesheet"]]
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","buildTree")
+                    for f in file_pool:
+                        outname_now=re.sub(file_endfix,"",os.path.basename(f))
+                        qcmd_now=qcmd_base+[outname_now,f]
+                        qcmd_now=" ".join(qcmd_now)
+                        s=subprocess.run(qcmd_now,shell=True)
+                        used_commands.append(qcmd_now)
+                        if s.returncode != 0:
+                            print("qsub failed: buildTree', file=sys.stderr")
+                            sys.exit(1)
+
+                    njobs=len(file_pool)
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now   
 
                 elif cmd=="mergeTree":
-                    sh_cmd_list=["dnaSynergizer","mergeTree","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/mergeTree","-o","$1","-lp","$2"]
-                    if self.settings.convert_opt["samplemerge"]:
-                        if self.settings.convert_opt["samplesheet"]=="":
-                            raise KeyError("Samplesheet is required for samplemerge")
-                        
-                        sh_cmd_list.append("-samplemerge")
-                        sh_cmd_list+=["-samplesheet",self.settings.convert_opt["samplesheet"]]
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","mergeTree")
-                
+                    print("Runnning qsub jobs...: mergeTree",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_mergeTree"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/mergeTree.sh"]
+                    outname_now="streamline"
+                    qcmd_now=qcmd_base+[outname_now,'"'+self.settings.outdir+"/buildTree/*_Tree.pkl.gz"+'"']
+
+                    qcmd_now=" ".join(qcmd_now)
+                    s=subprocess.run(qcmd_now,shell=True)
+                    used_commands.append(qcmd_now)
+                    if s.returncode != 0:
+                        print("qsub failed: mergeTree', file=sys.stderr")
+                        sys.exit(1)
+
+                    njobs=1
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now     
+           
                 elif cmd=="convert":
-                    sh_cmd_list=["dnaSynergizer","convert","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/convert","-o","$1","-tree","$2","-sv","$3","-sq","$4"]
-                    if self.settings.convert_opt["samplemerge"]:
-                        if self.settings.convert_opt["samplesheet"]=="":
-                            raise KeyError("Samplesheet is required for samplemerge")
+                    print("Runnning qsub jobs...: convert",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_convert"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/convert.sh"]
+                      
+                    file_endfix="_srcValue.tsv.gz"
+                    file_pool=[i for i in glob.glob(self.settings.outdir+"/mk_sval/*") if re.search(file_endfix,i)]
+                    mergetree=glob.glob(self.settings.outdir+"/mergeTree/*_mergeTree.pkl.gz")[0]
                         
-                        sh_cmd_list.append("-samplemerge")
-                        sh_cmd_list+=["-samplesheet",self.settings.convert_opt["samplesheet"]]
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","convert")
+                    for f in file_pool:
+                        outname_now=re.sub(file_endfix,"",os.path.basename(f))
+                        qcmd_now=qcmd_base+[outname_now,mergetree,f,re.sub(file_endfix,"_srcQual.tsv.gz",f)]
+                        qcmd_now=" ".join(qcmd_now)
+                        s=subprocess.run(qcmd_now,shell=True)
+                        used_commands.append(qcmd_now)
+                        if s.returncode != 0:
+                            print("qsub failed: convert', file=sys.stderr")
+                            sys.exit(1)
+
+                    njobs=len(file_pool)
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now   
 
                 elif cmd=="bc_sort":
-                    sh_cmd_list=["dnaSynergizer","bc_sort","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/bc_sort","-o","$1","-tree","$2","-sseq_to_svalue","$3","-tbl",self.settings.bc_sort_opt["table"]]
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","bc_sort")
+                    print("Runnning qsub jobs...: bc_sort",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_bc_sort"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/bc_sort.sh"]
+                    outname_now="streamline"
+                    mergetree=glob.glob(self.settings.outdir+"/mergeTree/*_mergeTree.pkl.gz")[0]
+                    s2v=glob.glob(self.settings.outdir+"/mk_sval/*_sseq_to_svalue.pkl.gz")[0]
+                    qcmd_now=qcmd_base+[outname_now,mergetree,s2v]
+
+                    qcmd_now=" ".join(qcmd_now)
+                    s=subprocess.run(qcmd_now,shell=True)
+                    used_commands.append(qcmd_now)
+                    if s.returncode != 0:
+                        print("qsub failed: bc_sort', file=sys.stderr")
+                        sys.exit(1)
+
+                    njobs=1
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now
+                    configRewrite(self.settings.orig_cfgpath,self.settings.outdir+"/bc_sort")
 
                 elif cmd=="export":
-                    sh_cmd_list=["dnaSynergizer","export","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6"]
-                    if self.settings.export_opt["export_bclist"]:
-                        sh_cmd_list.append("-export_bclist")
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","export")
+                    print("Runnning qsub jobs...: export",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_export"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/export.sh"]
 
+                    is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))
+                    if is_qc:
+                        file_endfix="_srcSeq.QC.tsv.gz"
+                        file_prefix=[os.path.basename(i).replace(endfix,"") for i in glob.glob(self.settings.outdir+"/qc/*") if re.search(endfix,i)]
+                    else:
+                        file_endfix="_srcSeq.tsv.gz"
+                        file_prefix=[os.path.basename(i.replace(endfix,"")) for i in glob.glob(self.settings.outdir+"/import/*") if re.search(endfix,i)]
+                    
+                    for outname_now in file_prefix:
+                        dval=self.settings.outdir+"/convert/"+outname_now+"_converted_value.tsv.gz"
+                        dqual=self.settings.outdir+"/convert/"+outname_now+"_converted_qual.tsv.gz"
+                        if is_qc:
+                            sseq =self.settings.outdir+"/qc/"+outname_now+file_endfix
+                            squal=self.settings.outdir+"/qc/"+outname_now+"_srcQual.QC.tsv.gz"
+                        else:
+                            sseq =self.settings.outdir+"/import/"+outname_now+file_endfix
+                            squal=self.settings.outdir+"/import/"+outname_now+"_srcQual.tsv.gz"
+                        sizedict=self.settings.outdir+"/mergeTree/streamline_size_info.pkl.gz"
+                        qcmd_now=qcmd_base+[outname_now,dval,dqual,sseq,squal,sizedict]
+                        qcmd_now=" ".join(qcmd_now)
+                        s=subprocess.run(qcmd_now,shell=True)
+                        used_commands.append(qcmd_now)
+                        if s.returncode != 0:
+                            print("qsub failed: export', file=sys.stderr")
+                            sys.exit(1)
+
+                    njobs=len(file_pool)
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now   
+                
                 elif cmd=="demultiplex":
-                    sh_cmd_list=["dnaSynergizer","demultiplex","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/demultiplex","-o","$1","-cs","$2","-cq","$3","-rq","$4"]
-                    if self.settings.demultiplex_opt["export_tsv"]:
-                        sh_cmd_list.append("-export_tsv")
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","demultiplex")
+                    print("Runnning qsub jobs...: demultiplex",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_demultiplex"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/demultiplex.sh"]
+                    is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))                    
+                    file_prefix=[os.path.basename(i.replace("_correct_result.tsv.gz","")) for i in glob.glob(self.settings.outdir+"/mk_sval/*") if re.search("_correct_result.tsv.gz",i)]
+
+                    for outname_now in file_prefix:
+                        result=self.settings.outdir+"/mk_sval/"+outname_now+"_correct_result.tsv.gz"
+                        cqual =self.settings.outdir+"/mk_sval/"+outname_now+"_correct_srcQual.tsv.gz"
+                        if is_qc:
+                            squal=self.settings.outdir+"/qc/"+outname_now+"_srcQual.QC.tsv.gz"
+                        else:
+                            squal=self.settings.outdir+"/import/"+outname_now+"_srcQual.tsv.gz"
+                        qcmd_now=qcmd_base+[outname_now,result,cqual,squal]
+                        qcmd_now=" ".join(qcmd_now)
+                        s=subprocess.run(qcmd_now,shell=True)
+                        used_commands.append(qcmd_now)
+                        if s.returncode != 0:
+                            print("qsub failed: demultiplex', file=sys.stderr")
+                            sys.exit(1)
+
+                    njobs=len(file_pool)
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now   
 
                 elif cmd=="tag":
-                    sh_cmd_list=["dnaSynergizer","tag","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/tag","-o","$1","-cs","$2","-cq","$3","-rq","$4"]
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","tag")
+                    print("Runnning qsub jobs...: tag",flush=True)
+                    qoption=qoption.replace("<mem>",self.settings.config["mem_tag"])
+                    qcmd_base=qcmd_base+[qoption,"-hold_jid",jid_prev,self.settings.outdir+"/sh/tag.sh"]
+                    is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(self.settings.outdir+"/qc/*"))                    
+                    file_prefix=[os.path.basename(i.replace("_correct_result.tsv.gz","")) for i in glob.glob(self.settings.outdir+"/mk_sval/*") if re.search("_correct_result.tsv.gz",i)]
+
+                    for outname_now in file_prefix:
+                        result=self.settings.outdir+"/mk_sval/"+outname_now+"_correct_result.tsv.gz"
+                        cqual =self.settings.outdir+"/mk_sval/"+outname_now+"_correct_srcQual.tsv.gz"
+                        if is_qc:
+                            squal=self.settings.outdir+"/qc/"+outname_now+"_srcQual.QC.tsv.gz"
+                        else:
+                            squal=self.settings.outdir+"/import/"+outname_now+"_srcQual.tsv.gz"
+                        qcmd_now=qcmd_base+[outname_now,result,cqual,squal]
+                        qcmd_now=" ".join(qcmd_now)
+                        s=subprocess.run(qcmd_now,shell=True)
+                        used_commands.append(qcmd_now)
+                        if s.returncode != 0:
+                            print("qsub failed: tag', file=sys.stderr")
+                            sys.exit(1)
+
+                    njobs=len(file_pool)
+                    job_wait(cmd,jid_now,self.settings.outdir,njobs)
+                    jid_prev=cmd+today_now   
+
 
         with open(self.settings.outdir+"/commandlog.txt",mode="wt") as w:
             for line in cmdlist:
