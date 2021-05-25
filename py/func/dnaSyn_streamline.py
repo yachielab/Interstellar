@@ -392,6 +392,9 @@ class STREAMLINE_EXE(object):
                     sh_cmd_line=" ".join(sh_cmd_list)
                     generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","seqkit_split"+str(fileindex))
 
+        if not "import" om self.settings.pipeline:
+            self.input_read_files=[]
+            
         for cmd in self.settings.pipeline:
             #Generate shell scripts for specified commands
             if cmd=="import":
@@ -508,7 +511,6 @@ class STREAMLINE_EXE(object):
 
     def run(self):
         used_commands=[]
-        input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
         basename_list=[os.path.basename(i) for i in input_file_list]
 
         #single CPU mode
@@ -516,7 +518,7 @@ class STREAMLINE_EXE(object):
             for cmd in self.settings.pipeline:
                 if cmd=="import":
                     cmdlist=[self.settings.outdir+"/sh/import.sh",self.settings.outname]
-                    # input_files=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
+                    input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
                     cmdlist+=input_file_list
                     
                 elif cmd=="qc":
