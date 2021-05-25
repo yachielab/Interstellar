@@ -493,7 +493,7 @@ class STREAMLINE_EXE(object):
 
             elif cmd=="demultiplex":
                 sh_cmd_list=["dnaSynergizer","demultiplex","-conf",self.settings.orig_cfgpath,"-d",self.settings.outdir+"/demultiplex","-o","$1","-cs","$2","-cq","$3","-rq","$4"]
-                if self.settings.demultiplex_opt["export_tsv"]:
+                if self.settings.demulti_opt["export_tsv"]:
                     sh_cmd_list.append("-export_tsv")
                 sh_cmd_line=" ".join(sh_cmd_list)
                 generateShellTemplate(self.settings.config["template_shellscript"],sh_cmd_line,self.settings.outdir+"/sh","demultiplex")
