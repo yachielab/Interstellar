@@ -135,7 +135,7 @@ def getargs(cmd):
         argparser = ArgumentParser(usage='%(prog)s streamline [options]')
         argparser.add_argument('cmdname',help="streamline")
         argparser.add_argument('-conf', '--config', type=str,required=True,help="config file")
-        # argparser.add_argument('-testrun', '--testrun',action="store_true",help="Run with small fractions of input data to check the streamline scripts work.")
+        argparser.add_argument('-testrun', '--testrun',action="store_true",help="Run with small fractions of input data to check the streamline scripts work.")
         argparser.add_argument('-distribute', '--distribute', action="store_true",help="Execute distributed jobs with qsub")        
         argparser.add_argument('-split', '--split', action="store_true",help="Split input fastq files into multiple chunks by seqkit")        
         # argparser.add_argument('-resume', '--resume', action="store_true",help="Resume the commands ")        
