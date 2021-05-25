@@ -511,14 +511,14 @@ class STREAMLINE_EXE(object):
 
     def run(self):
         used_commands=[]
-        basename_list=[os.path.basename(i) for i in input_file_list]
-
+        
         #single CPU mode
         if not self.settings.distribute:
             for cmd in self.settings.pipeline:
                 if cmd=="import":
                     cmdlist=[self.settings.outdir+"/sh/import.sh",self.settings.outname]
                     input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
+                    basename_list=[os.path.basename(i) for i in input_file_list]
                     cmdlist+=input_file_list
                     
                 elif cmd=="qc":
@@ -618,7 +618,11 @@ class STREAMLINE_EXE(object):
             today_now=today_now.replace(":","")
             today_now=today_now.replace(".","")
             today_now=today_now.replace("-","")
-            
+            if self.input_read_files:
+                input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
+            else:
+                input_file_list=[]
+                
             if input_file_list:
                 #Judge input format: file or directory / endfix determination
                 endfix_input,flg_file=judgeEndFix(input_file_list)
@@ -669,7 +673,6 @@ class STREAMLINE_EXE(object):
                             raise ArguementError("Input files should be fastq or fastq.gz")
                         break
 
-                    # outname_list=extractOutnameFromDirectory(input_file_list[0],endfix_input)
             
             jid_prev=""
             for n_cmd,cmd in enumerate(self.settings.pipeline):
@@ -681,6 +684,8 @@ class STREAMLINE_EXE(object):
                 if cmd=="import":
                     print("Runnning qsub jobs...: import",flush=True)
                     qoption=qoption.replace("<mem>",self.settings.config["mem_import"])
+                    input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
+                    basename_list=[os.path.basename(i) for i in input_file_list]
                     
                     if self.settings.split:
                         file_pool=[]
