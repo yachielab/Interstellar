@@ -619,7 +619,7 @@ class STREAMLINE_EXE(object):
             
             if input_file_list:
                 #Judge input format: file or directory / endfix determination
-                endfix,flg_file=judgeEndFix(input_file_list)
+                endfix_input,flg_file=judgeEndFix(input_file_list)
 
                 #Prepare input files
                 if flg_file==1: #split or not
@@ -645,9 +645,9 @@ class STREAMLINE_EXE(object):
                             time.sleep(10)
                             status_ok=jobCheck("seqkitsplit"+today_now,self.settings.outdir+"/qlog",len(glob.glob(self.settings.outdir+"/sh/seqkit*")))
                         print("Jobs completed: file split")
-                        # filename_to_search=basename_list[0].replace("."+endfix,"")
+                        # filename_to_search=basename_list[0].replace("."+endfix_input,"")
                         # judgeNumFiles(filename_to_search,self.settings.outdir+"/filesplit",len(glob.glob(self.settings.outdir+"/filesplit"))/len(input_files))
-                        # outname_list=[os.path.basename(i).replace("."+endfix) for i in glob.glob(self.settings.outdir+"/filesplit/"+filename_to_search)]
+                        # outname_list=[os.path.basename(i).replace("."+endfix_input) for i in glob.glob(self.settings.outdir+"/filesplit/"+filename_to_search)]
                     # else:
                         #no split
                         # outname_list=[basename_list[0]]
@@ -656,18 +656,18 @@ class STREAMLINE_EXE(object):
                     #Inputs are directories containing already-split files
                     for f in glob.glob(input_file_list[0]):
                         if re.search(r"fastq$",f):
-                            endfix="fastq"
+                            endfix_input="fastq"
                         elif re.search(r"fastq.gz$",f):
-                            endfix="fastq.gz"
+                            endfix_input="fastq.gz"
                         elif re.search(r"fq$",f):
-                            endfix="fq"
+                            endfix_input="fq"
                         elif re.search(r"fq.gz$",f):
-                            endfix="fq.gz"
+                            endfix_input="fq.gz"
                         else:
                             raise ArguementError("Input files should be fastq or fastq.gz")
                         break
 
-                    # outname_list=extractOutnameFromDirectory(input_file_list[0],endfix)
+                    # outname_list=extractOutnameFromDirectory(input_file_list[0],endfix_input)
             
             jid_prev=""
             for n_cmd,cmd in enumerate(self.settings.pipeline):
@@ -682,22 +682,23 @@ class STREAMLINE_EXE(object):
                     
                     if self.settings.split:
                         file_pool=[]
-                        chunk_identifier_pool=list(set(re.sub(r"^.+\.","",i.replace("."+endfix,"")) for i in glob.glob(self.settings.outdir+"/filesplit/*")))
+                        chunk_identifier_pool=list(set(re.sub(r"^.+\.","",i.replace("."+endfix_input,"")) for i in glob.glob(self.settings.outdir+"/filesplit/*")))
                         for f_name in basename_list:
-                            file_pool.append([self.settings.outdir+"/filesplit/"+f_name.replace(endfix,"")+i+"."+endfix for i in chunk_identifier_pool])
+                            file_pool.append([self.settings.outdir+"/filesplit/"+f_name.replace(endfix_input,"")+i+"."+endfix_input for i in chunk_identifier_pool])
                     else:
                         file_pool=[]
                         if flg_file==1:
                             for f_name in input_file_list:
                                 file_pool.append([f_name])
                         else:
-                            prefix_pool=[re.sub(r"_[^_]+\."+endfix,"",os.path.basename(i)) for i in glob.glob(input_file_list[0]+"/*")]
+                            prefix_pool=[re.sub(r"_[^_]+\."+endfix_input,"",os.path.basename(i)) for i in glob.glob(input_file_list[0]+"/*")]
                             for f_name in input_file_list:
                                 file_pool.append([glob.glob(f_name+"/"+p+"*")[0] for p in prefix_pool])
 
                     for infile in zip(*file_pool):
                         infile_now=[infile[i] for i in range(len(input_file_list))]
-                        qcmd_now=qcmd_base+[qoption,self.settings.outdir+"/sh/import.sh",infile_now[0].replace("."+endfix,"")]+infile_now
+                        outname_now=os.path.basename(infile_now[0].replace("."+endfix_input,""))
+                        qcmd_now=qcmd_base+[qoption,self.settings.outdir+"/sh/import.sh",outname_now]+infile_now
                         qcmd_now=" ".join(qcmd_now)
                         print(qcmd_now,flush=True)
                         s=subprocess.run(qcmd_now,shell=True)
