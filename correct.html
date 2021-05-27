@@ -1,0 +1,483 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Correct &mdash; Barista 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="mk_sval.html" />
+    <link rel="prev" title="Import" href="import.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Barista
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Content:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="import.html">Import</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Correct</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#setting-file">Setting file</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#description">Description</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#header-n4">correct</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usage">Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#note">Note</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#merging-import-result-performed-by-multiple-computational-nodes">Merging <code class="docutils literal notranslate"><span class="pre">import</span></code> result performed by multiple computational nodes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#computational-time-and-memory-consumption">Computational time and memory consumption</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mk-sval">mk_sval</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#header-n496">Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#header-n563">Note</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#header-n566">Computational time and memory consumption</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Barista</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Correct</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/correct.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="correct">
+<span id="header-n0"></span><h1>Correct<a class="headerlink" href="#correct" title="Permalink to this headline">¶</a></h1>
+<p>The imported data is corrected by this step. This correction step
+contains 2 commands, <code class="docutils literal notranslate"><span class="pre">correct</span></code> and <code class="docutils literal notranslate"><span class="pre">mk_sval</span></code>. <code class="docutils literal notranslate"><span class="pre">correct</span></code> command
+piles up all the srcCount.pkl.gz files generated by multiple computing
+nodes in import(link!) step, and correct the barcode sequences with
+specified parameters. Then, <code class="docutils literal notranslate"><span class="pre">mk_sval</span></code> command assign the corrected
+barcode to the corresponding components.</p>
+<div class="section" id="setting-file">
+<span id="header-n56"></span><h2>Setting file<a class="headerlink" href="#setting-file" title="Permalink to this headline">¶</a></h2>
+<p>Same setting file can be used for both <code class="docutils literal notranslate"><span class="pre">correct</span></code> and <code class="docutils literal notranslate"><span class="pre">mk_sval</span></code>.</p>
+<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">correct</span><span class="p">]</span>
+<span class="n">src_corrected_components</span><span class="o">=</span><span class="n">cellID1</span><span class="p">,</span><span class="n">constant</span><span class="p">,</span><span class="n">UMI</span><span class="p">,</span><span class="n">cellID2</span><span class="p">,</span><span class="n">biological</span>
+<span class="n">cellID1</span>   <span class="o">=</span> <span class="n">correct</span><span class="p">(</span><span class="n">src_raw_components</span><span class="p">:</span><span class="n">segment1</span><span class="p">,</span>
+                    <span class="n">rank_threshold</span><span class="p">:</span><span class="mi">400</span><span class="p">,</span>
+                    <span class="n">maxDist_with_majority</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">analyzed_portion</span><span class="p">:</span><span class="mf">1.00</span><span class="p">,</span>
+                    <span class="n">maxDist_with_whitelist</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+                    <span class="n">whitelist</span><span class="p">:</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">sci</span><span class="o">-</span><span class="n">RNA</span><span class="o">-</span><span class="n">seq3_HP_whitelist</span><span class="o">.</span><span class="n">txt</span><span class="p">)</span>
+<span class="n">cellID2</span>   <span class="o">=</span> <span class="n">correct</span><span class="p">(</span><span class="n">src_raw_components</span><span class="p">:</span><span class="n">segment4</span><span class="p">,</span>
+                    <span class="n">rank_threshold</span><span class="p">:</span><span class="mi">400</span><span class="p">,</span>
+                    <span class="n">maxDist_with_majority</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">analyzed_portion</span><span class="p">:</span><span class="mf">1.00</span><span class="p">,</span>
+                    <span class="n">maxDist_with_whitelist</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+                    <span class="n">whitelist</span><span class="p">:</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">sci</span><span class="o">-</span><span class="n">RNA</span><span class="o">-</span><span class="n">seq3_RT_whitelist</span><span class="o">.</span><span class="n">txt</span><span class="p">)</span>
+<span class="n">constant</span>  <span class="o">=</span> <span class="n">equal</span><span class="p">(</span><span class="n">src_raw_components</span><span class="p">:</span><span class="n">segment2</span><span class="p">)</span>
+<span class="n">biological</span><span class="o">=</span> <span class="n">equal</span><span class="p">(</span><span class="n">src_raw_components</span><span class="p">:</span><span class="n">segment5</span><span class="p">)</span>
+<span class="n">UMI</span>       <span class="o">=</span> <span class="n">equal</span><span class="p">(</span><span class="n">src_raw_components</span><span class="p">:</span><span class="n">segment3</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="description">
+<span id="header-n58"></span><h3>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">src_corrected_components <strong>(Required)</strong></p>
+<p>The name of each component used in this <code class="docutils literal notranslate"><span class="pre">correct</span></code> step. These
+component names correspond to the names which are used in <code class="docutils literal notranslate"><span class="pre">import</span></code>.</p>
+</li>
+<li><p class="first">cellID1=, cellID2=, … <strong>(Required)</strong></p>
+<p>Here, how the component in <code class="docutils literal notranslate"><span class="pre">import</span></code> step is passed to the
+corresponding component is described. There can be selected from 2
+kind of function, correct() and equal(). correct() performs barcode
+correction with given parameters (see below) and equal() directly
+passes the sequence to the component set in this step. In this case,
+segment2, 3 and 5 are directory passed to constant, biological and
+UMI with no correction, and segment1 and 4 are corrected with the
+sepecified parameters.</p>
+<p><strong>Note:</strong> <em>barsita</em> adopts 2-step correction, minority correction and
+whitelist correction (if whitelist available). Minority correction is
+based on an assumption that the true barcodes are more detected than
+the erroneous barcodes. Therefore, the minority barcode pool are
+compared with the majority pool and corrected to the most feasible
+barcode with a given Levenstein distance. For this minority
+correction, the correct() parameter ‘rank_threshold’,
+‘maxDist_with_majority’, and ‘analyzed_portion’ are used. If the
+sequencing platform provides pre-defined barcode sequence list called
+‘whitelist’, the majority barcodes are also compared with the
+corresponding whitelist at the 2nd step using the paratmeter
+‘maxDist_with_whitelist’ and ‘whitelist’.</p>
+<p><strong>Parameters for correct()</strong></p>
+<ul>
+<li><p class="first">src_raw_components <strong>(Required)</strong></p>
+<p>The name of corresponding component used in import step.</p>
+</li>
+<li><p class="first">rank_threshold</p>
+<p>Number of barcodes which is reagarded as the majority. Numeric
+value, ‘auto’ or ‘all’ can be selected. When ‘auto’, the threshold
+value is automatically defined using
+<a class="reference external" href="https://github.com/arvkevi/kneed">kneed</a> algorithm. If you
+don’t use minority correction and use all extracted barcode for
+the next whitelist correction, set ‘all’. Default: auto</p>
+</li>
+<li><p class="first">maxDist_with_majority</p>
+<p>The maximum Levenstein distance for minority correction.</p>
+</li>
+<li><p class="first">analyzed_portion</p>
+<p>The proportion of reads to be used for the downstream analysis. If
+set to 0.95, row count barcodes are discarded until the cumulative
+count achieves 5% of total reads.</p>
+</li>
+<li><p class="first">maxDist_with_whitelist</p>
+<p>The maximum Levenstein distance for whitelist correction.</p>
+</li>
+<li><p class="first">whitelist <strong>(Required for whitelist correction)</strong></p>
+<p>Path to whitelist. Note: ‘~(tilde)’ cannot be expanded. Set
+relative path or absolute path.</p>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="header-n4">
+<span id="id1"></span><h2>correct<a class="headerlink" href="#header-n4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="usage">
+<span id="header-n8"></span><h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">correct</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="n">config</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">ip</span> <span class="n">barista_import_srcCount</span><span class="o">.</span><span class="n">pkl</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="n">output_directory</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">output_filename</span>
+</pre></div>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="10%" />
+<col width="13%" />
+<col width="77%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Option</th>
+<th class="head">Required</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>-cmd</td>
+<td>○</td>
+<td><em>barista</em> command(correct)</td>
+</tr>
+<tr class="row-odd"><td>-conf</td>
+<td>○</td>
+<td>Setting file. See above how to write the config file.</td>
+</tr>
+<tr class="row-even"><td>-ip</td>
+<td>○</td>
+<td>count file (srcCount.pkl.gz) generated by <code class="docutils literal notranslate"><span class="pre">import</span></code> step.</td>
+</tr>
+<tr class="row-odd"><td>-d</td>
+<td>×</td>
+<td>Output directory.</td>
+</tr>
+<tr class="row-even"><td>-o</td>
+<td>×</td>
+<td>Output file name.</td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">correct</span></code> merges the count files generated by <code class="docutils literal notranslate"><span class="pre">import</span></code> and correct
+the barcode sequence using 2-step method described above. As a result,
+image file which show the count of each barcode sequence, majority
+threshold and correction summary (.png), sequences of each barcode
+(srcReference.tsv.gz) and binary file of correction result
+(srcCorrect.pkl.gz).</p>
+</div>
+<div class="section" id="note">
+<span id="header-n448"></span><h3>Note<a class="headerlink" href="#note" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="merging-import-result-performed-by-multiple-computational-nodes">
+<span id="header-n451"></span><h4>Merging <code class="docutils literal notranslate"><span class="pre">import</span></code> result performed by multiple computational nodes<a class="headerlink" href="#merging-import-result-performed-by-multiple-computational-nodes" title="Permalink to this headline">¶</a></h4>
+<p>To specify multiple multiple count files generated by multiple
+computational nodes, use * (wild card). For example,</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">correct</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="n">config</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">ip</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">import</span><span class="o">/*</span><span class="n">_srcCount</span><span class="o">.</span><span class="n">pkl</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="n">output_directory</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">output_filename</span>
+</pre></div>
+</div>
+<p>If you want to use the wild card for shell script argument, the wild
+card will be successfully expanded by surrounding the argument with ‘”’.</p>
+</div>
+<div class="section" id="computational-time-and-memory-consumption">
+<span id="header-n460"></span><h4>Computational time and memory consumption<a class="headerlink" href="#computational-time-and-memory-consumption" title="Permalink to this headline">¶</a></h4>
+<p>Computational time and memory consumption depend on the size of input
+file size and sequence complexity of input barcodes. For huge sequencing
+data set, large memory might be needed (not tested).</p>
+</div>
+</div>
+</div>
+<div class="section" id="mk-sval">
+<span id="header-n465"></span><h2>mk_sval<a class="headerlink" href="#mk-sval" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="header-n496">
+<span id="id2"></span><h3>Usage<a class="headerlink" href="#header-n496" title="Permalink to this headline">¶</a></h3>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">mk_sval</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="n">config</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">crp</span> <span class="n">barista_correct_srcCorrect</span><span class="o">.</span><span class="n">pkl</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">rs</span> <span class="n">barista_import_srcSeq</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">rq</span> <span class="n">barista_import_srcQual</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="n">output_directory</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">output_filename</span>
+</pre></div>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Option</th>
+<th class="head">Required</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>-cmd</td>
+<td>○</td>
+<td><em>barista</em>
+command(mk_sval)</td>
+</tr>
+<tr class="row-odd"><td>-conf</td>
+<td>○</td>
+<td>Setting file. See
+above how to write
+the config file.</td>
+</tr>
+<tr class="row-even"><td>-crp</td>
+<td>○</td>
+<td>correction result
+file
+(srcCorrect.pkl.gz)
+generated by
+<code class="docutils literal notranslate"><span class="pre">correct</span></code> step.</td>
+</tr>
+<tr class="row-odd"><td>-rs</td>
+<td>○</td>
+<td>sequence file
+generated by
+<code class="docutils literal notranslate"><span class="pre">import</span></code> command.</td>
+</tr>
+<tr class="row-even"><td>-rq</td>
+<td>○</td>
+<td>quality file
+generated by
+<code class="docutils literal notranslate"><span class="pre">import</span></code> command.</td>
+</tr>
+<tr class="row-odd"><td>-d</td>
+<td>×</td>
+<td>Output directory.</td>
+</tr>
+<tr class="row-even"><td>-o</td>
+<td>×</td>
+<td>Output file name.</td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">mk_sval</span></code> generates 3 files, result.tsv.gz, srcValue.tsv.gz and
+srcQual.tsv.gz. The ‘result’ file contains nucleotide sequences of each
+component extracted by <code class="docutils literal notranslate"><span class="pre">import</span></code> and corrected sequence computed by
+<code class="docutils literal notranslate"><span class="pre">correct</span></code>. The ‘value’ file contains the integer data for each barcode
+sequence which means the index in barcode sequences list. The ‘qual’
+file contains average sequence quality of each barcode sequence.</p>
+</div>
+<div class="section" id="header-n563">
+<span id="id3"></span><h3>Note<a class="headerlink" href="#header-n563" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="header-n566">
+<span id="id4"></span><h4>Computational time and memory consumption<a class="headerlink" href="#header-n566" title="Permalink to this headline">¶</a></h4>
+<p>Computational time linearly depends on the size of input files. Memory
+consumption depends on the sequence length. Basically, it requires 2~5GB
+memory for 4million reads processing. For 4 million reads, <code class="docutils literal notranslate"><span class="pre">mk_sval</span></code>
+for sciRNA-seq3 required about 6 mins and 1GB memory.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mk_sval.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="import.html" class="btn btn-neutral float-left" title="Import" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Yusuke Kijima, Yachie Lab
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

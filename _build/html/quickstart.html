@@ -1,0 +1,459 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Quick start &mdash; Barista 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Import" href="import.html" />
+    <link rel="prev" title="Setup" href="setup.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Barista
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Content:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#extract-barcodes">Extract barcodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#correct-barcodes">Correct barcodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#barcode-conversion">Barcode conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#read-structure-reformatting-and-export">Read structure reformatting and export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#read-demultiprexing">Read demultiprexing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#read-tagging">Read tagging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="import.html">Import</a></li>
+<li class="toctree-l1"><a class="reference internal" href="correct.html">Correct</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Barista</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Quick start</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/quickstart.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="quick-start">
+<span id="header-n9"></span><h1>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h1>
+<p>In this practice, we demonstrate the fastq format conversion of
+sciRNA-seq3(<a class="reference external" href="https://www.nature.com/articles/s41586-019-0969-x">Cao et al.,
+2019</a>) into 10X
+Chromuim V3. Small dataset (10000 reads) of sciRNA-seq3 is stored in
+barista/quickstart/dataset. Each step requires ~2min and ~5G memory.</p>
+<p>To see the available arguments and the grammer of config file in detail,
+see each command page.</p>
+<ul class="simple">
+<li>import&lt;link!&gt;</li>
+<li>correct&lt;link!&gt;</li>
+<li>convert&lt;link!&gt;</li>
+<li>export&lt;link!&gt;</li>
+</ul>
+<div class="section" id="extract-barcodes">
+<span id="header-n27"></span><h2>Extract barcodes<a class="headerlink" href="#extract-barcodes" title="Permalink to this headline">¶</a></h2>
+<p>First, fastq file is parsed by <code class="docutils literal notranslate"><span class="pre">import</span></code>. This <code class="docutils literal notranslate"><span class="pre">import</span></code> command
+accepts various sequence structure which can be presented in extended
+regular expression (fuzzy matching) allowing mismatch.</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="kn">import</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">R1</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">dataset</span><span class="o">/</span><span class="n">sci3_small_R1</span><span class="o">.</span><span class="n">fastq</span> \
+<span class="o">-</span><span class="n">R2</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">dataset</span><span class="o">/</span><span class="n">sci3_small_R2</span><span class="o">.</span><span class="n">fastq</span> \
+<span class="o">-</span><span class="n">d</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_import</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">barista_import</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span>#output directory structure
+./quickstart/out_import/
+├── barista_import_srcCount.pkl.gz
+├── barista_import_srcQual.tsv.gz
+└── barista_import_srcSeq.tsv.gz
+</pre></div>
+</div>
+<p>You can see the extracted sequences in Seq.tsv.gz file.</p>
+</div>
+<div class="section" id="correct-barcodes">
+<span id="header-n46"></span><h2>Correct barcodes<a class="headerlink" href="#correct-barcodes" title="Permalink to this headline">¶</a></h2>
+<p>Extracted sequences are corrected by <code class="docutils literal notranslate"><span class="pre">correct</span></code>. <code class="docutils literal notranslate"><span class="pre">correct</span></code> command
+adopts 2-step correction, minority correction and whitelist correction
+(if whitelist available). Minority correction is based on an assumption
+that the true barcodes are more detected than erroneous barcodes.
+Therefore, the minority barcode pool are compared with the majority pool
+and corrected to the most feasible barcode with a given Levenstein
+distance. If the sequencing platform provides pre-defined barcode
+sequence list called as ‘whitelist’, the majority barcodes are compared
+with the corresponding whitelist at the 2nd step.</p>
+<p>Here, we correct 2 cell barocdes in sciRNA-seq3 with distance=1 for
+minority correction and distance=2 for whitelist correction.</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">correct</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">ip</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_import</span><span class="o">/</span><span class="n">barista_import_srcCount</span><span class="o">.</span><span class="n">pkl</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_correct</span><span class="o">/</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">barista_correct</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span>#output directory structure
+./quickstart/out_correct/
+├── barista_correct_barcodeSummary_segment1.png
+├── barista_correct_barcodeSummary_segment4.png
+├── barista_correct_srcCorrect.pkl.gz
+└── barista_correct_srcReference.tsv.gz
+</pre></div>
+</div>
+<p>After correction, barcode rank plot are exported in
+./quickstart/out_correct/ directory.</p>
+<p>(figure here!)</p>
+<p>Then, extracted sequences generated in <code class="docutils literal notranslate"><span class="pre">import</span></code> are corrected by
+<code class="docutils literal notranslate"><span class="pre">mk_sval</span></code> command. This <code class="docutils literal notranslate"><span class="pre">mk_sval</span></code> command generates corrected
+sequence table and barcode value table which will be used in barcode
+conversion step.</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">mk_sval</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">crp</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_correct</span><span class="o">/</span><span class="n">barista_correct_srcCorrect</span><span class="o">.</span><span class="n">pkl</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">rs</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_import</span><span class="o">/</span><span class="n">barista_import_srcSeq</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">rq</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_import</span><span class="o">/</span><span class="n">barista_import_srcQual</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mk_sval</span><span class="o">/</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">barista_mk_sval</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span>#output directory structure
+./quickstart/out_mk_sval/
+├── barista_mk_sval_correct_result.tsv.gz
+├── barista_mk_sval_correct_srcQual.tsv.gz
+└── barista_mk_sval_correct_srcValue.tsv.gz
+</pre></div>
+</div>
+<p>Extracted sequences after correction are stored in result.tsv file.</p>
+</div>
+<div class="section" id="barcode-conversion">
+<span id="header-n216"></span><h2>Barcode conversion<a class="headerlink" href="#barcode-conversion" title="Permalink to this headline">¶</a></h2>
+<p>For the barcode conversion, 2 types of conversion, ‘global convert’ and
+‘local convert’, are considered. In global convert, source barcodes are
+naively converted into destination barcode. In local convert, barcode
+conversion of 1 barcode depends on other barcode(s). For example,
+scRNA-seq UMI is meaningful at least under the same cell barcode and UMI
+‘AAAAA’ in cell A and ‘AAAAA’ in cell B can tag different molecule in
+defferent cells.</p>
+<p>The first step of conversion is globalConvert:</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">globalConvert</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">sv</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mk_sval</span><span class="o">/</span><span class="n">barista_mk_sval_correct_srcValue</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">sq</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mk_sval</span><span class="o">/</span><span class="n">barista_mk_sval_correct_srcQual</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">ref</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_correct</span><span class="o">/</span><span class="n">barista_correct_srcReference</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_globalConvert</span><span class="o">/</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">barista_globalConvert</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span>#output directory structure
+./quickstart/out_globalConvert/
+├── barista_globalConvert_constraintTree.pkl.gz
+├── barista_globalConvert_global_destQual.tsv.gz
+└── barista_globalConvert_global_destValue.tsv.gz
+</pre></div>
+</div>
+<p>cell barcodes 1 and 2 are now globally converted. Then, for the
+preparetion of local conversion of UMI, build a correspondence tree to
+store the combination of cell barcode and UMI using <code class="docutils literal notranslate"><span class="pre">mergeTree</span></code>
+function.</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">mergeTree</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">lp</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_globalConvert</span><span class="o">/</span><span class="n">barista_globalConvert_constraintTree</span><span class="o">.</span><span class="n">pkl</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mergeTreeAfter</span> <span class="n">tree</span> <span class="n">merge</span><span class="p">,</span> <span class="mi">1</span> <span class="n">pickle</span> <span class="n">file</span> <span class="ow">is</span> <span class="n">exported</span><span class="o">.</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span>#output directory structure
+./quickstart/out_mergeTree/
+└── barista_mergedTree.pkl.gz
+</pre></div>
+</div>
+<p>Finally, UMI is converted by <code class="docutils literal notranslate"><span class="pre">localConvert</span></code> command:</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">localConvert</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">sv</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mk_sval</span><span class="o">/</span><span class="n">barista_mk_sval_correct_srcValue</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">dv</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_globalConvert</span><span class="o">/</span><span class="n">barista_globalConvert_global_destValue</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">l</span> <span class="n">d_value_UMI</span> \
+<span class="o">-</span><span class="n">mp</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mergeTree</span><span class="o">/</span><span class="n">barista_mergedTree</span><span class="o">.</span><span class="n">pkl</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_localConvert</span><span class="o">/</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">barista_localConvert</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span>#output directory structure
+./quickstart/out_localConvert/
+└── barista_localConvert_d_value_UMIglobal_destValue.tsv.gz
+</pre></div>
+</div>
+<p>If your conversion were succeded, you’ll get the message
+<code class="docutils literal notranslate"><span class="pre">All</span> <span class="pre">conversions</span> <span class="pre">were</span> <span class="pre">DONE!</span> <span class="pre">Proceed</span> <span class="pre">export</span> <span class="pre">step.</span></code></p>
+</div>
+<div class="section" id="read-structure-reformatting-and-export">
+<span id="header-n141"></span><h2>Read structure reformatting and export<a class="headerlink" href="#read-structure-reformatting-and-export" title="Permalink to this headline">¶</a></h2>
+<p>For the final step of conversion, use <code class="docutils literal notranslate"><span class="pre">export</span></code> command to generate
+fastq file with desired sequence structure. Here the converted
+sciRNA-seq3 file is exported as 10X v3 format. This step consumes time
+and memory compared to previous other steps, but most of them are for
+generation of 3million cell barcodes list and 12 nuucleotides UMI list
+which is constant even if the input sequence file is much larger than
+this practice dataset.</p>
+<p><strong>Note:</strong> Because of the file size limitaion of Github, 10X barcode
+whitelist is gzipped. Please decompress the
+./quickstart/dataset/3M-february-2018.txt.gz before you run the
+following export script.</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">export</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">dv</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_localConvert</span><span class="o">/</span><span class="n">barista_localConvert_d_value_UMIglobal_destValue</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">dq</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_globalConvert</span><span class="o">/</span><span class="n">barista_globalConvert_global_destQual</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">rs</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_import</span><span class="o">/</span><span class="n">barista_import_srcSeq</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">rq</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_import</span><span class="o">/</span><span class="n">barista_import_srcQual</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_export</span><span class="o">/</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">barista_export_10X</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span>#output directory structure
+./quickstart/out_export/
+├── barista_export_10XRead1_dest_destSeq.fastq.gz
+└── barista_export_10XRead2_dest_destSeq.fastq.gz
+</pre></div>
+</div>
+<p>These 10X formatted fastq file can be analyzed by Cellranger.</p>
+</div>
+<div class="section" id="read-demultiprexing">
+<span id="header-n155"></span><h2>Read demultiprexing<a class="headerlink" href="#read-demultiprexing" title="Permalink to this headline">¶</a></h2>
+<p>barista can split the input fastq files based on specific barcode using
+<code class="docutils literal notranslate"><span class="pre">demultiplex</span></code> command. <code class="docutils literal notranslate"><span class="pre">demultiplex</span></code> can be performed after
+generation of result file in <code class="docutils literal notranslate"><span class="pre">mk_sval</span></code> step. In this demonstration,
+the cell barcode1 is used for demultiplex tag and cell barcode2+UMI and
+biological read are exported as Read1 and Read2, respectively.</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span> \
+<span class="o">-</span><span class="n">cmd</span> <span class="n">demultiplex</span> \
+<span class="o">-</span><span class="n">conf</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">conf</span> \
+<span class="o">-</span><span class="n">cs</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mk_sval</span><span class="o">/</span><span class="n">barista_mk_sval_correct_result</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">rq</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_import</span><span class="o">/</span><span class="n">barista_import_srcQual</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">cq</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mk_sval</span><span class="o">/</span><span class="n">barista_mk_sval_correct_srcQual</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span> \
+<span class="o">-</span><span class="n">d</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_demultiplex</span><span class="o">/</span> \
+<span class="o">-</span><span class="n">o</span> <span class="n">barista_demulti</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span>#output directory structure
+./quickstart/out_demultiplex/
+└── barista_demulti_20200414085111
+    ├── barista_demulti_AAACCATAGT_20200414085111_Read1.fastq.gz
+    ├── barista_demulti_AAACCATAGT_20200414085111_Read2.fastq.gz
+    ├── barista_demulti_AAACTCCAAT_20200414085111_Read1.fastq.gz
+    ├── barista_demulti_AAACTCCAAT_20200414085111_Read2.fastq.gz
+    ├── barista_demulti_AAACTGAACT_20200414085111_Read1.fastq.gz
+    ├── barista_demulti_AAACTGAACT_20200414085111_Read2.fastq.gz
+    ├── barista_demulti_AAAGCTGATT_20200414085111_Read1.fastq.gz
+    ├── barista_demulti_AAAGCTGATT_20200414085111_Read2.fastq.gz
+    ...
+</pre></div>
+</div>
+<p>768 fastq files(384 cell barcode1 * 2) are generated.</p>
+</div>
+<div class="section" id="read-tagging">
+<span id="header-n230"></span><h2>Read tagging<a class="headerlink" href="#read-tagging" title="Permalink to this headline">¶</a></h2>
+<p>Similar to <code class="docutils literal notranslate"><span class="pre">demultiplex</span></code> command, barista also implement <code class="docutils literal notranslate"><span class="pre">tag</span></code>
+command. <code class="docutils literal notranslate"><span class="pre">tag</span></code> exports fastq file in which desired barcodes are tagged
+on the header line. This command is useful when some barcodes are needed
+to be attached to target segment, for example, extract biological read
+with cell barcode+UMI in scRNA-seq. Here, we demonstrate to tag cell
+barcode 1 and 2 with UMI for read1 and cell barcode 1, 2 and UMI with
+constant sequence+biological sequence for read2.</p>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">barista</span>
+<span class="o">-</span><span class="n">cmd</span> <span class="n">tag</span>
+<span class="o">-</span><span class="n">c</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">conf</span>
+<span class="o">-</span><span class="n">cs</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mk_sval</span><span class="o">/</span><span class="n">barista_mk_sval_correct_result</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span>
+<span class="o">-</span><span class="n">rq</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_import</span><span class="o">/</span><span class="n">barista_import_srcQual</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span>
+<span class="o">-</span><span class="n">cq</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_mk_sval</span><span class="o">/</span><span class="n">barista_mk_sval_correct_srcQual</span><span class="o">.</span><span class="n">tsv</span><span class="o">.</span><span class="n">gz</span>
+<span class="o">-</span><span class="n">d</span> <span class="o">./</span><span class="n">quickstart</span><span class="o">/</span><span class="n">out_tag</span><span class="o">/</span>
+<span class="o">-</span><span class="n">o</span> <span class="n">barista_tag</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default notranslate"><div class="highlight"><pre><span></span>#output directory structure
+./quickstart/out_tag/
+├── barista_tagRead1.fastq.gz
+└── barista_tagRead2.fastq.gz
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="import.html" class="btn btn-neutral float-right" title="Import" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="setup.html" class="btn btn-neutral float-left" title="Setup" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Yusuke Kijima, Yachie Lab
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
