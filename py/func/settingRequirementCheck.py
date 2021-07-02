@@ -102,18 +102,18 @@ def setDefaultQConfig(cfg):
     cfg["qsub"]["QOPTION"]=tryAndFill(cfg,"qsub","QOPTION","",required=True)
     # cfg["qsub"]["TEMPLATE_SHELLSCRIPT"]=tryAndFill(cfg,"qsub","TEMPLATE_SHELLSCRIPT","",required=True)
     cfg["qsub"]["MEM_RATIO"] =tryAndFill(cfg,"qsub","MEM_RATIO","0.05")
-    cfg["qsub"]["mem_import"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEN_RATIO"],1)
-    cfg["qsub"]["mem_qc"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEN_RATIO"],1)
+    cfg["qsub"]["mem_import"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
+    cfg["qsub"]["mem_qc"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
     cfg["qsub"]["mem_to_bt"]=cfg["qsub"]["MEM_MAX"]
     cfg["qsub"]["mem_correct"]=cfg["qsub"]["MEM_MAX"]
-    cfg["qsub"]["mem_mk_sval"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEN_RATIO"],2)
-    cfg["qsub"]["mem_buildTree"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEN_RATIO"],2)
+    cfg["qsub"]["mem_mk_sval"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
+    cfg["qsub"]["mem_buildTree"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
     cfg["qsub"]["mem_mergeTree"]=cfg["qsub"]["MEM_MAX"]
-    cfg["qsub"]["mem_convert"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEN_RATIO"],4)
-    cfg["qsub"]["mem_bc_sort"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEN_RATIO"],2)
-    cfg["qsub"]["mem_export"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEN_RATIO"],4)
-    cfg["qsub"]["mem_demultiplex"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEN_RATIO"],2)
-    cfg["qsub"]["mem_tag"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEN_RATIO"],2)
+    cfg["qsub"]["mem_convert"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],4)
+    cfg["qsub"]["mem_bc_sort"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
+    cfg["qsub"]["mem_export"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],4)
+    cfg["qsub"]["mem_demultiplex"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
+    cfg["qsub"]["mem_tag"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
     return cfg["qsub"]
 
 
