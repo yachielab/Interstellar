@@ -72,7 +72,7 @@ if __name__=="__main__":
 
 
     # set up a project directory
-    proj_dir=cfg["general"]["PROJECT_DIR"]
+    proj_dir=os.path.expanduser(cfg["general"]["PROJECT_DIR"])
     sampledir_list=settingImporter.genSampleDir(proj_dir,samplesheet)
 
 

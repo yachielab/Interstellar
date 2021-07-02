@@ -86,7 +86,7 @@ def fastqDirCheck(valid_dirs):
 
 
 def generateShellTemplate(template,cmdline,shelloutdir,shelloutname):
-    with open(template,mode="rt") as r, open(shelloutdir+"/"+shelloutname+".sh",mode="wt") as w:
+    with open(os.path.expanduser(template),mode="rt") as r, open(os.path.expanduser(shelloutdir+"/"+shelloutname+".sh"),mode="wt") as w:
         for line in r:
             w.write(line)
         w.write("\n")
@@ -167,7 +167,7 @@ class SETUP_SETTINGS(object):
             if not self.cfg["general"]["SAMPLESHEET"]=="":
                 # multi-sample
                 samplelist=[]
-                with open(self.cfg["general"]["SAMPLESHEET"],mode="rt") as r:
+                with open(os.path.expanduser(self.cfg["general"]["SAMPLESHEET"]),mode="rt") as r:
                     for line in r:
                         line=line.replace("\n","")
                         samplelist.append(line.split("\t"))
