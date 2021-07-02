@@ -217,6 +217,11 @@ class SETUP(object):
             #Generate shell scripts for file splitting by seqkit
             for prefix in self.settings.target_prefix_list:
                 input_read_files=[]
+
+                ##
+                print(self.settings.read_valid)
+                ##
+                
                 for r in ["read1","read2","index1","index2"]:
                     if r in self.settings.read_valid:
                         input_read_files.append(glob.glob(self.settings.read_valid[r]+"/"+prefix+"*")[0])

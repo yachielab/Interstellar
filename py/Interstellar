@@ -89,11 +89,14 @@ if __name__=="__main__":
 
     # setup
     param_dict={}
+    print(sampledir_list)
     for sampledir in sampledir_list:
         param_dict[os.path.basename(sampledir)]={}
         setting=interstellar_setup.SETUP_SETTINGS(cfg,qcfg,cmds_execute,sampledir,os.path.basename(sampledir))
         setting.settingGetter()
         setup_obj=interstellar_setup.SETUP(setting,is_qsub,is_multisample,opt.config)
+        print(setup_obj)
+        print("##\n\n\n\n")
         setup_obj.generateShellScripts()
 
         param_dict[os.path.basename(sampledir)]["valid_dirs"]=setting.valid_dirs
