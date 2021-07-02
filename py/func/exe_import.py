@@ -1,6 +1,7 @@
 from . import settingRequirementCheck
 from . import settingImporter
 from . import segmentImporter
+from . import interstellar_setup
 import regex
 import datetime
 import os
@@ -22,13 +23,13 @@ class settings_import(object):
     def __init__(self,opt):
         self.opt=opt
     def settingGetter(self):
+        cfg=settingImporter.readconfig(self.opt.config)
+        cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
+        cfg=settingRequirementCheck.setDefaultConfig(cfg)
+        cfg_value_ext = settingImporter.config_extract_value_ext(cfg)
+        
         input_files=[i for i in [self.opt.config,self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2,self.opt.outdir] if not i==""]
         settingRequirementCheck.pathExistCheck(input_files)
-
-        cfgPath=self.opt.config
-        cfg_import=settingImporter.readconfig(cfgPath)["import"]
-        cfg_import=settingImporter.configClean(cfg_import)
-        cfg_import=settingRequirementCheck.setDefaultValueInConfig(self.opt.cmdname,cfg_import)
 
         flg_file=0
         for i in [self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2]:
@@ -42,11 +43,10 @@ class settings_import(object):
                         raise InputError("All files should be commonly gzipped or ungzipped.")
                     
         self.input_fastq_gzipped=True if flg_gz==1 else False
-        self.simple=self.opt.simple
-        self.components=cfg_import["src_raw_components"].split(",")
-        self.barcodes=cfg_import["barcodes"].split(",")
-        self.flash=self.opt.flash
-        self.outFilePath_and_Prefix=regex.sub("/$","",str(self.opt.outdir))+"/"+str(self.opt.outname)
+        # self.simple=self.opt.simple
+        self.components=cfg_value_ext["segments"]
+        self.flash=cfg_value_ext["FLASH"]
+        self.outFilePath_and_Prefix=self.opt.outdir+"/"+self.opt.outname
         today_now=str(datetime.datetime.today())
         today_now=regex.sub(r"\.|:| ","-",today_now)
         random_string=segmentImporter.randomname(15)
@@ -55,17 +55,17 @@ class settings_import(object):
         self.tmpdir=tmpdir
 
         regexDict=dict(Read1_src=[],Read2_src=[],Index1_src=[],Index2_src=[],merge_src=[])
-        for pat in cfg_import:
-            if regex.search("^Read1_src",pat):
-                regexDict["Read1_src"].append(cfg_import[pat])
-            elif regex.search("^Read2_src",pat):
-                regexDict["Read2_src"].append(cfg_import[pat])
-            elif regex.search("^Index1_src",pat):
-                regexDict["Index1_src"].append(cfg_import[pat])
-            elif regex.search("^Index2_src",pat):
-                regexDict["Index2_src"].append(cfg_import[pat])
-            elif regex.search("^merge_src",pat):
-                regexDict["merge_src"].append(cfg_import[pat])
+        for pat in cfg_value_ext:
+            if regex.search("^READ1_STRUCTURE",pat):
+                regexDict["Read1_src"].append(cfg_value_ext[pat])
+            elif regex.search("^READ2_STRUCTURE",pat):
+                regexDict["Read2_src"].append(cfg_value_ext[pat])
+            elif regex.search("^INDEX1_STRUCTURE",pat):
+                regexDict["Index1_src"].append(cfg_value_ext[pat])
+            elif regex.search("^INDEX2_STRUCTURE",pat):
+                regexDict["Index2_src"].append(cfg_value_ext[pat])
+            elif regex.search("^READ_FLASH_STRUCTURE",pat):
+                regexDict["merge_src"].append(cfg_value_ext[pat])
         regexDict={k:regexDict[k] for k in regexDict if regexDict[k]}
         self.regexDict=regexDict
         reads_default=["Read1_src","Read2_src","Index1_src","Index2_src"]
@@ -73,24 +73,27 @@ class settings_import(object):
         for cnt,readPath in enumerate([self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2]):
             if readPath!="":
                 srcReadKeys.append(reads_default[cnt])
-        srcReadPaths=[i for i in [self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2] if i!=""]
+        srcReadPaths=[i for i in [self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2] if not i==""]
         readPathDict={k:v for k,v in zip(srcReadKeys,srcReadPaths) if v!=""}
         self.flash_gzipped_reads=[]
-        self.flash_gzipped_reads,self.src_readPathDict=segmentImporter.merge_reads_flash2(readPathDict,self.opt.flash,self.input_fastq_gzipped,tmpdir,cfg_import)
+        self.flash_gzipped_reads,self.src_readPathDict=segmentImporter.merge_reads_flash2(readPathDict,self.flash,self.input_fastq_gzipped,tmpdir,cfg_value_ext)
         
-        if self.simple:
-            patternDict={}
-            for readKey in regexDict:
-                pat_now=regexDict[readKey][0]
-                pat_now=regex.sub(r"><","_",pat_now)
-                pat_now=regex.sub(r"\<|\>","",pat_now).split("_")
-                patternDict[readKey]={k.split(":")[0]:int(k.split(":")[1]) for k in pat_now}
-            self.patternDict=patternDict
-        else:
-            regexDictCompiled={}
-            for readKey in regexDict:
-                regexDictCompiled[readKey]=[regex.compile(i) for i in regexDict[readKey]]
-            self.regexDictCompiled=regexDictCompiled
+        # if self.simple:
+        #     patternDict={}
+        #     for readKey in regexDict:
+        #         pat_now=regexDict[readKey][0]
+        #         pat_now=regex.sub(r"><","_",pat_now)
+        #         pat_now=regex.sub(r"\<|\>","",pat_now).split("_")
+        #         patternDict[readKey]={k.split(":")[0]:int(k.split(":")[1]) for k in pat_now}
+        #     self.patternDict=patternDict
+        # else:
+        regexDictCompiled={}
+        for readKey in regexDict:
+            regexDictCompiled[readKey]=[regex.compile(i) for i in regexDict[readKey]]
+        self.regexDictCompiled=regexDictCompiled
+        func_dict=settingImporter.func_check(cfg_value_ext)
+        self.barcodes=func_dict["barcode_list"]
+        
         
 class BARISTA_IMPORT(object):
     parsedSeqDict=None
@@ -107,6 +110,7 @@ class BARISTA_IMPORT(object):
             else:
                 fastqDict[readKey]=segmentImporter.sequenceGenerator(fq_path,self.settings)
         self.fastqDict=fastqDict
+
 
     def simple_extract(self):
         fastq_tab_dict={}
@@ -170,9 +174,9 @@ class BARISTA_IMPORT(object):
 
         for nread,readKey in enumerate(self.settings.src_readPathDict):
             print(readKey,flush=True)
-            if not self.settings.simple:
-                segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
-                segment_parsed_set=set(segment_parsed)
+            segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
+            segment_parsed_set=set(segment_parsed)
+            
             if self.settings.flash:
                 merge_components=segmentImporter.parseSegmentFromRegex(self.settings.regexDict["merge_src"])
                 merge_components_set=set(merge_components)
@@ -253,6 +257,7 @@ class BARISTA_IMPORT(object):
         self.counterDict=counterDict
         # self.today_now=today_now
         self.tmpdir=tmpdir+"/"
+
 
     def exportExtractedComponents(self):
         iter_num=-1

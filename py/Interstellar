@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import glob
+from argparse import ArgumentParser
+from distutils.util import strtobool
+# from func import arg
+# from func import dnaSyn_import
+# from func import dnaSyn_qc
+# from func import dnaSyn_to_bt
+# from func import dnaSyn_correct
+# from func import dnaSyn_mk_sval
+# from func import dnaSyn_buildTree
+# from func import dnaSyn_mergeTree
+# from func import dnaSyn_convert
+# from func import dnaSyn_bc_sort
+# from func import dnaSyn_export
+# from func import dnaSyn_demultiplex
+# from func import dnaSyn_tag
+# from func import interstellar_streamline
+from func import settingImporter
+from func import settingRequirementCheck
+from func import interstellar_setup
+from func import value_extraction
+from func import value_translation
+from func import demultiplex
+from func import tag
+
+
+def getOpt():
+    argparser = ArgumentParser(usage='%(prog)s [options]')
+    argparser.add_argument('-conf', '--config', type=str,required=True,help="Configuratioon file")
+    argparser.add_argument('-qconf', '--qconfig', type=str,default="",help="Configuration file for distributed computing. If you specify this option, qsub jobs are executed according to the settings. Default='' (no distributed computing)")
+    return argparser.parse_args()
+
+if __name__=="__main__":
+    opt=getOpt()
+    print("Interstellar 1.0",flush=True)
+
+    # read config file
+    cfg=settingImporter.readconfig(opt.config)
+    cfg={k:settingImporter.configClean(cfg[k]) for k in cfg if k in ["general","value_extraction","value_translation","tag","demultiplex"]}
+    cmds=list(cfg.keys())
+
+    if not "general" in cmds:
+        raise KeyError("The section 'general' is required.")
+    for cmd in cmds:
+        if not cmd in ["general","value_extraction","value_translation","tag","demultiplex"]:
+            raise KeyError("Unknown section name: "+cmd)
+    
+    cmds_execute=[]
+    for cmd in ["value_extraction","value_translation","tag","demultiplex"]:
+        if cmd in cmds:
+            cmds_execute.append(cmd)
+        if cmd=="value_translation" or cmd=="tag" or cmd=="demultiplex":
+            if not "value_extraction" in cmds:
+                raise KeyError("The section 'value_extraction' is required to execute"+cmd)
+
+    
+    #Filling default values into the config file
+    cfg=settingRequirementCheck.setDefaultConfig(cfg)
+
+
+    # Multi-sample?
+    if cfg["general"]["SAMPLESHEET"]=="":
+        is_multisample=False
+        samplesheet=""
+    else:
+        is_multisample=True
+        samplesheet=cfg["general"]["SAMPLESHEET"]
+
+
+    # set up a project directory
+    proj_dir=cfg["general"]["PROJECT_DIR"]
+    sampledir_list=settingImporter.genSampleDir(proj_dir,samplesheet)
+
+
+    # identify qsub or not
+    if opt.qconfig == "":
+        is_qsub=False
+        qcfg=""
+    else:
+        is_qsub=True
+        qcfg=settingImporter.readconfig(opt.qconfig)
+        qcfg={k:settingImporter.configClean(qcfg[k]) for k in qcfg}
+        qcfg=settingRequirementCheck.setDefaultQConfig(qcfg)
+
+
+    # setup
+    param_dict={}
+    for sampledir in sampledir_list:
+        param_dict[os.path.basename(sampledir)]={}
+        setting=interstellar_setup.SETUP_SETTINGS(cfg,qcfg,cmds_execute,sampledir,os.path.basename(sampledir))
+        setting.settingGetter()
+        setup_obj=interstellar_setup.SETUP(setting,is_qsub,is_multisample,opt.config)
+        setup_obj.generateShellScripts()
+
+        param_dict[os.path.basename(sampledir)]["valid_dirs"]=setting.valid_dirs
+        param_dict[os.path.basename(sampledir)]["read_valid"]=setting.read_valid
+        param_dict[os.path.basename(sampledir)]["file_suffix"]=setting.file_suffix
+        param_dict[os.path.basename(sampledir)]["target_prefix_list"]=setting.target_prefix_list
+        param_dict[os.path.basename(sampledir)]["shelldir"]=setup_obj.shelldir
+        param_dict[os.path.basename(sampledir)]["read_iden_dict"]=setup_obj.read_iden_dict
+
+        # fastq split
+        if "value_extraction" in cmds_execute and is_qsub:
+            setup_obj.fastq_split()
+            param_dict[os.path.basename(sampledir)]["today_now"]=setting.today_now
+    
+    # fastq split job monitoring
+    flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
+    if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
+        for sampledir in sampledir_list:
+            interstellar_setup.job_wait("FASTQ split","FASTQ_split"+param_dict[os.path.basename(sampledir)]["today_now"],sampledir+"/qlog",len(glob.glob(sampledir+"/sh/seqkit*")))
+        with open(proj_dir+"/_flg/_fastqsplit",mode="wt") as w:
+            w.write("")
+
+
+    # value extraction
+    flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
+    if "value_extraction" in cmds_execute and not "_valueextraction" in flg_files:
+        value_extraction.run(sampledir_list,cfg,qcfg,is_qsub,is_multisample,param_dict,proj_dir)
+        with open(proj_dir+"/_flg/_valueextraction",mode="wt") as w:
+            w.write("")
+
+    # value translation
+    flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
+    if "value_translation" in cmds_execute and not "_valuetranslatioon" in flg_files:
+        value_translation.run(sampledir_list,cfg,qcfg,is_qsub,is_multisample,param_dict,proj_dir,opt.config)
+        with open(proj_dir+"/_flg/_valuetranslatioon",mode="wt") as w:
+            w.write("")
+
+    # demultiplex
+    flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
+    if "demultiplex" in cmds_execute and not "_demultiplex" in flg_files:
+        demultiplex.run(sampledir_list,cfg,qcfg,is_qsub,is_multisample,param_dict,proj_dir,opt.config)
+        with open(proj_dir+"/_flg/_demultiplex",mode="wt") as w:
+            w.write("")
+
+    # tag
+    flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
+    if "tag" in cmds_execute and not "_tag" in flg_files:
+        tag.run(sampledir_list,cfg,qcfg,is_qsub,is_multisample,param_dict,proj_dir,opt.config)
+        with open(proj_dir+"/_flg/_tag",mode="wt") as w:
+            w.write("")
+
+    print("DONE!",flush=True)
+

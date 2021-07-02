@@ -1,36 +1,41 @@
 from . import settingImporter
 from . import barcodeConverter
+from . import settingRequirementCheck
 import regex
 import pandas as pd
 import numpy as np
 import gzip
 import pickle
 import time
+import os
 
 class settings_buildTree(object):
     def __init__(self,opt):
         self.opt=opt 
     def settingGetter(self):
-        cfgPath=self.opt.config
-        cfg_cvrt=settingImporter.readconfig(cfgPath)["convert"]
-        cfg_cvrt=settingImporter.configClean(cfg_cvrt)
-        self.dest_components=cfg_cvrt["dest_components"].split(",")        
-        # self.correctedSrc=settingImporter.getCorrectedSrc(self.opt.srcValue,self.opt.srcQuality,self.opt.reference)
-        cvrtOptDict={}
-        for i in self.dest_components:
-            cvrtOption_now=cfg_cvrt[i]
-            dict_now=settingImporter.convertOptionParse(cvrtOption_now)
-            cvrtOptDict[i]=dict_now
-            # if dict_now["is_combination"] and dict_now.get("combination_group") and dict_now.get("combination_group") not in cvrtOptDict:
-            #     cvrtOptDict[dict_now["combination_group"]]=dict_now
-        self.cvrtOptDict=cvrtOptDict
+        cfg=settingImporter.readconfig(self.opt.config)
+        cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
+        cfg=settingRequirementCheck.setDefaultConfig(cfg)
+        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        func_dict_ext=settingImporter.func_check(cfg_value_ext)
+        cfg_value_trans = settingImporter.config_extract_value_trans(cfg)
+        func_dict=settingImporter.func_check_trans(cfg_value_trans)
+        self.child2parent_val=settingImporter.getAllocation(func_dict_ext,cfg_value_trans,cfg_value_ext)
+        self.dest_segments=cfg_value_trans["dest_segment"]       
+        self.value_segment=cfg_value_ext["value_segment"]
+        self.func_dict=func_dict
         self.samplesheet=self.opt.samplesheet
         self.samplemerge=self.opt.samplemerge
         self.path_to_sval=self.opt.srcValue
-        # self.path_to_qual=self.opt.srcQuality
         outname=self.opt.outname
         outdir=self.opt.outdir
-        self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)
+        self.outFilePath_and_Prefix=outdir+"/"+outname
+
+        value_variables=[]
+        for i in self.value_segment:
+            if "VALUE" in func_dict_ext[i]["func_ordered"]:
+                value_variables.append(i)
+        self.value_variables=value_variables
         
 
 class BARISTA_BUILDTREE(object):
@@ -39,15 +44,16 @@ class BARISTA_BUILDTREE(object):
     def buildTree(self):
         if self.settings.samplemerge:
             samplesheet=pd.read_csv(self.settings.samplesheet,sep="\t",header=None,dtype=str)
-            sampledict=dict(zip(samplesheet[0],samplesheet[1]))
+            sampledict=dict(zip(os.path.expanduser(samplesheet[0]),samplesheet[1]))
             try:
                 sample_now=sampledict[self.settings.path_to_sval]
             except:
                 raise ValueError("File path",self.settings.path_to_sval,"is not found in the samplesheet!")
             
-        convertOptions=self.settings.cvrtOptDict
-        dval_to_sval_relationship = barcodeConverter.dval_to_sval_relationship(convertOptions)
-        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(convertOptions)
+        func_dict=self.settings.func_dict
+        dval_to_sval_relationship = barcodeConverter.dval_to_sval_relationship(func_dict,self.settings.dest_segments)
+        values_in_destarg=list(dval_to_sval_relationship.values())
+        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(self.settings.value_segment,values_in_destarg,self.settings.child2parent_val,self.settings.value_variables)
         
         count_tree={}
         s_val=pd.read_csv(self.settings.path_to_sval,sep='\t',dtype=str,chunksize=1000000)
@@ -55,7 +61,7 @@ class BARISTA_BUILDTREE(object):
             print("Building a count tree for chunk",n_chunk,"start...",flush=True)
             s_val_chunk=s_val_chunk.astype(str)
             s_val_chunk=s_val_chunk.replace("-1",np.nan).dropna()
-            s_val_chunk=barcodeConverter.to_svalue_prime(s_val_chunk,dval_to_sval_relationship)
+            s_val_chunk=barcodeConverter.to_svalue_prime(s_val_chunk,dval_to_sval_relationship,roots,edge_dict)
 
             if self.settings.samplemerge:
                 for component in globalComponents+roots:

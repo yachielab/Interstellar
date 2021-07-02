@@ -1,5 +1,6 @@
 from . import settingImporter
 from . import barcodeConverter
+from . import settingRequirementCheck
 import regex
 import pandas as pd
 import numpy as np
@@ -13,14 +14,18 @@ class settings_demultiplex(object):
     def __init__(self,opt):
         self.opt=opt 
     def settingGetter(self):
-        cfgPath=self.opt.config
-        cfg_demulti=settingImporter.readconfig(cfgPath)["demultiplex"]
-        cfg_demulti=settingImporter.configClean(cfg_demulti)
-        self.key=cfg_demulti["key"].split(",")
-        self.out_components=cfg_demulti["out_components"].split(",")
+        cfg=settingImporter.readconfig(self.opt.config)
+        cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
+        cfg=settingRequirementCheck.setDefaultConfig(cfg)
+        cfg_demulti=settingImporter.config_extract_value_demulti(cfg)
+        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        self.key=cfg_demulti["KEY"].split(",")
+        self.target=cfg_demulti["TARGET"].split(",")
+        if len(self.target)==0:
+            self.target=cfg_value_ext["value_segment"]
         self.exportReadStructure={}
         for i in cfg_demulti:
-            if i in ["Read1","Read2","Index1","Index2"] and cfg_demulti.get(i):
+            if i in ["READ1_STRUCTURE","READ2_STRUCTURE","INDEX1_STRUCTURE","INDEX2_STRUCTURE"] and cfg_demulti.get(i):
                 self.exportReadStructure[i]=cfg_demulti[i].split("+")
         self.path_to_seq=self.opt.correctedSeq
         self.path_to_avg_qval=self.opt.correctedQual
@@ -31,16 +36,17 @@ class settings_demultiplex(object):
 
         today_now=str(datetime.datetime.today())
         today_now=regex.sub(r"\W","",today_now)
-        new_outdir="_".join([regex.sub("/$","",str(outdir))+"/"+"barista_demulti",outname,today_now])
+        new_outdir="_".join([outdir+"/demulti",outname,today_now])
         flag=os.path.isdir(new_outdir)
         while flag:
             today_now=str(datetime.datetime.today())
             today_now=regex.sub(r"\W","",today_now)
-            new_outdir="_".join([regex.sub("/$","",str(outdir))+"/"+"barista_demulti",outname,today_now])
+            new_outdir="_".join([outdir+"/demulti",outname,today_now])
             flag=os.path.isdir(new_outdir)
         os.mkdir(new_outdir)
-        self.outFilePath_and_Prefix=new_outdir+"/"+str(outname)
+        self.outFilePath_and_Prefix=new_outdir+"/"+outname
         self.today_now=today_now
+
 
 class BARISTA_DEMULTIPLEX(object):
     def __init__(self,settings):
@@ -51,12 +57,12 @@ class BARISTA_DEMULTIPLEX(object):
         s_raw_qual=pd.read_csv(self.settings.path_to_rawQual,sep="\t",dtype=str,chunksize=500000)
         demulti_key=set()
         cnt_chunk=0
+        key_iden_list=[]
         for s_seq_chunk,s_avg_qual_chunk,s_raw_qual_chunk in zip(s_seq,s_avg_qual,s_raw_qual):
             print("start demultiplexing for chunk",cnt_chunk)
             s_avg_qual_chunk=s_avg_qual_chunk.drop("Header",axis=1)
             s_raw_qual_chunk=s_raw_qual_chunk.drop("Header",axis=1)
 
-            
             colnames=list(s_seq_chunk.columns)
             raw_component_names=[i.split(":")[0] for i in colnames if not i=="Header"]
             corrected_component_names=[i.split(":")[1] for i in colnames if not i=="Header"]
@@ -65,7 +71,7 @@ class BARISTA_DEMULTIPLEX(object):
             if self.settings.export_tsv:
                 key_series=s_seq_chunk[self.settings.key].apply("_".join,axis=1)
                 demulti_key|=set(key_series)
-                s_seq_chunk=s_seq_chunk[["Header"]+self.settings.out_components]
+                s_seq_chunk=s_seq_chunk[["Header"]+self.settings.target]
                 for eachkey in demulti_key:
                     if not "-" in eachkey:
                         export_pd_tmp=s_seq_chunk[key_series==eachkey]
@@ -74,6 +80,7 @@ class BARISTA_DEMULTIPLEX(object):
                             export_pd_tmp.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=True)
                         else:
                             export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
+                        key_iden_list.append("_"+eachkey+".tsv.gz")
             else:
                 s_seq_chunk=s_seq_chunk[s_seq_chunk!="-"].dropna()
                 s_avg_qual_chunk=s_avg_qual_chunk.loc[s_seq_chunk.index]
@@ -104,9 +111,19 @@ class BARISTA_DEMULTIPLEX(object):
                             export_pd["qual"]=export_pd["qual"].str.cat(s_raw_qual_chunk[component_raw],sep="")
 
                     export_pd=export_pd[["Header","seq","3rd","qual"]]
+
+                    if exportReadNum=="READ1_STRUCTURE":
+                        readIden="R1"
+                    elif exportReadNum=="READ2_STRUCTURE":
+                        readIden="R2"
+                    elif exportReadNum=="INDEX1_STRUCTURE":
+                        readIden="I1"
+                    elif exportReadNum=="INDEX2_STRUCTURE":
+                        readIden="I2"
+
                     for eachkey in demulti_key:
                         export_pd_tmp=export_pd[key_series==eachkey]
-                        outfilename="_".join([self.settings.outFilePath_and_Prefix,eachkey,exportReadNum])+".fastq.gz"
+                        outfilename="_".join([self.settings.outFilePath_and_Prefix,eachkey,readIden])+".fastq.gz"
                         export_pd_tmp=export_pd_tmp.stack()
                         export_pd_tmp=export_pd_tmp.reset_index()
                         export_pd_tmp=pd.DataFrame(export_pd_tmp[0])
@@ -114,5 +131,10 @@ class BARISTA_DEMULTIPLEX(object):
                             export_pd_tmp.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=False)
                         else:
                             export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
+                        key_iden_list.append("_"+eachkey+"_"+readIden+".fastq.gz")
             cnt_chunk+=1
-                        
+        key_iden_list=list(set(key_iden_list))
+        print(key_iden_list[:5])
+        with open(self.settings.outFilePath_and_Prefix+"_demulti_key_list.txt",mode="wt") as w:
+            for i in key_iden_list:
+                w.write(i+"\n")

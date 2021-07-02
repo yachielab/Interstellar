@@ -9,7 +9,18 @@ import datetime
 import time
 import pandas as pd
 
-def setUpWorkDir(workdir,cmds):
+
+class EmptyError(Exception):
+    pass
+
+
+def getReadFiles(dir_R1="",dir_R2="",dir_I1="",dir_I2=""):
+    if dir_R1=="" and dir_R2=="" and dir_I1=="" and dir_I2=="":
+        raise EmptyError("At least a single input file directory is required.")
+        
+    
+
+def setUpSampleDir(workdir,cmds):
     cmds=cmds.split(",")
     cmds=["qlog","filesplit","config","sh"]+cmds
     for i in cmds:
@@ -219,7 +230,7 @@ def judgeEndFix(input_files):
             else:
                 flg_file_now=0
             
-            #All inputs shou;d have the same format
+            #All inputs should have the same format
             if flg_file==flg_file_now:
                 if flg_file==1 and not endfix_now==endfix:
                     raise ArguementError("Inconsistent input files.")
@@ -306,19 +317,20 @@ class ArguementError(Exception):
 
 
 class STREAMLINE_SETTINGS(object):
-    def __init__(self,opt):
-        self.opt=opt
+    def __init__(self,cfg,qcfg):
+        self.cfg=cfg
+        self.qcfg=qcfg
     def settingGetter(self):
-        cfgPath=self.opt.config
-        cfg_all=settingImporter.readconfig(cfgPath)
-        cfg_stream=cfg_all["streamline"]
-        cfg_stream=settingRequirementCheck.setDefaultValueInConfig("streamline",cfg_stream,self.opt.distribute)
+        # cfgPath=self.opt.config
+        # cfg_all=settingImporter.readconfig(cfgPath)
+        # cfg_stream=cfg_all["streamline"]
+        # cfg_stream=settingRequirementCheck.setDefaultValueInConfig("streamline",cfg_stream,self.opt.distribute)
 
         #setup workdir
-        setUpWorkDir(self.opt.outdir,cfg_stream["pipeline"])
+        # setUpWorkDir(self.opt.outdir,cfg_stream["pipeline"])
         
         #pipeline check
-        self.pipeline=pipelineCheck(cfg_stream["pipeline"],cfg_all,self.opt.outdir)
+        # self.pipeline=pipelineCheck(cfg_stream["pipeline"],cfg_all,self.opt.outdir)
         
         #streamline option
         self.orig_cfgpath=cfgPath

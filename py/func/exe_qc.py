@@ -1,5 +1,6 @@
 from . import settingImporter
 from . import segmentImporter
+from . import settingRequirementCheck
 import regex
 import pandas as pd
 import collections
@@ -11,25 +12,28 @@ class settings_qc(object):
     def __init__(self,opt):
         self.opt=opt
     def settingGetter(self):
-        cfgPath=self.opt.config
-        cfg_qc=settingImporter.readconfig(cfgPath)["import"]
-        cfg_qc=settingImporter.configClean(cfg_qc)
-        self.qc_targets=cfg_qc["qc_targets"].split(",")
+        cfg=settingImporter.readconfig(self.opt.config)
+        cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
+        cfg=settingRequirementCheck.setDefaultConfig(cfg)
+        cfg_value_ext = settingImporter.config_extract_value_ext(cfg)
+        func_dict=settingImporter.func_check(cfg_value_ext)
+        self.qc_targets=[func_dict[val]["QUALITY_FILTER"]["source"] for val in func_dict if "QUALITY_FILTER" in func_dict[val]]
         self.seq=self.opt.rawSeq
         self.qual=self.opt.rawQual
-        self.barcodes=cfg_qc["barcodes"].split(",")
-        self.min_base_quality=int(cfg_qc["min_base_quality"])
-        self.min_avg_quality=int(cfg_qc["min_avg_quality"])
+        self.barcodes=func_dict["barcode_list"]
+        self.qscore_dict=settingImporter.getQscoreDict(func_dict)
+        # self.min_base_quality=int(cfg_qc["min_base_quality"])
+        # self.min_avg_quality=int(cfg_qc["min_avg_quality"])
         outname=self.opt.outname
         outdir=self.opt.outdir
-        self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)
+        self.outFilePath_and_Prefix=outdir+"/"+outname
         
 class BARISTA_QC(object):
     def __init__(self,settings):
         self.settings=settings
     def qualityCheck(self):
-        print("Minimum base quality threshold:",self.settings.min_base_quality)
-        print("Average base quality threshold:",self.settings.min_avg_quality)
+        # print("Minimum base quality threshold:",self.settings.min_base_quality)
+        # print("Average base quality threshold:",self.settings.min_avg_quality)
         seq_raw=pd.read_csv(self.settings.seq, sep='\t',chunksize=1000000)
         seq_qual=pd.read_csv(self.settings.qual, sep="\t",chunksize=1000000)
         counterDict={}
@@ -38,7 +42,7 @@ class BARISTA_QC(object):
             seq_chunk=seq_qual_zip[0]
             qual_chunk=seq_qual_zip[1]
             for component in self.settings.qc_targets:
-                bool_filtered=qual_chunk[component].apply(segmentImporter.qualityFiltering,min_base_quality=self.settings.min_base_quality,min_avg_quality=self.settings.min_avg_quality)
+                bool_filtered=qual_chunk[component].apply(segmentImporter.qualityFiltering,min_base_quality=self.settings.qscore_dict[component]["min_base"],min_avg_quality=self.settings.qscore_dict[component]["min_avg"])
                 seq_chunk[component][bool_filtered]="-"
                 
             for col in self.settings.barcodes:

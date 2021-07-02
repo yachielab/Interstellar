@@ -19,17 +19,18 @@ class settings_tag(object):
         self.exportReadStructure={}
         self.tags={}
         for i in cfg_tag:
-            if i in ["Read1","Read2","Index1","Index2"] and cfg_tag.get(i):
+            if i in ["READ1_STRUCTURE","READ2_STRUCTURE","INDEX1_STRUCTURE","INDEX2_STRUCTURE"] and cfg_tag.get(i):
                 self.exportReadStructure[i]=cfg_tag[i].split("+")
-            elif i in ["tag_Read1","tag_Read2","tag_Index1","tag_Index2"] and cfg_tag.get(i):
-                self.tags[i.split("_")[1]]=cfg_tag[i].split(",")
+            elif i in ["READ1_TAG","READ2_TAG","INDEX1_TAG","INDEX2_TAG"] and cfg_tag.get(i):
+                self.tags[i.split("_")[0]+"_STRUCTURE"]=cfg_tag[i].split(",")
             
         self.path_to_seq=self.opt.correctedSeq
         self.path_to_avg_qval=self.opt.correctedQual
         self.path_to_rawQual=self.opt.rawQual
         outname=self.opt.outname
         outdir=self.opt.outdir
-        self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)
+        self.outFilePath_and_Prefix=outdir+"/"+outname
+
 class BARISTA_TAG(object):
     def __init__(self,settings):
         self.settings=settings
@@ -76,8 +77,18 @@ class BARISTA_TAG(object):
                 export_pd=export_pd.stack()
                 export_pd=export_pd.reset_index()
                 export_pd=pd.DataFrame(export_pd[0])
+
+                if exportRead=="READ1_STRUCTURE":
+                    read_iden="R1"
+                elif exportRead=="READ2_STRUCTURE":
+                    read_iden="R2"
+                elif exportRead=="INDEX1_STRUCTURE":
+                    read_iden="I1"
+                elif exportRead=="INDEX2_STRUCTURE":
+                    read_iden="I2"
+
                 if cnt_chunk==0:
-                    export_pd.to_csv(self.settings.outFilePath_and_Prefix+exportRead+".fastq.gz",mode="w",compression="gzip",sep="\t",index=False,header=False)
+                    export_pd.to_csv(self.settings.outFilePath_and_Prefix+"_"+read_iden+".fastq.gz",mode="w",compression="gzip",sep="\t",index=False,header=False)
                 else:
-                    export_pd.to_csv(self.settings.outFilePath_and_Prefix+exportRead+".fastq.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+                    export_pd.to_csv(self.settings.outFilePath_and_Prefix+"_"+read_iden+".fastq.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
             cnt_chunk+=1

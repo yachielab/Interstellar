@@ -28,9 +28,7 @@ def getRawIndex(seq,rawReference):
     return rawReference.index(seq)+1
 
 def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
-    rank_threshold=correctOpt.get("rank_threshold")
-    seed_min=correctOpt.get("seed_min")
-    srcComponent=correctOpt["src_raw_components"]
+    srcComponent=correctOpt["KNEE_CORRECT"]["source"]
     srcCounter=counterDict[srcComponent]
     seqCount_sort=sorted(srcCounter.items(),key=lambda x:x[1],reverse=True)
     seqCountSummary=dict(seq=list(),rank=list(),logrank=list(),count=list())
@@ -41,90 +39,87 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         seqCountSummary["count"].append(countSet[1])
         seqCountSummary["rank"].append(idx+1)
         seqCountSummary["logrank"].append(math.log10(idx+1))
-    #knee=KneeLocator(seqCountSummary["logrank"],seqCountSummary["count"],curve="concave",S=1,direction="decreasing",interp_method='interp1d')
+
+    analyzedPosition=len(seqCountSummary["count"])-1        
     
-    totalCount=sum(seqCountSummary["count"])
-    analyzedCount=round(totalCount*correctOpt["analyzed_portion"])
-    cntSum=0
-    for pos,cnt in enumerate(seqCountSummary["count"]):
-        cntSum+=cnt
-        if cntSum>=analyzedCount:
-            analyzedPosition=pos
-            break
-    if not rank_threshold or rank_threshold=="auto":
-        knee=KneeLocator(seqCountSummary["rank"],seqCountSummary["count"],S=10,curve="convex",direction="decreasing",interp_method='interp1d')
-        #knee=KneeLocator(seqCountSummary["logrank"],seqCountSummary["count"],S=1,curve="convex",direction="decreasing",interp_method='polynomial')
-        print("Finding knee for",srcComponent,"was done!",flush=True)
-        kneepoint_idx=seqCountSummary["rank"].index(knee.knee)
-        #kneepoint_idx=seqCountSummary["logrank"].index(knee.knee)
-    elif rank_threshold=="all":
-        kneepoint_idx=analyzedPosition
-    else:
-        kneepoint_idx=int(rank_threshold)
-    seq_majority=seqCountSummary["seq"][:kneepoint_idx]
-    seq_minority=seqCountSummary["seq"][kneepoint_idx:analyzedPosition]
-    seq_discarded=seqCountSummary["seq"][analyzedPosition:]
-    print("majority length",str(len(seq_majority)),flush=True)
+    if "KNEE_CORRECT" in correctOpt["func_ordered"]:
+        rank_threshold=correctOpt["KNEE_CORRECT"]["rank"]
+        # seed_min=correctOpt.get("seed_min")
+            
+        if rank_threshold=="auto":
+            knee=KneeLocator(seqCountSummary["rank"],seqCountSummary["count"],S=10,curve="convex",direction="decreasing",interp_method='interp1d')
+            #knee=KneeLocator(seqCountSummary["logrank"],seqCountSummary["count"],S=1,curve="convex",direction="decreasing",interp_method='polynomial')
+            print("Finding knee for",srcComponent,"was done!",flush=True)
+            kneepoint_idx=seqCountSummary["rank"].index(knee.knee)
+            #kneepoint_idx=seqCountSummary["logrank"].index(knee.knee)
+        # elif rank_threshold=="all":
+        #     kneepoint_idx=analyzedPosition
+        else:
+            kneepoint_idx=int(rank_threshold)
+        seq_majority=seqCountSummary["seq"][:kneepoint_idx]
+        seq_minority=seqCountSummary["seq"][kneepoint_idx:analyzedPosition]
+        seq_discarded=seqCountSummary["seq"][analyzedPosition:]
+        print("majority length",str(len(seq_majority)),flush=True)
 
-    #store majority dictionary
-    correctionDict_maj={}
-    seqlen_min=min([len(i) for i in seq_majority if not i == "-"])
-    seedlen=math.floor(seqlen_min/2)
-    if seed_min and seedlen<seed_min:
-        seedlen=seed_min
-    suggestion_verbosity = Verbosity.TOP
-    idx_match_maj=[]
-    idx_noMatch_maj=[]
-    today_now=str(datetime.datetime.today())
-    today_now=regex.sub(r"\.|:| ","-",today_now)
-    random_string=''.join(random.choices(string.ascii_letters + string.digits, k=15))
-    fname="_".join([outname,srcComponent,today_now,random_string,"seq_majority.tmp"])
-    if seq_minority:
-        with open(fname,mode="wt") as w:
-            for seqm in seq_majority:
-                w.write(seqm+"\n")
+        #store majority dictionary
+        correctionDict_maj={}
+        seqlen_min=min([len(i) for i in seq_majority if not i == "-"])
+        seedlen=math.floor(seqlen_min/2)
+        # if seed_min and seedlen<seed_min:
+        #     seedlen=seed_min
+        suggestion_verbosity = Verbosity.TOP
+        today_now=str(datetime.datetime.today())
+        today_now=regex.sub(r"\.|:| ","-",today_now)
+        random_string=''.join(random.choices(string.ascii_letters + string.digits, k=15))
+        fname="_".join([outname,srcComponent,today_now,random_string,"seq_majority.tmp"])
+        if seq_minority:
+            with open(fname,mode="wt") as w:
+                for seqm in seq_majority:
+                    w.write(seqm+"\n")
 
-        symspelldb=SymSpell(correctOpt["maxDist_with_majority"],seedlen)
-        symspelldb.create_dictionary(fname)
+            symspelldb=SymSpell(correctOpt["KNEE_CORRECT"]["dist"],seedlen)
+            symspelldb.create_dictionary(fname)
 
-        t0=time.time()
-        print("Minority correction has been started...",flush=True)
-        seq_minority_pd=pd.Series(seq_minority)
-        # seq_minority_pd_corrected=seq_minority_pd.apply(findMostFeasibleCandidate,suggestion_verbosity=suggestion_verbosity,dist_thresh=correctOpt["maxDist_with_majority"],symspelldb=symspelldb)
-        seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["maxDist_with_majority"],symspelldb))
+            t0=time.time()
+            print("Minority correction has been started...",flush=True)
+            seq_minority_pd=pd.Series(seq_minority)
+            seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["KNEE_CORRECT"]["dist"],symspelldb))
 
-        correctionDict_maj={k:v for k,v in zip(list(seq_minority_pd),list(seq_minority_pd_corrected))}
-        t1=time.time()
-        print("Minority correction done",round(t1-t0),"sec")
-        seq_success=seq_minority_pd[seq_minority_pd_corrected!="-"]
-        seq_fail=seq_minority_pd[seq_minority_pd_corrected=="-"]
-        os.remove(fname)
-        
-    for seq in seq_majority:
-        correctionDict_maj[seq]=seq
-    for seq in seq_discarded:
-        correctionDict_maj[seq]="-"
-    correctionDict=dict(correctionDict=correctionDict_maj,reference=seq_majority)
+            correctionDict_maj={k:v for k,v in zip(list(seq_minority_pd),list(seq_minority_pd_corrected))}
+            t1=time.time()
+            print("Minority correction done",round(t1-t0),"sec")
+            seq_success=seq_minority_pd[seq_minority_pd_corrected!="-"]
+            seq_fail=seq_minority_pd[seq_minority_pd_corrected=="-"]
+            os.remove(fname)
+            
+        for seq in seq_majority:
+            correctionDict_maj[seq]=seq
+        for seq in seq_discarded:
+            correctionDict_maj[seq]="-"
+        correctionDict=dict(correctionDict=correctionDict_maj,reference=seq_majority)
 
-    # print(set(seqCountSummary["seq"])-set(correctionDict_maj))
-    # print(srcComponent,len(idx_match_maj),len(idx_noMatch_maj))
-    if correctOpt.get("whitelist"):
+    if "WHITELIST_CORRECT" in correctOpt["func_ordered"]:
+        if not "KNEE_CORRECT" in correctOpt["func_ordered"]:
+            seq_majority=seqCountSummary["seq"][:kneepoint_idx]
+            correctionDict_maj={}
+            for seq in seq_majority:
+                correctionDict_maj[seq]=seq
+            correctionDict=dict(correctionDict=correctionDict_maj,reference=seq_majority)
+
         print("Whitelist correction has been started...",flush=True)
         print("Reference building...",flush=True)
-        idx_match_wl=[]
-        idx_noMatch_wl=[]
-        with open(correctOpt["whitelist"],mode="rt",encoding="utf-8") as f:
+        with open(correctOpt["WHITELIST_CORRECT"]["path"],mode="rt",encoding="utf-8") as f:
             wl=[regex.sub("\n","",i) for i in f]
 
         wlset=set(wl)
         print("Seed length: ",seedlen,flush=True)
-        symspelldb=SymSpell(correctOpt["maxDist_with_whitelist"],seedlen)
-        symspelldb.create_dictionary(correctOpt["whitelist"])
+        symspelldb=SymSpell(correctOpt["WHITELIST_CORRECT"]["dist"],seedlen)
+        symspelldb.create_dictionary(correctOpt["WHITELIST_CORRECT"]["path"])
         print("Reference build done.",flush=True)
         seq_majority_pd=pd.Series(seq_majority)
         print("correct...",flush=True)
         t0=time.time()
-        seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["maxDist_with_whitelist"],symspelldb,wlset))
+        seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["WHITELIST_CORRECT"]["dist"],symspelldb,wlset))
         t1=time.time()
         print("Whitelist correction done",t1-t0,"sec",flush=True)
         correctionDict_wl={k:v for k,v in zip(list(seq_majority_pd),list(seq_majority_pd_corrected))}
@@ -178,6 +173,8 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         correctionDict["reference"].append("-")
 
     return correctionDict
+
+
 
 def qualityProcessing(qualitySequence):
     qualSum=0

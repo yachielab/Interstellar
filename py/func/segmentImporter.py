@@ -8,8 +8,8 @@ def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
     if not flash:
         return [],readPathDict
     else:
-        flash=flash.replace("R","Read")
-        flash=flash.replace("I","Index")
+        flash=flash.replace("READ","Read")
+        flash=flash.replace("INDEX","Index")
         merge_reads=[i+"_src" for i in flash.split("-")]
         if gzipped:
             print("gzipped read decompressing...",flush=True)
@@ -22,8 +22,8 @@ def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
         else:
             decompressed_fastq=[readPathDict[i] for i in merge_reads]
 
-        flash_min=str(config["flash_min_overlap"])
-        flash_max=str(config["flash_max_overlap"])
+        flash_min=str(config["FLASH_MIN_OVERLAP"])
+        flash_max=str(config["FLASH_MAX_OVERLAP"])
         print("Merging reads using Flash2...",flush=True)
         cmdlist_flash=["flash2","-z","-m",flash_min,"-M",flash_max,"-d",tmpdir,"-o","merge",decompressed_fastq[0],decompressed_fastq[1]]
         cmd=" ".join(cmdlist_flash)
@@ -39,6 +39,8 @@ def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
         gzipped=merge_reads+["merge_src"]
         return gzipped,readPathDict
 
+
+
 def sequenceGenerator(fq_path,settings,from_flash=False):
     if settings.input_fastq_gzipped or from_flash:
         with gzip.open(fq_path,mode="rt") as input_file:
@@ -50,6 +52,8 @@ def sequenceGenerator(fq_path,settings,from_flash=False):
             for i in input_file:
                 i=i.replace("\n","")
                 yield i
+
+
 
 def randomname(n):
    return ''.join(random.choices(string.ascii_letters + string.digits, k=n))

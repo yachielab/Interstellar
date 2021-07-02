@@ -1,53 +1,62 @@
 from . import settingImporter
 from . import barcodeConverter
+from . import settingRequirementCheck
 import regex
 import pandas as pd
 import numpy as np
 import gzip
 import pickle
-import time
+import os
 
 class settings_convert(object):
     def __init__(self,opt):
         self.opt=opt 
     def settingGetter(self):
-        cfgPath=self.opt.config
-        cfg_cvrt=settingImporter.readconfig(cfgPath)["convert"]
-        cfg_cvrt=settingImporter.configClean(cfg_cvrt)
-        self.dest_components=cfg_cvrt["dest_components"].split(",")    
-        self.tree=self.opt.tree    
-        # self.correctedSrc=settingImporter.getCorrectedSrc(self.opt.srcValue,self.opt.srcQuality,self.opt.reference)
-        cvrtOptDict={}
-        for i in self.dest_components:
-            cvrtOption_now=cfg_cvrt[i]
-            dict_now=settingImporter.convertOptionParse(cvrtOption_now)
-            cvrtOptDict[i]=dict_now
-            
-        self.cvrtOptDict=cvrtOptDict
+        cfg=settingImporter.readconfig(self.opt.config)
+        cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
+        cfg=settingRequirementCheck.setDefaultConfig(cfg)
+        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        func_dict_ext=settingImporter.func_check(cfg_value_ext)
+        cfg_value_trans = settingImporter.config_extract_value_trans(cfg)
+        func_dict=settingImporter.func_check_trans(cfg_value_trans)
+        self.child2parent_val=settingImporter.getAllocation(func_dict_ext,cfg_value_trans,cfg_value_ext)
+        self.dest_segments=cfg_value_trans["dest_segment"]       
+        self.value_segment=cfg_value_ext["value_segment"]  
+        self.tree=self.opt.tree
+        self.func_dict=func_dict
         self.samplemerge=self.opt.samplemerge
         self.samplesheet=self.opt.samplesheet
         outname=self.opt.outname
         outdir=self.opt.outdir
-        self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)
+        self.outFilePath_and_Prefix=outdir+"/"+outname
         self.path_to_sval=self.opt.srcValue
         self.path_to_qual=self.opt.srcQuality
+        value_variables=[]
+        for i in self.value_segment:
+            if "VALUE" in func_dict_ext[i]["func_ordered"]:
+                value_variables.append(i)
+        self.value_variables=value_variables
 
 class BARISTA_CONVERT(object):
     def __init__(self,settings):
         self.settings=settings
     def convert(self):
-        convertOptions=self.settings.cvrtOptDict
-        dval_to_sval_relationship = barcodeConverter.dval_to_sval_relationship(convertOptions)
-        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(convertOptions)
-
         if self.settings.samplemerge:
             samplesheet=pd.read_csv(self.settings.samplesheet,sep="\t",header=None,dtype=str)
-            sampledict=dict(zip(samplesheet[0],samplesheet[1]))
+            sampledict=dict(zip(os.path.expanduser(samplesheet[0]),samplesheet[1]))
             try:
                 sample_now=sampledict[self.settings.path_to_sval]
             except:
                 raise ValueError("File path",self.settings.path_to_sval,"is not found in the samplesheet!")
         
+        func_dict=self.settings.func_dict
+        dval_to_sval_relationship = barcodeConverter.dval_to_sval_relationship(func_dict,self.settings.dest_segments)
+        values_in_destarg=list(dval_to_sval_relationship.values())
+        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(self.settings.value_segment,values_in_destarg,self.settings.child2parent_val,self.settings.value_variables)
+        
+        global_used_in_dest=list(set(globalComponents) & set(dval_to_sval_relationship.values()))
+        destname_dict={dval_to_sval_relationship[k]:k for k in dval_to_sval_relationship}
+
         with gzip.open(self.settings.tree,mode="rb") as p:
             tree=pickle.load(p)
         s_val =pd.read_csv(self.settings.path_to_sval,sep='\t',dtype=str,chunksize=1000000)
@@ -58,29 +67,25 @@ class BARISTA_CONVERT(object):
         for n_chunk,s_val_chunk in enumerate(s_val):
             print("Processing chunk",n_chunk,"...",flush=True)
             s_val_chunk=s_val_chunk.astype(str)
-            headers=s_val_chunk["Header"]
-            s_val_chunk=pd.concat([headers,barcodeConverter.to_svalue_prime(s_val_chunk,dval_to_sval_relationship)],axis=1)
-
+            s_val_chunk=barcodeConverter.to_svalue_prime(s_val_chunk,dval_to_sval_relationship,roots,edge_dict)
             compressed_svalue = pd.DataFrame({"Header":s_val_chunk["Header"]})
 
             if self.settings.samplemerge:
                 for component in globalComponents+roots:
                     s_val_chunk[component]=s_val_chunk[component]+":"+sample_now+":"
 
-            if globalComponents:
-                for component in globalComponents:
-                    compressed_svalue[component] = s_val_chunk[component].map(lambda x: barcodeConverter.compression_global(x,component=component,Tree=tree))
+            if global_used_in_dest:
+                for component in global_used_in_dest:
+                    compressed_svalue[destname_dict[component]] = s_val_chunk[component].map(lambda x: barcodeConverter.compression_global(x,component=component,Tree=tree))
             
             #Local convert, Depth-First Search
             if roots:
                 for root_now in roots:
                     tasklist=[root_now]
-                    compressed_svalue[root_now] = s_val_chunk[root_now].map(lambda x: barcodeConverter.compression_global(x,component=root_now,Tree=tree))
-                    
+                    compressed_svalue[destname_dict[root_now]] = s_val_chunk[root_now].map(lambda x: barcodeConverter.compression_global(x,component=root_now,Tree=tree))    
                     while True:
                         if not tasklist:
                             break
-
                         parent=tasklist[0]
                         tasklist=tasklist[1:]
                         childs=[edge_dict["child"][idx] for idx,i in enumerate(edge_dict["parent"]) if i==parent]
@@ -90,13 +95,16 @@ class BARISTA_CONVERT(object):
                             continue
                             
                         for child in childs:
+                            if not child in destname_dict:
+                                continue
                             ancestor_list = barcodeConverter.getAncestor(child,edge_dict)
+                            # ancestor_list = [i.replace(",","+") for i in ancestor_list]
+                            # parent=parent.replace(",","+")
+                            # child=child.replace(",","+")
                             parent_series = s_val_chunk[ancestor_list[0]].str.cat(s_val_chunk[ancestor_list[1:]],sep="_")
                             parent_series.name = parent
-
-                            s_val_tmp = parent_series.str.cat(s_val_chunk[child],sep=",")
-                            
-                            compressed_svalue[child] = s_val_tmp.map(lambda x: barcodeConverter.compression_local(x,component=child,Tree=tree))
+                            s_val_tmp = parent_series.str.cat(s_val_chunk[child],sep=",")  
+                            compressed_svalue[destname_dict[child]] = s_val_tmp.map(lambda x: barcodeConverter.compression_local(x,component=child,Tree=tree))
             if n_chunk==0:
                 compressed_svalue.to_csv(self.settings.outFilePath_and_Prefix+"_converted_value.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
             else:
@@ -104,18 +112,18 @@ class BARISTA_CONVERT(object):
 
         #Quality conversion
         print("Start converting read qualities...")
+        dest_value_segments=list(set(roots+globalComponents+list(edge_dict["parent"])+list(edge_dict["child"])))
         for n_chunk,q_val_chunk in enumerate(s_qual):
             print("Processing chunk",n_chunk,"...",flush=True)
             compressed_qvalue=pd.DataFrame({"Header":q_val_chunk["Header"]})
-
-            for component in dval_to_sval_relationship:
-                if "+" in dval_to_sval_relationship[component]:
-                    svalues=dval_to_sval_relationship[component].split("+")
+            for component in dest_value_segments:
+                if "+" in component:
+                    svalues=component.split("+")
                     average_qvalue=q_val_chunk[svalues].mean(axis=1).round().astype(int)
                 else:
-                    average_qvalue=q_val_chunk[dval_to_sval_relationship[component]].astype(int)
+                    average_qvalue=q_val_chunk[component].astype(int)
                 
-                compressed_qvalue[component]=average_qvalue
+                compressed_qvalue[destname_dict[component]]=average_qvalue
             
             if n_chunk==0:
                 compressed_qvalue.to_csv(self.settings.outFilePath_and_Prefix+"_converted_qual.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)

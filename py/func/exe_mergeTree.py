@@ -1,5 +1,6 @@
 from . import settingImporter
 from . import barcodeConverter
+from . import settingRequirementCheck
 import regex
 import collections
 import pandas as pd
@@ -12,24 +13,28 @@ class settings_mergetree(object):
     def __init__(self,opt):
         self.opt=opt 
     def settingGetter(self):
-        cfgPath=self.opt.config
-        cfg_cvrt=settingImporter.readconfig(cfgPath)["convert"]
-        cfg_cvrt=settingImporter.configClean(cfg_cvrt)
-        self.dest_components=cfg_cvrt["dest_components"].split(",")
+        cfg=settingImporter.readconfig(self.opt.config)
+        cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
+        cfg=settingRequirementCheck.setDefaultConfig(cfg)
+        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        func_dict_ext=settingImporter.func_check(cfg_value_ext)
+        cfg_value_trans = settingImporter.config_extract_value_trans(cfg)
+        func_dict=settingImporter.func_check_trans(cfg_value_trans)
+        self.child2parent_val=settingImporter.getAllocation(func_dict_ext,cfg_value_trans,cfg_value_ext)
+        self.dest_segments=cfg_value_trans["dest_segment"]       
+        self.value_segment=cfg_value_ext["value_segment"]
         self.localTreePkl=self.opt.localTreePkl
         self.samplesheet=self.opt.samplesheet
         self.samplemerge=self.opt.samplemerge
-        cvrtOptDict={}
-        for i in self.dest_components:
-            cvrtOption_now=cfg_cvrt[i]
-            dict_now=settingImporter.convertOptionParse(cvrtOption_now)
-            cvrtOptDict[i]=dict_now
-            # if dict_now["is_combination"] and dict_now.get("combination_group") and dict_now.get("combination_group") not in cvrtOptDict:
-            #     cvrtOptDict[dict_now["combination_group"]]=dict_now
-        self.cvrtOptDict=cvrtOptDict
+        self.func_dict=func_dict
         outname=self.opt.outname
         outdir=self.opt.outdir
-        self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)
+        self.outFilePath_and_Prefix=outdir+"/"+outname
+        value_variables=[]
+        for i in self.value_segment:
+            if "VALUE" in func_dict_ext[i]["func_ordered"]:
+                value_variables.append(i)
+        self.value_variables=value_variables
 
 class BARISTA_MERGETREE(object):
     def __init__(self,settings):
@@ -37,7 +42,11 @@ class BARISTA_MERGETREE(object):
 
     def mergeTree_v2(self):
         pkl=self.settings.localTreePkl
-        num_pkl=len(pkl)
+        func_dict=self.settings.func_dict
+        dval_to_sval_relationship = barcodeConverter.dval_to_sval_relationship(func_dict,self.settings.dest_segments)
+        values_in_destarg=list(dval_to_sval_relationship.values())
+        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(self.settings.value_segment,values_in_destarg,self.settings.child2parent_val,self.settings.value_variables)
+        
 
         #Pile up counttree
         mergedCountTree={}
@@ -51,7 +60,6 @@ class BARISTA_MERGETREE(object):
             for component in count_tree:
                 if not component in mergedCountTree: #1st counttree
                     mergedCountTree[component]=count_tree[component]
-
                 else: #2nd~
                     if type(count_tree[component])==collections.Counter: #For global value
                         mergedCountTree[component].update(count_tree[component])
@@ -63,11 +71,13 @@ class BARISTA_MERGETREE(object):
                             else:
                                 mergedCountTree[component][parent]=child_freq_now
         
+        # barcodeConverter.printDictTest(mergedCountTree)
         #Sort piled up tree by count, and add indices
         print("Start sorting...",flush=True)
         Tree={}
         iterate_keys=list(mergedCountTree.keys())
         for component in iterate_keys:
+            
             Tree[component]={}
             if type(mergedCountTree[component])==collections.Counter: #For global value
                 Tree[component]=barcodeConverter.sortCounter(mergedCountTree[component])
@@ -79,7 +89,13 @@ class BARISTA_MERGETREE(object):
             #to minimize memory consumption
             del mergedCountTree[component]
         
+        # for i in Tree:
+        #     for n,k in enumerate(Tree[i]):
+        #         if n<10:
+        #             print(i,k,Tree[i][k])
         
+        
+        #Generate a merged tree 
         if self.settings.samplemerge:
             """
             If multiple samples were merged, 
@@ -112,7 +128,7 @@ class BARISTA_MERGETREE(object):
                 #Maximum information space
                 info_dic={}
                 for component in subTree:
-                    if self.settings.cvrtOptDict[component]["type"]=="globalConvert":
+                    if type(Tree[component])==collections.Counter: #For global value
                         info_dic[component]=len(Tree[component]) #maximum size of the merged tree
                     else:
                         len_list=[len(subTree[component][i]) for i in subTree[component]]
@@ -129,7 +145,7 @@ class BARISTA_MERGETREE(object):
             #Maximum information space
             info_dic={}
             for component in Tree:
-                if self.settings.cvrtOptDict[component]["type"]=="globalConvert":
+                if component in roots+globalComponents: #For global value
                     info_dic[component]=len(Tree[component])
                 else:
                     len_list=[len(Tree[component][i]) for i in Tree[component]]

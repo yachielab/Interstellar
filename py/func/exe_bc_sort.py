@@ -1,5 +1,6 @@
 from . import settingImporter
 from . import barcodeConverter
+from . import settingRequirementCheck
 import regex
 import pandas as pd
 import numpy as np
@@ -12,27 +13,31 @@ class BARISTA_BC_SORT(object):
         self.opt=opt
 
     def bc_sort_settingGetter(self):
-        cfgPath=self.opt.config
-        cfg_cvrt=settingImporter.readconfig(cfgPath)["convert"]
-        cfg_cvrt=settingImporter.configClean(cfg_cvrt)
-        cvrtOptDict={}
-        self.dest_components=cfg_cvrt["dest_components"].split(",")    
-        for i in self.dest_components:
-            cvrtOption_now=cfg_cvrt[i]
-            dict_now=settingImporter.convertOptionParse(cvrtOption_now)
-            cvrtOptDict[i]=dict_now
-        self.cvrtOptDict=cvrtOptDict
+        cfg=settingImporter.readconfig(self.opt.config)
+        cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
+        cfg=settingRequirementCheck.setDefaultConfig(cfg)
+        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        cfg_value_trans = settingImporter.config_extract_value_trans(cfg)
+        func_dict=settingImporter.func_check_trans(cfg_value_trans)
+        self.dest_segments=cfg_value_trans["dest_segment"]       
+        self.value_segment=cfg_value_ext["value_segment"]
+        # cvrtOptDict={}
+        # self.dest_components=cfg_cvrt["dest_components"].split(",")    
+        # for i in self.dest_components:
+        #     cvrtOption_now=cfg_cvrt[i]
+        #     dict_now=settingImporter.convertOptionParse(cvrtOption_now)
+        #     cvrtOptDict[i]=dict_now
+        self.func_dict=func_dict
 
         #extract available src components
         src_components=[]
-        for i in cvrtOptDict:
-            for j in cvrtOptDict[i]:
-                if "src_corrected_component" in j:
-                    src_components.append(cvrtOptDict[i][j])
+        for i in self.dest_segments:
+            fun=func_dict[i]["func_ordered"][0]
+            src_components.append(func_dict[i][fun]["source"])
 
         conversion_table=pd.read_csv(self.opt.table,sep="\t",header=0)
-        table_src=[i for i in conversion_table.columns if i in src_components]
-        table_dest=[i for i in conversion_table.columns if i not in src_components]
+        table_src=[i for i in conversion_table.columns if i in self.value_segment]
+        table_dest=[i for i in conversion_table.columns if i not in self.value_segment]
         # print("Warning: On the header line of the table, the barcode name included in the source reference file is regarded as ")
         print("source barcode(s):",table_src)
         print("destination barcode(s):",table_dest)
@@ -46,19 +51,19 @@ class BARISTA_BC_SORT(object):
         self.tree=self.opt.tree
         outname=self.opt.outname
         outdir=self.opt.outdir
-        self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)
+        self.outFilePath_and_Prefix=outdir+"/"+outname
 
     def bc_sort(self):
         #Only for a single global value
         #Cannot be used with samplemerge function
-        convertOptions=self.cvrtOptDict
+        func_dict=self.func_dict
         with gzip.open(self.sseq_to_svalue,mode="rb") as p:
             sseq_to_svalue=pickle.load(p)
         with gzip.open(self.tree,mode="rb") as p:
             tree=pickle.load(p)
 
         #Find corresponding pairs of given source components and destination components
-        dval_to_sval_relationship=barcodeConverter.dval_to_sval_relationship(convertOptions)
+        dval_to_sval_relationship=barcodeConverter.dval_to_sval_relationship(func_dict,self.settings.dest_segments)
         for component in dval_to_sval_relationship:
             sval_components=dval_to_sval_relationship[component].split("+")
             if set(sval_components) == set(self.table_src):
@@ -68,7 +73,7 @@ class BARISTA_BC_SORT(object):
         try:
             d_component
         except:
-            raise ValueError("Souce barcodes: "+self.table_src+" do not exist in conversion process.")
+            raise ValueError("Souce variables: "+self.table_src+" do not exist in conversion process.") #kokomade
 
         #sseq in conversion table to svalue
         for c,src_component in enumerate(self.table_src):
@@ -77,12 +82,19 @@ class BARISTA_BC_SORT(object):
             else:
                 src_value_series_tmp=self.conversion_table[src_component].map(lambda x: barcodeConverter.get_svalue(x,component=src_component,ref=sseq_to_svalue)).astype(str)
                 src_value_series=src_value_series.str.cat(src_value_series_tmp,sep="+")
+
+        #reinex source sequences in the conversion table into optimized value list
         src_value_prime=src_value_series.apply(barcodeConverter.get_reindex,d_component=d_component,tree=tree)
         
+        #start dealing with dest whitelist
         dest_df=pd.DataFrame(self.conversion_table[self.table_dest])
+
+        #add optimized svalues to dest table
         dest_df["reindex"]=src_value_prime
         dest_df=dest_df.dropna(how="any")
         dest_df=dest_df.astype({"reindex":int})
+
+        #sort the table by optimized source values
         dest_df=dest_df.sort_values("reindex")
         for i in dest_df.columns:
             if not i=="reindex":

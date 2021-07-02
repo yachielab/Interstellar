@@ -1,5 +1,7 @@
+from shutil import copy
 from . import settingImporter
 from . import barcodeConverter
+from . import settingRequirementCheck
 import regex
 import pandas as pd
 import numpy as np
@@ -9,120 +11,135 @@ import time
 import os
 import collections
 import itertools as it
+import copy
 
 class settings_export(object):
     def __init__(self,opt):
         self.opt=opt 
     def settingGetter(self):
-        cfgPath=self.opt.config
-        cfg_export=settingImporter.readconfig(cfgPath)["export"]
-        cfg_export=settingImporter.configClean(cfg_export)
-        self.export_components=cfg_export["export_components"].split(",")
+        cfg=settingImporter.readconfig(self.opt.config)
+        cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
+        cfg=settingRequirementCheck.setDefaultConfig(cfg)
+        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        func_dict_ext=settingImporter.func_check(cfg_value_ext)
+        cfg_value_trans = settingImporter.config_extract_value_trans(cfg)
+        func_dict=settingImporter.func_check_trans(cfg_value_trans)
+        self.dest_segments=cfg_value_trans["dest_segment"]
+
         self.destValue=self.opt.destValue
         self.destQual=self.opt.destQual
         self.rawSeq=self.opt.rawSeq
         self.rawQual=self.opt.rawQual
         self.is_barcodelist=self.opt.export_bclist
-
         size_info=self.opt.size_info
         with gzip.open(size_info,mode="rb") as p:
             self.size_info=pickle.load(p)
         
-        exportOptDict={}
-        for i in self.export_components:
-            exportOption_now=cfg_export[i]
-            dict_now=settingImporter.exportOptionParse(exportOption_now)
-            exportOptDict[i]=dict_now
+        # exportOptDict={}
+        # for i in self.export_components:
+        #     exportOption_now=cfg_export[i]
+        #     dict_now=settingImporter.exportOptionParse(exportOption_now)
+        #     exportOptDict[i]=dict_now
         
         exportReadStructure={}
-        for i in cfg_export:
-            if i in ["Read1_dest","Read2_dest","Index1_dest","Index2_dest"] and cfg_export.get(i):
-                exportReadStructure[i]=cfg_export[i].split("+")
-        self.exportOptDict=exportOptDict
+        for i in cfg_value_trans:
+            if i in ["READ1_STRUCTURE","READ2_STRUCTURE","INDEX1_STRUCTURE","INDEX2_STRUCTURE"] and cfg_value_trans.get(i):
+                exportReadStructure[i]=cfg_value_trans[i].split("+")
+        self.func_dict=func_dict
+        self.func_dict_ext=func_dict_ext
         self.exportReadStructure=exportReadStructure
-        
+        print(func_dict)
+
+        self.dest_barcode_segment=[i for i in self.dest_segments if func_dict[i]["func_ordered"][0]=="WHITELIST_ASSIGNMENT" or func_dict[i]["func_ordered"][0]=="RANDSEQ_ASSIGNMENT"]
+        print(self.dest_barcode_segment)
         outname=self.opt.outname
         outdir=self.opt.outdir
-        self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)
+        self.outFilePath_and_Prefix=outdir+"/"+outname
+
+
 class BARISTA_EXPORT(object):
     def __init__(self,settings):
         self.settings=settings
 
     def generateReferences(self):
         print("generating reference...",flush=True)
-        exportOptDict=self.settings.exportOptDict
+        func_dict=self.settings.func_dict
+        func_dict_cp=copy.deepcopy(func_dict)
         referenceDict=collections.defaultdict(list)
-        #typeDict={}
-        export_components_list=self.settings.export_components
+        dest_segments=self.settings.dest_segments
         processed_components_list=[]
-        for export_component in export_components_list:
-            if export_component in processed_components_list:
+        for seg in self.settings.dest_barcode_segment:
+            if seg in processed_components_list:
                 continue
-            print(export_component)
-            processed_components_list.append(export_component)
-            opt_now=exportOptDict[export_component]
+            processed_components_list.append(seg)
+            opt_now=func_dict_cp[seg]
+            func_now=opt_now["func_ordered"][0]
+            opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"]) #concatenate source value (stored in a list as a default)
 
-            #typeDict[export_component]=opt_now["type"]
-            if opt_now["type"]=="whitelistExport" or opt_now["type"]=="randomExport":
-                # if opt_now.get("whitelist_correspondence"):
-                #     continue
+            seg_split=seg.split("+")
 
-                if opt_now.get("is_sorted"):
-                    with open(opt_now["whitelist"],mode="rt",encoding="utf-8") as f:
-                        referenceDict[export_component]=[regex.sub("\n","",i) for i in f]
-                    continue
+            """
+            seg = destseg1,destseg2,destseg3
+            seg_split = [destseg1,destseg2,destseg3]
+            seg_each = destseg1
+            """
+            reference_group=[]
+            for n_each,seg_each in enumerate(seg_split):
+                if func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
+                    #bc sort
+                    if func_now=="WHITELIST_ASSIGNMENT" and opt_now["WHITELIST_ASSIGNMENT"].get("correspondence_table"):
+                        wl_now=opt_now["path"][n_each]
+                        with open(wl_now,mode="rt",encoding="utf-8") as f:
+                            referenceDict[seg_each]=[regex.sub("\n","",i) for i in f]
+                        continue
+                    
+                    #normal
+                    ref_now=barcodeConverter.buildReference(opt_now,n_each,self.settings.size_info)
+                    reference_group.append(ref_now)
+
+                # d_val_now=opt_now["d_val"]
+                # component_group=[export_component]
+                # group_now=opt_now["combination_group"]
+                # for otherComponent in export_components_list:
+                #     opt_other=exportOptDict[otherComponent]
+                #     if opt_other.get("combination_group") and opt_other.get("combination_group")==group_now and not otherComponent==export_component:
+                #         processed_components_list.append(otherComponent)
+                #         component_group.append(otherComponent)
+                #         ref_other=barcodeConverter.buildReference(opt_other,self.settings.size_info)
+                #         reference_group.append(ref_other)
                 
-                ref_now=barcodeConverter.buildReference(opt_now,self.settings.size_info)
+            reference_product=[]
+            maxsize=self.settings.size_info[opt_now[func_now]["source"]]
+            if maxsize<200000:
+                maxsize=200000
+            for cnt,i in enumerate(it.product(*reference_group)):
+                if cnt >= maxsize:
+                    break
+                reference_product.append("_".join(i))
 
-                if opt_now.get("combination_group"):
-                    d_val_now=opt_now["d_val"]
-                    reference_group=[ref_now]
-                    component_group=[export_component]
-                    group_now=opt_now["combination_group"]
-                    for otherComponent in export_components_list:
-                        opt_other=exportOptDict[otherComponent]
-                        if opt_other.get("combination_group") and opt_other.get("combination_group")==group_now and not otherComponent==export_component:
-                            processed_components_list.append(otherComponent)
-                            component_group.append(otherComponent)
-                            ref_other=barcodeConverter.buildReference(opt_other,self.settings.size_info)
-                            reference_group.append(ref_other)
-                    
-                    reference_product=[]
-                    maxsize=self.settings.size_info[d_val_now]
-                    if maxsize<200000:
-                        maxsize=200000
-                    for cnt,i in enumerate(it.product(*reference_group)):
-                        if cnt >= maxsize:
-                            break
-                        reference_product.append("_".join(i))
+            for combinedReference in reference_product:
+                splittedReference=combinedReference.split("_")
+                for idx,eachComponent in enumerate(seg_split):
+                    referenceDict[eachComponent].append(splittedReference[idx])
 
-                    for combinedReference in reference_product:
-                        splittedReference=combinedReference.split("_")
-                        for idx,eachComponent in enumerate(component_group):
-                            referenceDict[eachComponent].append(splittedReference[idx])
+            # else:
+            #     referenceDict[export_component]=ref_now
+            for eachComponent in seg_split:
+                print("Destination barcode library size: ",eachComponent,len(referenceDict[eachComponent]),flush=True)
 
-                else:
-                    referenceDict[export_component]=ref_now
-                    
-                print("Destination barcode library size:",len(referenceDict[export_component]),flush=True)
-        #self.typeDict=typeDict
-        # for i in referenceDict:
-        #     L="\n".join(referenceDict[i])+"\n"
-        #     with open(self.settings.outFilePath_and_Prefix+"_"+i+".txt",mode="wt") as w:
-        #         w.write(L)
         self.referenceDict=referenceDict
+
 
     def exportSequence(self):
         print("exporting sequence...",flush=True)
         
-        exportOptDict=self.settings.exportOptDict
+        func_dict=self.settings.func_dict
+        funcdict_key_list=list(func_dict.keys())
         exportReadStructure=self.settings.exportReadStructure
         
         referenceDict=self.referenceDict
         export_read_exist=list(exportReadStructure.keys())
-        # with gzip.open(self.settings.reindex,mode="rb") as p:
-        #     reindex_dict=pickle.load(p)
-
+        
         d_val=pd.read_csv(self.settings.destValue,sep='\t',dtype=str,chunksize=500000)
         d_qual=pd.read_csv(self.settings.destQual,sep='\t',dtype=str,chunksize=500000)
         s_seq=pd.read_csv(self.settings.rawSeq,sep='\t',dtype=str,chunksize=500000)
@@ -133,6 +150,7 @@ class BARISTA_EXPORT(object):
             survived_idx_dict={}
             barcode_correspondence=pd.DataFrame()
             barcode_correspondence["Header"]=s_seq_chunk["Header"]
+
             for read_now in export_read_exist:
                 print("start processing for",read_now,"and chunk",chunkCount,"...",flush=True)
                 fastq_parse=pd.DataFrame()
@@ -142,46 +160,42 @@ class BARISTA_EXPORT(object):
                 readStructure_now=exportReadStructure[read_now]
                 for cnt_comp,component in enumerate(readStructure_now):
                     t0=time.time()
-                    # print("\n"+component,flush=True)
-                    opt_now=exportOptDict[component]
+                    for k in funcdict_key_list:
+                        if component+"," in k or ","+component in k or component==k:
+                            funcdict_key=k
+                    try:
+                        funcdict_key
+                    except:
+                        raise(component+" was not found in func_dict keys.")
 
-                    if opt_now["type"]=="equalExport":
-                        s_seq_component=opt_now["src_raw_components"]
+                    opt_now=func_dict[funcdict_key]
+                    func_now=opt_now["func_ordered"][0]
+                    opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"])
+
+                    if func_now=="PASS":
+                        s_seq_component=opt_now[func_now]["source"]
+                        func_tmp=self.settings.func_dict_ext[s_seq_component]["func_ordered"][0]
+                        s_seq_component=self.settings.func_dict_ext[s_seq_component][func_tmp]["source"]
                         seq_export_tmp=s_seq_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now.get("length"),datatype="seq",add_nuc=opt_now.get("add_nucleotide"))
                         qual_export_tmp=s_qual_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now.get("length"),datatype="qual",baseQuality=None)
                     
-                    elif opt_now["type"]=="whitelistExport" or opt_now["type"]=="randomExport":
-                        d_val_component=opt_now["d_val"]
-                        # if d_val_component in reindex_dict:
-                        #     reindex_now=reindex_dict[d_val_component]
-                        # else:
-                        #     reindex_now=None
+                    elif func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
+                        d_val_component=opt_now[func_now]["source"]
 
                         reference_now=referenceDict[component]
-                        
-                        t_map=time.time()
-                        d_val_chunk[d_val_component]=d_val_chunk[d_val_component].map(int)
-                        d_qual_chunk[d_val_component]=d_qual_chunk[d_val_component].map(int)
-                        # print("mappint time:",time.time()-t_map)
-                        t_convseq=time.time()
-                        # seq_export_tmp=d_val_chunk[d_val_component].apply(barcodeConverter.getConvSeq,reference=reference_now,reindex=reindex_now)
-                        seq_export_tmp=d_val_chunk[d_val_component].apply(barcodeConverter.getConvSeq,reference=reference_now)
-                        # print("convert time:",time.time()-t_convseq)
-                        df_tmp_cat=seq_export_tmp.str.cat(d_qual_chunk[d_val_component].astype(str),sep="_")
-                        t_getqual=time.time()
+                        d_val_chunk[funcdict_key]=d_val_chunk[funcdict_key].map(int)
+                        d_qual_chunk[funcdict_key]=d_qual_chunk[funcdict_key].map(int)
+                        seq_export_tmp=d_val_chunk[funcdict_key].apply(barcodeConverter.getConvSeq,reference=reference_now)
+                        df_tmp_cat=seq_export_tmp.str.cat(d_qual_chunk[funcdict_key].astype(str),sep="_")
                         qual_export_tmp=df_tmp_cat.map(barcodeConverter.getConvQual_ver2)
-                        # print("get qual seq:",time.time()-t_getqual)
 
                         if self.settings.is_barcodelist:
                             barcode_correspondence[component]=seq_export_tmp
 
-                    elif opt_now["type"]=="constantExport":
+                    elif func_now=="CONSTANT":
                         seq_export_tmp=[opt_now["sequence"]]*d_val_chunk.shape[0]
                         length_now=len(opt_now["sequence"])
-                        if opt_now.get("baseQuality"):
-                            baseQuality=opt_now["baseQuality"]
-                        else:
-                            baseQuality=30
+                        baseQuality=30 #hard coded
                         const_quality=chr(baseQuality+33)*length_now
                         qual_export_tmp=[const_quality]*d_val_chunk.shape[0]
 
@@ -193,7 +207,6 @@ class BARISTA_EXPORT(object):
                         fastq_parse["qual"]=fastq_parse["qual"].str.cat(qual_export_tmp,sep="")
                     print("processing for",component,"end:",time.time()-t0,flush=True)
 
-                # print("start NA trimming...\n",flush=True)
                 fastq_parse=fastq_parse.dropna(how="any")
                 survived_idx=fastq_parse.index
 
@@ -224,13 +237,14 @@ class BARISTA_EXPORT(object):
                     merged_idx&=survived_idx_dict[key]
 
             for read_now in export_read_exist:
-                if read_now=="Read1_dest":
+                print(read_now)
+                if read_now=="READ1_STRUCTURE":
                     read_now_out="R1"
-                elif read_now=="Read2_dest":
+                elif read_now=="READ2_STRUCTURE":
                     read_now_out="R2"
-                elif read_now=="Index1_dest":
+                elif read_now=="INDEX1_STRUCTURE":
                     read_now_out="I1"
-                elif read_now=="Index2_dest":
+                elif read_now=="INDEX2_STRUCTURE":
                     read_now_out="I2"
 
                 with open(self.settings.outFilePath_and_Prefix+read_now+"tmp.pkl",mode="rb") as p:
