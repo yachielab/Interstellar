@@ -224,7 +224,7 @@ class SETUP(object):
                 ##
                 
                 for r in ["read1","read2","index1","index2"]:
-                    if r in self.settings.read_valid:
+                    if r in self.settings.read_valid and not self.settings.read_valid[r]=="":
                         input_read_files.append(glob.glob(self.settings.read_valid[r]+"/"+prefix+"*")[0])
                 
                 sh_cmd_list_template=["seqkit","split2","-s",str(self.settings.cfg["general"]["CHUNKSIZE"])]
