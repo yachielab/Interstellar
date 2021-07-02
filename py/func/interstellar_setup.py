@@ -220,6 +220,7 @@ class SETUP(object):
 
                 ##
                 print(self.settings.read_valid)
+                print(self.settings.target_prefix_list)
                 ##
                 
                 for r in ["read1","read2","index1","index2"]:
