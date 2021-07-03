@@ -218,17 +218,13 @@ class SETUP(object):
         today_now=today_now.replace(".","")
         today_now=today_now.replace("-","")
         self.today_now=today_now
+        print(today_now)
 
         if self.is_qsub:
             #Generate shell scripts for file splitting by seqkit
             for prefix in self.settings.target_prefix_list:
                 input_read_files=[]
 
-                ##
-                print(self.settings.read_valid)
-                print(self.settings.target_prefix_list)
-                ##
-                
                 for r in ["read1","read2","index1","index2"]:
                     if r in self.settings.read_valid and not self.settings.read_valid[r]=="":
                         input_read_files.append(glob.glob(self.settings.read_valid[r]+"/"+prefix+"*")[0])
@@ -273,7 +269,6 @@ class SETUP(object):
         #Generate shell scripts for specified commands
         if "value_extraction" in self.settings.cmds_execute:
             outdir=self.settings.sampledir+"/value_extraction/_work/"
-
             
             # import
             sh_cmd_list=["Interstellar-exec","import","-conf",self.cfgpath,"-d",outdir+"/import","-o","$1"]

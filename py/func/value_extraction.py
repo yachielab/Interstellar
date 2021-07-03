@@ -39,6 +39,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         if is_qsub:
             mem_key="mem_import"
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
+            print(qcmd_base)
 
             #collect input files
             file_pool=[]
@@ -65,7 +66,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             #         prefix_pool=[re.sub(r"_[^_]+\."+endfix_input,"",os.path.basename(i)) for i in glob.glob(input_file_list[0]+"/*")]
             #         for f_name in input_file_list:
             #             file_pool.append([glob.glob(f_name+"/"+p+"*")[0] for p in prefix_pool])
-
+            print(file_pool)
             for infile in zip(*file_pool):
                 # infile_now=[infile[i] for i in range(len(param_dict[os.path.basename(sampledir)]["read_valid"]))]
                 outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
