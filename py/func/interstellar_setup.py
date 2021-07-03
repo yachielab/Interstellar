@@ -245,10 +245,10 @@ class SETUP(object):
                         generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(fileindex))
                 
                 #get read identifier
-                read_iden_dict[prefix]={}
+                # read_iden_dict[prefix]={}
                 for n,r in enumerate(["read1","read2","index1","index2"]):
                     if r in self.settings.read_valid and not self.settings.read_valid[r]=="":
-                        read_iden_dict[r]=input_read_files[n].replace(self.settings.file_suffix,"").replace(prefix,"")
+                        read_iden_dict[r]=os.path.basename(input_read_files[n]).replace(self.settings.file_suffix,"").replace(prefix,"")
         else:
             #Generate shell scripts for file splitting by seqkit
             for prefix in self.settings.target_prefix_list:
