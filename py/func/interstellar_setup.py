@@ -370,6 +370,7 @@ class SETUP(object):
         used_commands=[]
 
         print("Runnning qsub jobs...: Split FASTQ files",flush=True)
+        print(self.settings.sampledir)
         qoption=self.settings.qcfg["QOPTION"]
         qoption=qoption.replace("<mem>",self.settings.qcfg["MEM_MAX"])
         qcmd_base=["qsub",qoption,"-e",self.settings.sampledir+"/qlog","-o",self.settings.sampledir+"/qlog","-cwd"]
