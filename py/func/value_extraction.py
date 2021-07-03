@@ -41,12 +41,12 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
             print(qcmd_base)
             print("\n###")
-            print(all_files)
             print(param_dict[os.path.basename(sampledir)]["target_prefix_list"])
 
             #collect input files
             file_pool=[]
             all_files=glob.glob(sampledir+"/filesplit/*/*")
+            print(all_files)
             for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
                 for r in ['read1','read2','index1','index2']:
                     if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
