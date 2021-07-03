@@ -112,57 +112,57 @@ class BARISTA_IMPORT(object):
         self.fastqDict=fastqDict
 
 
-    def simple_extract(self):
-        fastq_tab_dict={}
-        counterDict={}
-        tmpdir=self.settings.tmpdir
-        for nread,readKey in enumerate(self.settings.src_readPathDict):
-            fqpath_now=self.settings.src_readPathDict[readKey]
-            tmp_tsv_path="_".join([tmpdir+"/",readKey])+".tsv.gz"
-            cmdlist=["seqkit fx2tab",fqpath_now,"-o",tmp_tsv_path]
-            cmd=" ".join(cmdlist)
-            subprocess.run(cmd,shell=True)
+    # def simple_extract(self):
+    #     fastq_tab_dict={}
+    #     counterDict={}
+    #     tmpdir=self.settings.tmpdir
+    #     for nread,readKey in enumerate(self.settings.src_readPathDict):
+    #         fqpath_now=self.settings.src_readPathDict[readKey]
+    #         tmp_tsv_path="_".join([tmpdir+"/",readKey])+".tsv.gz"
+    #         cmdlist=["seqkit fx2tab",fqpath_now,"-o",tmp_tsv_path]
+    #         cmd=" ".join(cmdlist)
+    #         subprocess.run(cmd,shell=True)
 
-            fastq_now=pd.read_csv(tmp_tsv_path,sep="\t",header=None,chunksize=500000)
-            fastq_tab_dict[readKey]=fastq_now
-        fastq_key=list(fastq_tab_dict.keys())
-        fastq_val=list(fastq_tab_dict.values())
-        for chunkcnt,chunklist in enumerate(zip(*fastq_val)):
-            print("chunk",chunkcnt,"started...")
-            export_seq=pd.DataFrame()
-            export_qual=pd.DataFrame()
-            for readcnt,fq_chunk in enumerate(chunklist):
-                fq_chunk=fq_chunk.replace("[ |\t].+$","",regex=True)
-                if readcnt==0:
-                    export_seq["Header"]="@"+fq_chunk[0]
-                    export_qual["Header"]="@"+fq_chunk[0]
-                readkey_now=fastq_key[readcnt]
-                pos=0
-                for component in self.settings.patternDict[readkey_now]:
-                    if not self.settings.patternDict[readkey_now][component]==0:
-                        export_seq[component]=fq_chunk[1].str[pos:pos+self.settings.patternDict[readkey_now][component]]
-                        export_qual[component]=fq_chunk[2].str[pos:pos+self.settings.patternDict[readkey_now][component]]
-                        pos+=self.settings.patternDict[readkey_now][component]
-                    else:
-                        export_seq[component]=fq_chunk[1].str[pos:]
-                        export_qual[component]=fq_chunk[2].str[pos:]
-                        break
-            if chunkcnt==0:
-                export_seq.to_csv(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
-                export_qual.to_csv(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
-            else:    
-                export_seq.to_csv(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
-                export_qual.to_csv(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+    #         fastq_now=pd.read_csv(tmp_tsv_path,sep="\t",header=None,chunksize=500000)
+    #         fastq_tab_dict[readKey]=fastq_now
+    #     fastq_key=list(fastq_tab_dict.keys())
+    #     fastq_val=list(fastq_tab_dict.values())
+    #     for chunkcnt,chunklist in enumerate(zip(*fastq_val)):
+    #         print("chunk",chunkcnt,"started...")
+    #         export_seq=pd.DataFrame()
+    #         export_qual=pd.DataFrame()
+    #         for readcnt,fq_chunk in enumerate(chunklist):
+    #             fq_chunk=fq_chunk.replace("[ |\t].+$","",regex=True)
+    #             if readcnt==0:
+    #                 export_seq["Header"]="@"+fq_chunk[0]
+    #                 export_qual["Header"]="@"+fq_chunk[0]
+    #             readkey_now=fastq_key[readcnt]
+    #             pos=0
+    #             for component in self.settings.patternDict[readkey_now]:
+    #                 if not self.settings.patternDict[readkey_now][component]==0:
+    #                     export_seq[component]=fq_chunk[1].str[pos:pos+self.settings.patternDict[readkey_now][component]]
+    #                     export_qual[component]=fq_chunk[2].str[pos:pos+self.settings.patternDict[readkey_now][component]]
+    #                     pos+=self.settings.patternDict[readkey_now][component]
+    #                 else:
+    #                     export_seq[component]=fq_chunk[1].str[pos:]
+    #                     export_qual[component]=fq_chunk[2].str[pos:]
+    #                     break
+    #         if chunkcnt==0:
+    #             export_seq.to_csv(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
+    #             export_qual.to_csv(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
+    #         else:    
+    #             export_seq.to_csv(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+    #             export_qual.to_csv(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
             
-            for i in self.settings.barcodes:
-                if chunkcnt==0:
-                    counterDict[i]=collections.Counter(export_seq[i])
-                else:
-                    counter_tmp=collections.Counter(export_seq[i])
-                    counterDict[i].update(counter_tmp)
-        shutil.rmtree(tmpdir)
-        with gzip.open(self.settings.outFilePath_and_Prefix+"_srcCount.pkl.gz",mode="wb") as p:
-            pickle.dump(counterDict,p)
+    #         for i in self.settings.barcodes:
+    #             if chunkcnt==0:
+    #                 counterDict[i]=collections.Counter(export_seq[i])
+    #             else:
+    #                 counter_tmp=collections.Counter(export_seq[i])
+    #                 counterDict[i].update(counter_tmp)
+    #     shutil.rmtree(tmpdir)
+    #     with gzip.open(self.settings.outFilePath_and_Prefix+"_srcCount.pkl.gz",mode="wb") as p:
+    #         pickle.dump(counterDict,p)
 
 
     def extractComponents(self):
