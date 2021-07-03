@@ -99,7 +99,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                     sys.exit(1)
     if is_qsub:
         for sampledir in sampledir_list:
-            jid_now=param_dict[os.path.basename(sampledir)]["today_now"]
+            jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Read segmentation",jid_now,sampledir+"/qlog",njobdict[sampledir])
     
 
