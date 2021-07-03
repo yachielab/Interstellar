@@ -309,14 +309,14 @@ class SETUP(object):
             sh_cmd_list=["Interstellar-exec","buildTree","-conf",self.cfgpath,"-d",outdir+"/buildTree","-o","$1","-sv","$2"]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
-                sh_cmd_list+=["-samplesheet",self.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
+                sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"buildTree")
             #mergeTree
             sh_cmd_list=["Interstellar-exec","mergeTree","-conf",self.cfgpath,"-o","$1","-lp","$2"]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
-                sh_cmd_list+=["-samplesheet",self.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv","-d",self.cfg["general"]["PROJECT_DIR"]+"/_multisample/mergeTree"]
+                sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv","-d",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/mergeTree"]
             else:
                 sh_cmd_list+=["-d",outdir+"/mergeTree"]
             sh_cmd_line=" ".join(sh_cmd_list)
@@ -325,7 +325,7 @@ class SETUP(object):
             sh_cmd_list=["Interstellar-exec","convert","-conf",self.cfgpath,"-d",outdir+"/convert","-o","$1","-tree","$2","-sv","$3","-sq","$4"]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
-                sh_cmd_list+=["-samplesheet",self.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
+                sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"convert")
             # bc_sort (cannot executed in multi-sample mode.)
