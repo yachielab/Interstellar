@@ -370,8 +370,8 @@ class SETUP(object):
         used_commands=[]
 
         print("Runnning qsub jobs...: Split FASTQ files",flush=True)
-        qoption=self.settings.qcfg["qoption"]
-        qoption=qoption.replace("<mem>",self.settings.qcfg["mem_max"])
+        qoption=self.settings.qcfg["QOPTION"]
+        qoption=qoption.replace("<mem>",self.settings.qcfg["MEM_MAX"])
         qcmd_base=["qsub",qoption,"-e",self.settings.sampledir+"/qlog","-o",self.settings.sampledir+"/qlog","-cwd"]
         for i in glob.glob(self.shelldir+"/seqkit*"):
             qcmd_now=qcmd_base+["-N","FASTQ_split"+today_now,i]
