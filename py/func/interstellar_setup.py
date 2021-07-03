@@ -117,7 +117,7 @@ def job_wait(cmd,jid_now,outdir,njobs):
     print("Waiting for the jobs...:",cmd,flush=True)
     while not status_ok:
         time.sleep(10)
-        status_ok=jobCheck(jid_now,outdir+"/qlog",njobs)
+        status_ok=jobCheck(jid_now,outdir,njobs)
     print("Jobs completed:",cmd,flush=True)
     return
 
