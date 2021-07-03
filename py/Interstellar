@@ -83,7 +83,7 @@ if __name__=="__main__":
     else:
         is_qsub=True
         qcfg=settingImporter.readconfig(opt.qconfig)
-        qcfg={k:settingImporter.configClean(qcfg[k]) for k in qcfg}
+        qcfg={k:qcfg[k] for k in qcfg} #No qconfig cleanup
         qcfg=settingRequirementCheck.setDefaultQConfig(qcfg)
 
 
