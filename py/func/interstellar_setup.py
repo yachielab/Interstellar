@@ -213,6 +213,12 @@ class SETUP(object):
         shelldir=self.settings.sampledir+"/sh"
         self.shelldir=shelldir
         read_iden_dict={}
+        today_now=str(datetime.datetime.today()).replace(" ","")
+        today_now=today_now.replace(":","")
+        today_now=today_now.replace(".","")
+        today_now=today_now.replace("-","")
+        self.today_now=today_now
+
         if self.is_qsub:
             #Generate shell scripts for file splitting by seqkit
             for prefix in self.settings.target_prefix_list:
@@ -363,10 +369,6 @@ class SETUP(object):
 
 
     def fastq_split(self):
-        today_now=str(datetime.datetime.today()).replace(" ","")
-        today_now=today_now.replace(":","")
-        today_now=today_now.replace(".","")
-        today_now=today_now.replace("-","")
         used_commands=[]
 
         print("Runnning qsub jobs...: Split FASTQ files",flush=True)
@@ -375,7 +377,7 @@ class SETUP(object):
         qoption=qoption.replace("<mem>",self.settings.qcfg["MEM_MAX"])
         qcmd_base=["qsub",qoption,"-e",self.settings.sampledir+"/qlog","-o",self.settings.sampledir+"/qlog","-cwd"]
         for i in glob.glob(self.shelldir+"/seqkit*"):
-            qcmd_now=qcmd_base+["-N","FASTQ_split"+today_now,i]
+            qcmd_now=qcmd_base+["-N","FASTQ_split"+self.today_now,i]
             qcmd_now=" ".join(qcmd_now)
             print(qcmd_now+"\n")
             s=subprocess.run(qcmd_now,shell=True)
@@ -384,4 +386,4 @@ class SETUP(object):
                 print("streamline: qsub for seqkit split failed.', file=sys.stderr")
                 sys.exit(1)
         time.sleep(15)
-        self.today_now=today_now
+        self.today_now=self.today_now

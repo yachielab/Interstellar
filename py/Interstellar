@@ -102,13 +102,12 @@ if __name__=="__main__":
         param_dict[os.path.basename(sampledir)]["target_prefix_list"]=setting.target_prefix_list
         param_dict[os.path.basename(sampledir)]["shelldir"]=setup_obj.shelldir
         param_dict[os.path.basename(sampledir)]["read_iden_dict"]=setup_obj.read_iden_dict
-
+        param_dict[os.path.basename(sampledir)]["today_now"]=setup_obj.today_now
 
         # fastq split
         flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
         if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
             setup_obj.fastq_split()
-            param_dict[os.path.basename(sampledir)]["today_now"]=setup_obj.today_now
         
 
 
