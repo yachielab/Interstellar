@@ -115,7 +115,7 @@ if __name__=="__main__":
     # fastq split job monitoring
     if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
         for sampledir in sampledir_list:
-            interstellar_setup.job_wait("FASTQ split","FASTQ_split"+param_dict[os.path.basename(sampledir)]["today_now"],sampledir+"/qlog",len(glob.glob(sampledir+"/sh/seqkit*")))
+            interstellar_setup.job_wait("FASTQ split","FASTQ_split"+param_dict[os.path.basename(sampledir)]["today_now"],sampledir,len(glob.glob(sampledir+"/sh/seqkit*")))
         with open(proj_dir+"/_flg/_fastqsplit",mode="wt") as w:
             w.write("")
 
