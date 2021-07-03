@@ -103,19 +103,22 @@ if __name__=="__main__":
         param_dict[os.path.basename(sampledir)]["shelldir"]=setup_obj.shelldir
         param_dict[os.path.basename(sampledir)]["read_iden_dict"]=setup_obj.read_iden_dict
 
-        # fastq split
-        if "value_extraction" in cmds_execute and is_qsub:
-            setup_obj.fastq_split()
-            param_dict[os.path.basename(sampledir)]["today_now"]=setting.today_now
-    
-    # fastq split job monitoring
+
+    # fastq split
     flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
     if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
         for sampledir in sampledir_list:
-            interstellar_setup.job_wait("FASTQ split","FASTQ_split"+param_dict[os.path.basename(sampledir)]["today_now"],sampledir+"/qlog",len(glob.glob(sampledir+"/sh/seqkit*")))
+            setup_obj.fastq_split()
+            param_dict[os.path.basename(sampledir)]["today_now"]=setup_obj.today_now
         with open(proj_dir+"/_flg/_fastqsplit",mode="wt") as w:
             w.write("")
 
+
+    # fastq split job monitoring
+    if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
+        for sampledir in sampledir_list:
+            interstellar_setup.job_wait("FASTQ split","FASTQ_split"+param_dict[os.path.basename(sampledir)]["today_now"],sampledir+"/qlog",len(glob.glob(sampledir+"/sh/seqkit*")))
+        
 
     # value extraction
     flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
