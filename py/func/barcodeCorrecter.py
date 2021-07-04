@@ -28,7 +28,8 @@ def getRawIndex(seq,rawReference):
     return rawReference.index(seq)+1
 
 def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
-    srcComponent=correctOpt["KNEE_CORRECT"]["source"]
+    func_tmp=correctOpt["func_ordered"][0]
+    srcComponent=correctOpt[func_tmp]["source"]
     srcCounter=counterDict[srcComponent]
     seqCount_sort=sorted(srcCounter.items(),key=lambda x:x[1],reverse=True)
     seqCountSummary=dict(seq=list(),rank=list(),logrank=list(),count=list())
