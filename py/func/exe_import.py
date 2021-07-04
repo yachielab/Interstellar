@@ -30,6 +30,7 @@ class settings_import(object):
         
         input_files=[i for i in [self.opt.config,self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2,self.opt.outdir] if not i==""]
         settingRequirementCheck.pathExistCheck(input_files)
+        print(input_files)
 
         flg_file=0
         print(self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2)
