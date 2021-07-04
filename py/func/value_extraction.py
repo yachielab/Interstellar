@@ -39,22 +39,16 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         if is_qsub:
             mem_key="mem_import"
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
-            print(qcmd_base)
-            print("\n###")
-            print(param_dict[os.path.basename(sampledir)]["target_prefix_list"])
-
+            
             #collect input files
             file_pool=[]
             all_files=glob.glob(sampledir+"/filesplit/*/*")
-            print(param_dict[os.path.basename(sampledir)])
             for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
                 for r in ['read1','read2','index1','index2']:
                     if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
                         read_identifier=param_dict[os.path.basename(sampledir)]["read_iden_dict"][r]
-                        print(read_identifier)
                         target_files=[i for i in all_files if re.search(fileprefix+read_identifier+r".*"+endfix_input,os.path.basename(i))]
-                        print(fileprefix+read_identifier+r".*"+endfix_input,os.path.basename(all_files[0]))
-                        file_pool.append(target_files)
+                        file_pool.append(sorted(target_files))
             # input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
             # basename_list=[os.path.basename(i) for i in input_file_list]
             
@@ -71,13 +65,12 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             #         prefix_pool=[re.sub(r"_[^_]+\."+endfix_input,"",os.path.basename(i)) for i in glob.glob(input_file_list[0]+"/*")]
             #         for f_name in input_file_list:
             #             file_pool.append([glob.glob(f_name+"/"+p+"*")[0] for p in prefix_pool])
-            print(file_pool)
             for infile in zip(*file_pool):
                 # infile_now=[infile[i] for i in range(len(param_dict[os.path.basename(sampledir)]["read_valid"]))]
                 outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
                 qcmd_now=qcmd_base+[sampledir+"/sh/import.sh",outname_now]+list(infile)
                 qcmd_now=" ".join(qcmd_now)
-                print(qcmd_now,flush=True)
+                print(list(map(os.path.basename,infile)),flush=True)
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
                 if s.returncode != 0:
