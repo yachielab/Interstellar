@@ -32,6 +32,7 @@ class settings_import(object):
         settingRequirementCheck.pathExistCheck(input_files)
 
         flg_file=0
+        print(self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2)
         for i in [self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2]:
             if not i=="":
                 if flg_file==0:
