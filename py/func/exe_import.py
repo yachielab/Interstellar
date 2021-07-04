@@ -30,17 +30,15 @@ class settings_import(object):
         
         input_files=[i for i in [self.opt.config,self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2,self.opt.outdir] if not i==""]
         settingRequirementCheck.pathExistCheck(input_files)
-        print(input_files)
 
         flg_file=0
-        print(self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2)
         for i in [self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2]:
             if not i=="":
                 if flg_file==0:
-                    flg_gz=1 if regex.match(r"gz$",i) else 0
+                    flg_gz=1 if regex.search(r"gz$",i) else 0
                     flg_file=1
                 else:
-                    flg_gz_tmp=1 if regex.match(r"gz$",i) else 0
+                    flg_gz_tmp=1 if regex.search(r"gz$",i) else 0
                     if not flg_gz==flg_gz_tmp:
                         raise InputError("All files should be commonly gzipped or ungzipped.")
                     
