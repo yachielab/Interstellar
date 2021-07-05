@@ -44,11 +44,7 @@ def parse_constraint(value_segment,values_in_destarg,child2parent_val,value_vari
 
 
 def to_svalue_prime(s_val_chunk,dval_to_sval_relationship,roots,edge_dict):
-    print(dval_to_sval_relationship)
-    print(s_val_chunk.head())
-    print(roots)
-    print(edge_dict)
-    #convert s-value into new s-value interpreting the combination
+    #update s-value by interpreting the combination
     combi_idx=0
     for component in dval_to_sval_relationship:
         component_svalue=dval_to_sval_relationship[component]
@@ -63,7 +59,8 @@ def to_svalue_prime(s_val_chunk,dval_to_sval_relationship,roots,edge_dict):
                 s_val_chunk_prime = pd.DataFrame(series_svalue)
             else:
                 s_val_chunk_prime = pd.concat([s_val_chunk_prime,series_svalue],axis=1)
-    s_val_chunk=pd.concat([s_val_chunk,s_val_chunk_prime],axis=1)
+    if combi_idx>0:
+        s_val_chunk=pd.concat([s_val_chunk,s_val_chunk_prime],axis=1)
 
     combi_idx=0
     input_list=list(set(roots+edge_dict["parent"]+edge_dict["child"]))
