@@ -24,8 +24,8 @@ class settings_buildTree(object):
         self.dest_segments=cfg_value_trans["dest_segment"]       
         self.value_segment=cfg_value_ext["value_segment"]
         self.func_dict=func_dict
-        self.samplesheet=self.opt.samplesheet
-        self.samplemerge=os.path.expanduser(self.opt.samplemerge)
+        self.samplesheet=os.path.expanduser(self.opt.samplesheet)
+        self.samplemerge=self.opt.samplemerge
         self.path_to_sval=self.opt.srcValue
         outname=self.opt.outname
         outdir=self.opt.outdir
