@@ -25,7 +25,7 @@ class settings_buildTree(object):
         self.value_segment=cfg_value_ext["value_segment"]
         self.func_dict=func_dict
         self.samplesheet=self.opt.samplesheet
-        self.samplemerge=self.opt.samplemerge
+        self.samplemerge=os.path.expanduser(self.opt.samplemerge)
         self.path_to_sval=self.opt.srcValue
         outname=self.opt.outname
         outdir=self.opt.outdir
@@ -44,7 +44,7 @@ class BARISTA_BUILDTREE(object):
     def buildTree(self):
         if self.settings.samplemerge:
             samplesheet=pd.read_csv(self.settings.samplesheet,sep="\t",header=None,dtype=str)
-            sampledict=dict(zip(os.path.expanduser(samplesheet[0]),samplesheet[1]))
+            sampledict=dict(zip(samplesheet[0],samplesheet[1]))
             try:
                 sample_now=sampledict[self.settings.path_to_sval]
             except:
