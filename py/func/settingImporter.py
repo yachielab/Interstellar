@@ -129,7 +129,6 @@ def funcSetDefault(val,func_dict,funcname,option_list,default_list,opt_int=[]):
     return func_dict
 
 
-
 def func_parse(func_line,func_collection,dest=False):
     func_line=func_line.split(">>")
     d=dict()
