@@ -43,6 +43,8 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
 
     analyzedPosition=len(seqCountSummary["count"])-1
     kneepoint_idx=len(seqCountSummary["count"])-1
+    seqlen_min=min([len(i) for i in seqCountSummary["seq"]])
+    seedlen=math.floor(seqlen_min/2)
     
     if "KNEE_CORRECT" in correctOpt["func_ordered"]:
         rank_threshold=correctOpt["KNEE_CORRECT"]["rank"]

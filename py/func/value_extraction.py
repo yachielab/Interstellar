@@ -70,7 +70,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
                 qcmd_now=qcmd_base+[sampledir+"/sh/import.sh",outname_now]+list(infile)
                 qcmd_now=" ".join(qcmd_now)
-                print(list(map(os.path.basename,infile)),flush=True)
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
                 if s.returncode != 0:
