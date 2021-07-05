@@ -44,7 +44,10 @@ def parse_constraint(value_segment,values_in_destarg,child2parent_val,value_vari
 
 
 def to_svalue_prime(s_val_chunk,dval_to_sval_relationship,roots,edge_dict):
-    
+    print(dval_to_sval_relationship)
+    print(s_val_chunk.head())
+    print(roots)
+    print(edge_dict)
     #convert s-value into new s-value interpreting the combination
     combi_idx=0
     for component in dval_to_sval_relationship:
