@@ -28,9 +28,11 @@ def getRawIndex(seq,rawReference):
     return rawReference.index(seq)+1
 
 def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
+    suggestion_verbosity = Verbosity.TOP
     func_tmp=correctOpt["func_ordered"][0]
     srcComponent=correctOpt[func_tmp]["source"]
     srcCounter=counterDict[srcComponent]
+    
     seqCount_sort=sorted(srcCounter.items(),key=lambda x:x[1],reverse=True)
     seqCountSummary=dict(seq=list(),rank=list(),logrank=list(),count=list())
     for idx,countSet in enumerate(seqCount_sort):
@@ -45,10 +47,17 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
     kneepoint_idx=len(seqCountSummary["count"])-1
     seqlen_min=min([len(i) for i in seqCountSummary["seq"]])
     seedlen=math.floor(seqlen_min/2)
+
+    seq_minority=[]
+    seq_discarded=[]
+
+    if "KNEE_CORRECT" in correctOpt:
+        rank_threshold=correctOpt["KNEE_CORRECT"]["rank"]
+    else:
+        rank_threshold=len(seqCountSummary["count"])
     
     if "KNEE_CORRECT" in correctOpt["func_ordered"]:
-        rank_threshold=correctOpt["KNEE_CORRECT"]["rank"]
-        # seed_min=correctOpt.get("seed_min")
+         # seed_min=correctOpt.get("seed_min")
             
         if rank_threshold=="auto":
             knee=KneeLocator(seqCountSummary["rank"],seqCountSummary["count"],S=10,curve="convex",direction="decreasing",interp_method='interp1d')
@@ -71,7 +80,6 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         seedlen=math.floor(seqlen_min/2)
         # if seed_min and seedlen<seed_min:
         #     seedlen=seed_min
-        suggestion_verbosity = Verbosity.TOP
         today_now=str(datetime.datetime.today())
         today_now=regex.sub(r"\.|:| ","-",today_now)
         random_string=''.join(random.choices(string.ascii_letters + string.digits, k=15))
@@ -127,8 +135,8 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         t1=time.time()
         print("Whitelist correction done",t1-t0,"sec",flush=True)
         correctionDict_wl={k:v for k,v in zip(list(seq_majority_pd),list(seq_majority_pd_corrected))}
-        seq_success=seq_majority_pd[seq_majority_pd_corrected!="-"]
-        seq_fail=seq_majority_pd[seq_majority_pd_corrected=="-"]
+        # seq_success=seq_majority_pd[seq_majority_pd_corrected!="-"]
+        # seq_fail=seq_majority_pd[seq_majority_pd_corrected=="-"]
 
         for seq in seq_minority+seq_discarded:
             correctionDict_wl[seq]="-"
