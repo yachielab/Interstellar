@@ -43,7 +43,7 @@ class BARISTA_CONVERT(object):
     def convert(self):
         if self.settings.samplemerge:
             samplesheet=pd.read_csv(self.settings.samplesheet,sep="\t",header=None,dtype=str)
-            sampledict=dict(zip(samplesheet[0]),samplesheet[1])
+            sampledict=dict(zip(samplesheet[0],samplesheet[1]))
             try:
                 sample_now=sampledict[self.settings.path_to_sval]
             except:
