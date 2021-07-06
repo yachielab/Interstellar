@@ -125,7 +125,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         print("Running qsub jobs...: Merging trees",flush=True)
         qoption=qcfg["QOPTION"]
         qoption=qoption.replace("<mem>",qcfg[mem_key])
-        qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd,qoption]
+        qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"],qoption]
             
         outname_now="merge"
         qcmd_now=qcmd_base+[sampledir_list[0]+"/sh/mergeTree.sh",outname_now,'"'+proj_dir+"/*/value_translation/_work/buildTree/*_Tree.pkl.gz"+'"']
@@ -144,7 +144,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             print("Job failed: Building tree', file=sys.stderr")
             sys.exit(1)
     if is_qsub:
-        jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
+        jid_now=cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"]
         interstellar_setup.job_wait("Merging tree",jid_now,sampledir_list[0]+"/qlog",njob)
 
 
