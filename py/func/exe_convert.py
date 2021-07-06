@@ -25,7 +25,7 @@ class settings_convert(object):
         self.tree=self.opt.tree
         self.func_dict=func_dict
         self.samplemerge=self.opt.samplemerge
-        self.samplesheet=self.opt.samplesheet
+        self.samplesheet=os.path.expanduser(self.opt.samplesheet)
         outname=self.opt.outname
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=outdir+"/"+outname
@@ -43,7 +43,7 @@ class BARISTA_CONVERT(object):
     def convert(self):
         if self.settings.samplemerge:
             samplesheet=pd.read_csv(self.settings.samplesheet,sep="\t",header=None,dtype=str)
-            sampledict=dict(zip(os.path.expanduser(samplesheet[0]),samplesheet[1]))
+            sampledict=dict(zip(samplesheet[0]),samplesheet[1])
             try:
                 sample_now=sampledict[self.settings.path_to_sval]
             except:
