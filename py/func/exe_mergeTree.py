@@ -128,7 +128,7 @@ class BARISTA_MERGETREE(object):
                 #Maximum information space
                 info_dic={}
                 for component in subTree:
-                    if type(Tree[component])==collections.Counter: #For global value
+                    if component in roots+globalComponents: #For global value
                         info_dic[component]=len(Tree[component]) #maximum size of the merged tree
                     else:
                         len_list=[len(subTree[component][i]) for i in subTree[component]]
