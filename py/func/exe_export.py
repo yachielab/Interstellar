@@ -177,10 +177,10 @@ class BARISTA_EXPORT(object):
                         s_seq_component=opt_now[func_now]["source"]
                         print(s_seq_component)
                         print(s_seq_chunk.columns)
-                        # func_tmp=self.settings.func_dict_ext[s_seq_component]["func_ordered"][0]
-                        # s_seq_component=self.settings.func_dict_ext[s_seq_component][func_tmp]["source"]
-                        seq_export_tmp=s_seq_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now.get("length"),datatype="seq",add_nuc=opt_now.get("add_nucleotide"))
-                        qual_export_tmp=s_qual_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now.get("length"),datatype="qual",baseQuality=None)
+                        func_tmp=self.settings.func_dict_ext[s_seq_component]["func_ordered"][0]
+                        s_seq_component=self.settings.func_dict_ext[s_seq_component][func_tmp]["source"]
+                        seq_export_tmp=s_seq_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="seq",add_nuc=opt_now.get("add_nucleotide"))
+                        qual_export_tmp=s_qual_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="qual",baseQuality=None)
                     
                     elif func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
                         d_val_component=opt_now[func_now]["source"]
