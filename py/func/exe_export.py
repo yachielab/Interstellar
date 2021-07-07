@@ -173,10 +173,7 @@ class BARISTA_EXPORT(object):
                     opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"])
 
                     if func_now=="PASS":
-                        print(opt_now[func_now])
                         s_seq_component=opt_now[func_now]["source"]
-                        print(s_seq_component)
-                        print(s_seq_chunk.columns)
                         func_tmp=self.settings.func_dict_ext[s_seq_component]["func_ordered"][0]
                         s_seq_component=self.settings.func_dict_ext[s_seq_component][func_tmp]["source"]
                         seq_export_tmp=s_seq_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="seq",add_nuc=opt_now.get("add_nucleotide"))
