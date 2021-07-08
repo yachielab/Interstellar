@@ -168,7 +168,7 @@ class BARISTA_EXPORT(object):
                     except:
                         raise(component+" was not found in func_dict keys.")
 
-                    opt_now=func_dict[funcdict_key]
+                    opt_now=copy.deepcopy(func_dict[funcdict_key])
                     func_now=opt_now["func_ordered"][0]
                     print(opt_now[func_now]["source"])
                     opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"])
