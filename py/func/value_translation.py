@@ -243,8 +243,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     for sampledir in sampledir_list:
         file_endfix="_correct_srcValue.tsv.gz"
         is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-        print(glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-        print(is_qc)
         if is_qc:
             file_endfix="_srcSeq.QC.tsv.gz"
             file_prefix=[os.path.basename(i).replace(file_endfix,"") for i in glob.glob(sampledir+"/value_extraction/_work/qc/*") if re.search(file_endfix,i)]

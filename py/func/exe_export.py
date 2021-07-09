@@ -121,6 +121,8 @@ class BARISTA_EXPORT(object):
                 splittedReference=combinedReference.split("_")
                 for idx,eachComponent in enumerate(seg_split):
                     referenceDict[eachComponent].append(splittedReference[idx])
+            for i in referenceDict:
+                print(i,referenceDict[i][:5])
 
             # else:
             #     referenceDict[export_component]=ref_now
@@ -193,6 +195,8 @@ class BARISTA_EXPORT(object):
                         seq_export_tmp=d_val_chunk[funcdict_key].apply(barcodeConverter.getConvSeq,reference=reference_now)
                         df_tmp_cat=seq_export_tmp.str.cat(d_qual_chunk[funcdict_key].astype(str),sep="_")
                         qual_export_tmp=df_tmp_cat.map(barcodeConverter.getConvQual_ver2)
+                        print(seq_export_tmp.head())
+                        print("##\n")
 
                         if self.settings.is_barcodelist:
                             barcode_correspondence[component]=seq_export_tmp
