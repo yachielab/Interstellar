@@ -76,7 +76,7 @@ class BARISTA_EXPORT(object):
             func_now=opt_now["func_ordered"][0]
             opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"]) #concatenate source value (stored in a list as a default)
 
-            seg_split=seg.split("+")
+            seg_split=seg.split(",")
 
             """
             seg = destseg1,destseg2,destseg3
@@ -107,7 +107,6 @@ class BARISTA_EXPORT(object):
                 #         component_group.append(otherComponent)
                 #         ref_other=barcodeConverter.buildReference(opt_other,self.settings.size_info)
                 #         reference_group.append(ref_other)
-                
             reference_product=[]
             maxsize=self.settings.size_info[opt_now[func_now]["source"]]
             if maxsize<200000:
@@ -121,14 +120,12 @@ class BARISTA_EXPORT(object):
                 splittedReference=combinedReference.split("_")
                 for idx,eachComponent in enumerate(seg_split):
                     referenceDict[eachComponent].append(splittedReference[idx])
-            for i in referenceDict:
-                print(i,referenceDict[i][:5])
-
+            
             # else:
             #     referenceDict[export_component]=ref_now
             for eachComponent in seg_split:
                 print("Destination barcode library size: ",eachComponent,len(referenceDict[eachComponent]),flush=True)
-
+ 
         self.referenceDict=referenceDict
 
 

@@ -132,7 +132,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         qcmd_now=" ".join(qcmd_now)
         s=subprocess.run(qcmd_now,shell=True)
         if s.returncode != 0:
-            print("qsub failed: Building tree', file=sys.stderr")
+            print("qsub failed: Merging tree', file=sys.stderr")
             sys.exit(1)
         njob=1
     else:
@@ -141,7 +141,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         cmd_now=" ".join(cmd_now)
         s=subprocess.run(cmd_now,shell=True)
         if s.returncode != 0:
-            print("Job failed: Building tree', file=sys.stderr")
+            print("Job failed: Merging tree', file=sys.stderr")
             sys.exit(1)
     if is_qsub:
         jid_now=cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"]
@@ -217,19 +217,19 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 if s.returncode != 0:
-                    print("qsub failed: Building tree', file=sys.stderr")
+                    print("qsub failed: Barcode correspondence', file=sys.stderr")
                     sys.exit(1)
             else:
                 cmd_now=[sampledir_list[0]+"/sh/bc_sort.sh",outname_now,mergetree,s2v,tbl_now]
                 cmd_now=" ".join(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 if s.returncode != 0:
-                    print("Job failed: Building tree', file=sys.stderr")
+                    print("Job failed: Barcode correspondence', file=sys.stderr")
                     sys.exit(1)
         if is_qsub:
             for sampledir in sampledir_list:
                 jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
-                interstellar_setup.job_wait("Building tree",jid_now,sampledir+"/qlog",njob)
+                interstellar_setup.job_wait("Barcode correspondence",jid_now,sampledir+"/qlog",njob)
 
         configRewrite(cfgpath,sampledir_list[0]+"/value_translation/_work/bc_sort",outnamedict)
 
@@ -290,7 +290,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     if is_qsub:
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
-            interstellar_setup.job_wait("Value optimization",jid_now,sampledir+"/qlog",njobdict[sampledir])
+            interstellar_setup.job_wait("Sequence export",jid_now,sampledir+"/qlog",njobdict[sampledir])
 
     for sampledir in sampledir_list:
         out_files=glob.glob(sampledir+"/value_translation/_work/export/*")
@@ -303,5 +303,5 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 cmd=" ".join(cmd)
                 s=subprocess.run(cmd,shell=True)
                 if s.returncode != 0:
-                    print("Job failed: Tagged file merge', file=sys.stderr")
+                    print("Job failed: Sequence export', file=sys.stderr")
                     sys.exit(1)
