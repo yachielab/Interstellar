@@ -190,7 +190,7 @@ class SETUP_SETTINGS(object):
                             prefix.append(x[0])
                         else:
                             break
-                target_prefix_list.append("".join(prefix))
+                    target_prefix_list.append("".join(prefix))
                 # if not self.qcfg == "":
                 #     # qsub = True -> split files
                 #     shell_cmd="mkdir -p "+self.sampledir+"/filesplit/"+"".join(prefix)
@@ -218,10 +218,10 @@ class SETUP(object):
         today_now=today_now.replace(".","")
         today_now=today_now.replace("-","")
         self.today_now=today_now
-        print(today_now)
 
         if self.is_qsub:
             #Generate shell scripts for file splitting by seqkit
+            print(self.settings.target_prefix_list)
             for prefix in self.settings.target_prefix_list:
                 input_read_files=[]
 
