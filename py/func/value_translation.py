@@ -298,6 +298,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         
         for key in key_list:
             target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
+            target_files=sorted(target_files)
             if len(target_files)>0:
                 cmd=["cat"]+target_files+[">",sampledir+"/value_translation/out/translated"+key]
                 cmd=" ".join(cmd)
