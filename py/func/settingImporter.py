@@ -74,7 +74,7 @@ def config_extract_value_ext(cfg_raw):
     keys_tmp =set([i for i in cfg_value_ext if "READ1_STRUCTURE" in i or "READ2_STRUCTURE" in i or "INDEX1_STRUCTURE" in i or "INDEX2_STRUCTURE" in i or "READ_FLASH" in i])
     keys_tmp|=set(["READ1_DIR","READ2_DIR","INDEX1_DIR","INDEX2_DIR"])
     keys_tmp|=set(["FLASH","FLASH_MIN_OVERLAP","FLASH_MAX_OVERLAP"])
-    keys_tmp|=set(cfg_value_ext["segments"]+["segments","parent"])
+    keys_tmp|=set(cfg_value_ext["segments"]+["segments","parent"]+list(cfg_value_ext["parent"].keys()))
     cfg_value_ext["value_segment"]=sorted(list(all_keys-keys_tmp))
 
     #detecting functions
