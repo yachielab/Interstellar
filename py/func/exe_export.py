@@ -213,7 +213,6 @@ class BARISTA_EXPORT(object):
                         fastq_parse["qual"]=fastq_parse["qual"].str.cat(qual_export_tmp,sep="")
                     print("processing for",component,"end:",time.time()-t0,flush=True)
 
-                print(fastq_parse.head())
                 fastq_parse=fastq_parse.dropna(how="any")
                 survived_idx=fastq_parse.index
 
@@ -227,7 +226,7 @@ class BARISTA_EXPORT(object):
                 fastq_parse=fastq_parse[["Header","seq","Third","qual"]]
                 with open(self.settings.outFilePath_and_Prefix+read_now+"tmp.pkl",mode="wb") as p:
                     pickle.dump(fastq_parse,p)
-
+                
             if self.settings.is_barcodelist:
                 barcode_correspondence=barcode_correspondence.fillna("-")
                 if chunkCount==0:
@@ -242,6 +241,7 @@ class BARISTA_EXPORT(object):
                     merged_idx=survived_idx_dict[key]
                 else:
                     merged_idx&=survived_idx_dict[key]
+            merged_idx=sorted(list(merged_idx))
 
             for read_now in export_read_exist:
                 print(read_now)
