@@ -151,6 +151,7 @@ class BARISTA_EXPORT(object):
             barcode_correspondence=pd.DataFrame()
             barcode_correspondence["Header"]=s_seq_chunk["Header"]
 
+
             for read_now in export_read_exist:
                 print("start processing for",read_now,"and chunk",chunkCount,"...",flush=True)
                 fastq_parse=pd.DataFrame()
@@ -162,21 +163,19 @@ class BARISTA_EXPORT(object):
                     t0=time.time()
                     for k in funcdict_key_list:
                         if component+"," in k or ","+component in k or component==k:
-                            funcdict_key=k
+                            funcdict_key=copy.copy(k)
                     try:
                         funcdict_key
                     except:
                         raise(component+" was not found in func_dict keys.")
+                    
 
                     opt_now=copy.deepcopy(func_dict[funcdict_key])
                     func_now=opt_now["func_ordered"][0]
-                    print(opt_now[func_now]["source"])
                     opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"])
 
                     if func_now=="PASS":
-                        print(opt_now)
                         s_seq_component=opt_now[func_now]["source"]
-                        print(s_seq_component)
                         func_tmp=self.settings.func_dict_ext[s_seq_component]["func_ordered"][0]
                         s_seq_component=self.settings.func_dict_ext[s_seq_component][func_tmp]["source"]
                         seq_export_tmp=s_seq_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="seq",add_nuc=opt_now.get("add_nucleotide"))
@@ -184,6 +183,9 @@ class BARISTA_EXPORT(object):
                     
                     elif func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
                         d_val_component=opt_now[func_now]["source"]
+
+                        print(funcdict_key)
+                        print(component)
 
                         reference_now=referenceDict[component]
                         d_val_chunk[funcdict_key]=d_val_chunk[funcdict_key].map(int)
@@ -210,6 +212,7 @@ class BARISTA_EXPORT(object):
                         fastq_parse["qual"]=fastq_parse["qual"].str.cat(qual_export_tmp,sep="")
                     print("processing for",component,"end:",time.time()-t0,flush=True)
 
+                print(fastq_parse.head())
                 fastq_parse=fastq_parse.dropna(how="any")
                 survived_idx=fastq_parse.index
 
