@@ -51,6 +51,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                         read_identifier=param_dict[os.path.basename(sampledir)]["read_iden_dict"][r]
                         print(r,"readiden=",read_identifier)
                         target_files=[i for i in all_files if re.search(fileprefix+read_identifier+r".*"+endfix_input,os.path.basename(i))]
+                        print(sorted(target_files))
                         file_pool.append(sorted(target_files))
             exit()
             # input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
