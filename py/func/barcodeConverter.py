@@ -48,7 +48,6 @@ def to_svalue_prime(s_val_chunk,dval_to_sval_relationship,roots,edge_dict):
     combi_idx=0
     for component in dval_to_sval_relationship:
         component_svalue=dval_to_sval_relationship[component]
-
         # Generate series of s-values 
         if "+" in component_svalue:
             combi_idx+=1

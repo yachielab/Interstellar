@@ -315,6 +315,7 @@ def func_check_trans(cfg):
         #CONSTANT Correct option check
         funcIllegalOptionCheck(val,func_dict,"CONSTANT",["sequence"])
         funcRequiredOptionCheck(val,func_dict,"CONSTANT",["sequence"])
+        func_dict=funcSetDefault(val,func_dict,"CONSTANT",["source"],[["constant"]])
 
         #PASS Correct option check
         funcIllegalOptionCheck(val,func_dict,"PASS",["source","length","add"])
