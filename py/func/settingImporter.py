@@ -125,7 +125,10 @@ def funcSetDefault(val,func_dict,funcname,option_list,default_list,opt_int=[]):
             func_dict[val][funcname]["correspondence_table"]=os.path.expanduser(func_dict[val][funcname]["correspondence_table"])
 
         for i in opt_int:
-            func_dict[val][funcname][i]=int(func_dict[val][funcname][i])
+            if type(func_dict[val][funcname][i])==list:
+                func_dict[val][funcname][i]=list(map(int,func_dict[val][funcname][i]))
+            else:
+                func_dict[val][funcname][i]=int(func_dict[val][funcname][i])
     return func_dict
 
 
@@ -139,6 +142,7 @@ def func_parse(func_line,func_collection,dest=False):
         if not funcname in func_collection:
             raise KeyError("Function '"+funcname+"' doesn't exist.")
         contents=m.group(2).split(",")
+
         if not dest:
             contents={i.split(":")[0]:i.split(":")[1] for i in contents if not i==""}
             d[funcname]=contents
@@ -150,10 +154,12 @@ def func_parse(func_line,func_collection,dest=False):
                     dict_out["source"].append(i)
                 elif opt=="path" and len(i.split(":"))==1:
                     dict_out["path"].append(i)
+                elif funcname=="RANDSEQ_ASSIGNMENT" and opt=="length":
+                    dict_out["length"].append(i)
                 else:
                     opt=i.split(":")[0]
                     val=i.split(":")[1]
-                    if opt=="source" or opt=="path":
+                    if opt=="source" or opt=="path" or (funcname=="RANDSEQ_ASSIGNMENT" and opt=="length"):
                         dict_out[opt]=[val]
                     else:
                         dict_out[opt]=val

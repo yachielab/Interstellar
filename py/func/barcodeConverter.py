@@ -388,7 +388,7 @@ def sortCounter(counterDict):
         dict_tmp[k]=idx
     return dict_tmp
 
-def buildReference(opt_now,seg_idx,info_dic,max_default=7000000):
+def buildReference(opt_now,seg_idx,info_dic,max_default=7000000): #n_each?
     func_now=opt_now["func_ordered"][0]
     if func_now=="WHITELIST_ASSIGNMENT":
         with open(opt_now[func_now]["path"][seg_idx],mode="rt",encoding="utf-8") as f:
@@ -401,7 +401,7 @@ def buildReference(opt_now,seg_idx,info_dic,max_default=7000000):
         if maxsize < max_default:
             maxsize=max_default
 
-        seqlength=int(opt_now[func_now]["length"])
+        seqlength=int(opt_now[func_now]["length"][seg_idx])
         reference_iter=it.product(*(["ATGC"]*seqlength))
         reference_now=[]
         for cnt,i in enumerate(reference_iter):
