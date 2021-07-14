@@ -14,7 +14,7 @@ def getargs(cmd):
         argparser.add_argument('-d', '--outdir', type=str, default=".", help='output directory')
         # argparser.add_argument('-fq_gz', '--input_fastq_gzipped', action="store_true", help='Fastq is gzipped')
         argparser.add_argument('-simple', '--simple', action="store_true", help='Read strucutre is described as non-regular expression format')
-        argparser.add_argument('-flash', '--flash',type=str, default="", choices=["","R1-R2","R1-I1","R1-I2","R2-I1","R2-I2","I1-I2"],help='If the paired end reads have overlap, specified reads are merged using flash2 algorithm. exp) R1-R2')
+        argparser.add_argument('-flash', '--flash',type=str, default="", choices=["","READ1-READ2","READ1-INDEX1","READ1-INDEX2","READ2-INDEX1","READ2-INDEX2","INDEX1-INDEX2"])
     
     elif cmd=="qc":
         argparser = ArgumentParser(usage='%(prog)s qc [options]')
