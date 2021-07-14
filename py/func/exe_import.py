@@ -76,6 +76,13 @@ class settings_import(object):
         srcReadPaths=[i for i in [self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2] if not i==""]
         readPathDict={k:v for k,v in zip(srcReadKeys,srcReadPaths) if v!=""}
         self.flash_gzipped_reads=[]
+
+        print(readPathDict)
+        print(self.flash)
+        print("##\n")
+
+
+
         self.flash_gzipped_reads,self.src_readPathDict=segmentImporter.merge_reads_flash2(readPathDict,self.flash,self.input_fastq_gzipped,tmpdir,cfg_value_ext)
         
         # if self.simple:
@@ -93,6 +100,9 @@ class settings_import(object):
         self.regexDictCompiled=regexDictCompiled
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.barcodes=func_dict["barcode_list"]
+        
+        print("\n")
+        print(readPathDict)
         
         
 class BARISTA_IMPORT(object):
