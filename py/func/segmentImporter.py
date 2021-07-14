@@ -11,7 +11,6 @@ def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
         flash=flash.replace("READ","Read")
         flash=flash.replace("INDEX","Index")
         merge_reads=[i+"_src" for i in flash.split("-")]
-        print(merge_reads)
         if gzipped:
             print("gzipped read decompressing...",flush=True)
             decompressed_fastq=[]
@@ -22,7 +21,6 @@ def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
                 decompressed_fastq.append(tmpdir+"/"+i+".fastq")
         else:
             decompressed_fastq=[readPathDict[i] for i in merge_reads]
-        print(decompressed_fastq)
 
         flash_min=str(config["FLASH_MIN_OVERLAP"])
         flash_max=str(config["FLASH_MAX_OVERLAP"])
@@ -31,9 +29,6 @@ def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
         cmd=" ".join(cmdlist_flash)
         subprocess.run(cmd,shell=True)
         print("Merging done!",flush=True)
-
-        print("\n\n\n#####")
-        print(cmd)
 
         for cnt,i in enumerate(merge_reads):
             if cnt==0:
