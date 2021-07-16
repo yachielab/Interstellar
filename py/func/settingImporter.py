@@ -240,7 +240,7 @@ def func_check(cfg):
         func_dict=funcSetDefault(val,func_dict,"PASS",["length"],[0],opt_int=["length"])
 
         #Values
-        if "VALUE" in func_oredered:
+        if "VALUE" in func_oredered or "KNEE_CORRECT" in func_oredered or "WHITELIST_CORRECT" in func_oredered or "BARTENDER" in func_oredered:
             barcode_list.append(segment_now[0])
         for func in func_dict[val]:
             if not func=="func_ordered":
