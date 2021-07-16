@@ -221,7 +221,6 @@ class SETUP(object):
 
         if self.is_qsub:
             #Generate shell scripts for file splitting by seqkit
-            print(self.settings.target_prefix_list)
             for prefix in self.settings.target_prefix_list:
                 input_read_files=[]
 
@@ -367,14 +366,12 @@ class SETUP(object):
         used_commands=[]
 
         print("Runnning qsub jobs...: Split FASTQ files",flush=True)
-        print(self.settings.sampledir)
         qoption=self.settings.qcfg["QOPTION"]
         qoption=qoption.replace("<mem>",self.settings.qcfg["MEM_MAX"])
         qcmd_base=["qsub",qoption,"-e",self.settings.sampledir+"/qlog","-o",self.settings.sampledir+"/qlog","-cwd"]
         for i in glob.glob(self.shelldir+"/seqkit*"):
             qcmd_now=qcmd_base+["-N","FASTQ_split"+self.today_now,i]
             qcmd_now=" ".join(qcmd_now)
-            print(qcmd_now+"\n")
             s=subprocess.run(qcmd_now,shell=True)
             used_commands.append(qcmd_now)
             if s.returncode != 0:

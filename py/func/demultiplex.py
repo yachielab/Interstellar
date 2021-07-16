@@ -31,6 +31,7 @@ def checkRequiredFile(key,flist):
 
 
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,cfgpath):
+    shell_template=cfg_raw["general"]["TEMPLATE_SHELLSCRIPT"]
     cfg=settingImporter.config_extract_value_demulti(cfg_raw)
     cfg_ext=settingImporter.config_extract_value_ext(cfg_raw)
     
@@ -54,7 +55,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
         if is_qsub:
             mem_key="mem_"+cmd
-            print("Running qsub jobs...: "+cmd,flush=True)
+            print("Running qsub jobs...: Demultiplex",flush=True)
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
                 
             for f in file_pool:
@@ -92,7 +93,10 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Demultiplex",jid_now,sampledir+"/qlog",njobdict[sampledir])
     
+
     #merging files
+    print("Merging files...")
+    njobdict=dict()
     for sampledir in sampledir_list:
         demulti_dirs=glob.glob(sampledir+"/demultiplex/_work/*")
         key_list=[]
@@ -103,13 +107,74 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     key_list.append(line.replace("\n",""))
         key_set=set(key_list)
         demulti_filename_list=[f for f in glob.glob(sampledir+"/demultiplex/_work/*/*")]
+
+        njobdict[sampledir]=len(key_set)
+        if is_qsub:
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,"demulti_filemerge",mem_key)
         for key in key_set:
             target_files=[t for t in demulti_filename_list if key in os.path.basename(t)]
-            cmd=["cat"]+target_files+[">",sampledir+"/demultiplex/out/demultiplex"+key]
-            cmd=" ".join(cmd)
-            s=subprocess.run(cmd,shell=True)
-            if s.returncode != 0:
-                print("Job failed: Demultiplex file merge', file=sys.stderr")
-                sys.exit(1)
+            if cfg["FORMAT"]=="tsv":
+                key_gunzip=key.replace(".gz","")
+                cmd1=["cat"]+target_files+[" | zcat | head -n1 >",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip]
+                cmd1=" ".join(cmd1)
+                cmd2=["cat"]+target_files+[" | zgrep -v Header >",sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip]
+                cmd2=" ".join(cmd2)
+                cmd3=["cat",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip,sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip+" | gzip -c > ",sampledir+"/demultiplex/out/demultiplex"+key]
+                cmd3=" ".join(cmd3)
+                cmd4=["rm",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip,sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip]
+                cmd4=" ".join(cmd4)
+                if not is_qsub:
+                    for cmd in [cmd1,cmd2,cmd3,cmd4]:
+                        s=subprocess.run(cmd,shell=True)
+                        if s.returncode != 0:
+                            print("Job failed: Demultiuplexed file merge', file=sys.stderr")
+                            sys.exit(1)
+                else:
+                    shell_lines=[]
+                    with open(shell_template,mode="rt") as r:
+                        for line in r:
+                            line=line.replace("\n","")
+                            shell_lines.append(line)
+                    shell_lines+=[cmd1,cmd2,cmd3,cmd4]
+                    shell_lines="\n".join(shell_lines)+"\n"
+                    with open(sampledir+"/sh/demulti_filemerge.sh",mode="wt") as w:
+                        w.write(shell_lines)
 
+                    qcmd_now=qcmd_base+[sampledir+"/sh/demulti_filemerge.sh"]
+                    qcmd_now=" ".join(qcmd_now)
+                    s=subprocess.run(qcmd_now,shell=True)
+                    if s.returncode != 0:
+                        print("qsub failed: Demultiuplexed file merge', file=sys.stderr")
+                        sys.exit(1)
+                
+            else:
+                cmd=["cat"]+target_files+[">",sampledir+"/demultiplex/out/demultiplex"+key]
+                cmd=" ".join(cmd)
+                
+                if not is_qsub:
+                    s=subprocess.run(cmd,shell=True)
+                    if s.returncode != 0:
+                        print("Job failed: Demultiuplexed file merge', file=sys.stderr")
+                        sys.exit(1)
+                else:
+                    shell_lines=[]
+                    with open(shell_template,mode="rt") as r:
+                        for line in r:
+                            line=line.replace("\n","")
+                            shell_lines.append(line)
+                    shell_lines+=[cmd]
+                    shell_lines="\n".join(shell_lines)+"\n"
+                    with open(sampledir+"/sh/demulti_filemerge.sh",mode="wt") as w:
+                        w.write(shell_lines)
 
+                    qcmd_now=qcmd_base+[sampledir+"/sh/demulti_filemerge.sh"]
+                    qcmd_now=" ".join(qcmd_now)
+                    s=subprocess.run(qcmd_now,shell=True)
+                    if s.returncode != 0:
+                        print("qsub failed: Demultiuplexed file merge', file=sys.stderr")
+                        sys.exit(1)
+                
+    if is_qsub:
+        for sampledir in sampledir_list:
+            jid_now="demulti_filemerge"+param_dict[os.path.basename(sampledir)]["today_now"]
+            interstellar_setup.job_wait("Demultiplex",jid_now,sampledir+"/qlog",njobdict[sampledir])

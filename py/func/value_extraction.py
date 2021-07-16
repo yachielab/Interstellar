@@ -48,7 +48,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
 
             all_files=glob.glob(sampledir+"/filesplit/*/*")
             for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
-                print("fileprefix:",fileprefix)
                 idx=0
                 for r in ['read1','read2','index1','index2']:
                     if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
@@ -72,7 +71,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             #         prefix_pool=[re.sub(r"_[^_]+\."+endfix_input,"",os.path.basename(i)) for i in glob.glob(input_file_list[0]+"/*")]
             #         for f_name in input_file_list:
             #             file_pool.append([glob.glob(f_name+"/"+p+"*")[0] for p in prefix_pool])
-            print(file_pool)
             for infile in zip(*file_pool):
                 # infile_now=[infile[i] for i in range(len(param_dict[os.path.basename(sampledir)]["read_valid"]))]
                 outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
@@ -297,9 +295,16 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for key in key_list:
             target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
             if len(target_files)>0:
-                cmd=["cat"]+target_files+[">",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
-                cmd=" ".join(cmd)
-                s=subprocess.run(cmd,shell=True)
-                if s.returncode != 0:
-                    print("Job failed: Tagged file merge', file=sys.stderr")
-                    sys.exit(1)
+                cmd1=["cat"]+target_files+[" | zcat | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
+                cmd1=" ".join(cmd1)
+                cmd2=["cat"]+target_files+[" | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
+                cmd2=" ".join(cmd2)
+                cmd3=["cat",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content | gzip -c > ",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
+                cmd3=" ".join(cmd3)
+                cmd4=["rm",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content"]
+                cmd4=" ".join(cmd4)
+                for cmd in [cmd1,cmd2,cmd3,cmd4]:
+                    s=subprocess.run(cmd,shell=True)
+                    if s.returncode != 0:
+                        print("Job failed: Tagged file merge', file=sys.stderr")
+                        sys.exit(1)
