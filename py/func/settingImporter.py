@@ -363,6 +363,18 @@ def config_extract_value_demulti(cfg_raw):
     return cfg_value_demulti
 
 
+def config_extract_value_tag(cfg_raw):
+    cfg=copy.deepcopy(cfg_raw)
+    cfg_value_ext=config_extract_value_ext(cfg)
+    cfg_value_tag=cfg["tag"]
+       
+    #available segments
+    cfg_value_tag["available_seg"]=[]
+    for i in cfg_value_ext["value_segment"]:
+        cfg_value_tag["available_seg"].append(i)
+   
+    return cfg_value_tag
+
 
 def getQscoreDict(func_dict):
     qscore_dict=dict()
