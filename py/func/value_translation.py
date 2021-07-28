@@ -60,7 +60,7 @@ def configRewrite(cfgpath,outdir,outnamedict):
             line=re.sub(r"(path:)[^,\)]+", "\\1"+outlist, line)
             line=re.sub(r"(correspondence_table:)[^,\)]+", "\\1"+"", line)
             if not "path:" in line:
-                line=re.sub(r"\)$", ",path:"+outlist+"\)", line)
+                line=re.sub(r"\)$", ",path:"+outlist+")", line)
         cfg_new.append(line)
 
     with open(outdir+"/sorted.conf",mode="wt") as w:
