@@ -63,7 +63,7 @@ class BARISTA_BC_SORT(object):
             tree=pickle.load(p)
 
         #Find corresponding pairs of given source components and destination components
-        dval_to_sval_relationship=barcodeConverter.dval_to_sval_relationship(func_dict,self.settings.dest_segments)
+        dval_to_sval_relationship=barcodeConverter.dval_to_sval_relationship(func_dict,self.dest_segments)
         for component in dval_to_sval_relationship:
             sval_components=dval_to_sval_relationship[component].split("+")
             if set(sval_components) == set(self.table_src):

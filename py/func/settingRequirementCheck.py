@@ -107,11 +107,11 @@ def setDefaultQConfig(cfg):
     cfg["qsub"]["mem_to_bt"]=cfg["qsub"]["MEM_MAX"]
     cfg["qsub"]["mem_correct"]=cfg["qsub"]["MEM_MAX"]
     cfg["qsub"]["mem_mk_sval"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
-    cfg["qsub"]["mem_buildTree"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
+    cfg["qsub"]["mem_buildTree"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
     cfg["qsub"]["mem_mergeTree"]=cfg["qsub"]["MEM_MAX"]
-    cfg["qsub"]["mem_convert"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],4)
-    cfg["qsub"]["mem_bc_sort"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
-    cfg["qsub"]["mem_export"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],4)
+    cfg["qsub"]["mem_convert"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],3)
+    cfg["qsub"]["mem_bc_sort"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
+    cfg["qsub"]["mem_export"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],3)
     cfg["qsub"]["mem_demultiplex"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
     cfg["qsub"]["mem_tag"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
     return cfg["qsub"]
