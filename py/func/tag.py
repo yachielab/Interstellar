@@ -31,7 +31,7 @@ def checkRequiredFile(key,flist):
 
 
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,cfgpath):
-    cfg=settingImporter.config_extract_value_demulti(cfg_raw)
+    cfg=settingImporter.config_extract_value_tag(cfg_raw)
     cfg_ext=settingImporter.config_extract_value_ext(cfg_raw)
     
     for key in cfg:
