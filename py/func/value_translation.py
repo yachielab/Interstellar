@@ -35,7 +35,7 @@ def checkRequiredFile(key,flist):
     return False
 
 
-def configRewrite(cfgpath,outdir,outnamedict,func_dict):
+def configRewrite(cfgpath,outdir,outnamedict):
     with open(cfgpath,mode="rt") as r:
         cfg_orig=[re.sub("\\t|\\n| ","",i) for i in r]
     cfg_new=[]
