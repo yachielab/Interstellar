@@ -82,9 +82,13 @@ class BARISTA_BC_SORT(object):
             else:
                 src_value_series_tmp=self.conversion_table[src_component].map(lambda x: barcodeConverter.get_svalue(x,component=src_component,ref=sseq_to_svalue)).astype(str)
                 src_value_series=src_value_series.str.cat(src_value_series_tmp,sep="+")
+        
+        src_value_series.to_csv(self.outFilePath_and_Prefix+"_series.tsv",sep="\t")
 
         #reinex source sequences in the conversion table into optimized value list
         src_value_prime=src_value_series.apply(barcodeConverter.get_reindex,d_component="+".join(self.table_src),tree=tree)
+
+        src_value_prime.to_csv(self.outFilePath_and_Prefix+"_sval_prime.tsv",sep="\t")
         
         #start dealing with dest whitelist
         dest_df=pd.DataFrame(self.conversion_table[self.table_dest])
@@ -99,3 +103,5 @@ class BARISTA_BC_SORT(object):
         for i in dest_df.columns:
             if not i=="reindex":
                 dest_df[i].to_csv(self.outFilePath_and_Prefix+"_"+i+"_sorted_whitelist.tsv",mode="w",sep="\t",index=False,header=False)
+
+        dest_df.to_csv(self.outFilePath_and_Prefix+"_dest_df.tsv",sep="\t")
