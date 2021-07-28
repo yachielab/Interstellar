@@ -49,7 +49,7 @@ def configRewrite(cfgpath,outdir,outnamedict):
 
             outnameprefix=outnamedict[line_split[0]] #-> bc_sort_1th
             destname=line_split[0].split(",")        #-> [dest1,dest2]
-            for dest_each in enumerate(destname):
+            for dest_each in destname:
                 targetwhitelistpath=glob.glob(outdir+"/"+outnameprefix+"*"+dest_each+"*_sorted_whitelist.tsv")
                 outlist+=targetwhitelistpath
                 if len(targetwhitelistpath)>1:
@@ -200,8 +200,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         s2v=glob.glob(sampledir_list[0]+"/value_extraction/_work/mk_sval/*_sseq_to_svalue.pkl.gz")[0]
         njobs=0
         outnamedict=dict()
-        print(cfg["val2table"])
-        print("##\n")
         
         for n,dest_seg in enumerate(cfg["val2table"]):
             tbl_now=cfg["val2table"][dest_seg]
@@ -217,7 +215,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     
                 qcmd_now=qcmd_base+[sampledir_list[0]+"/sh/bc_sort.sh",outname_now,mergetree,s2v,tbl_now]
                 qcmd_now=" ".join(qcmd_now)
-                print(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 if s.returncode != 0:
                     print("qsub failed: Barcode correspondence', file=sys.stderr")
@@ -225,7 +222,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             else:
                 cmd_now=[sampledir_list[0]+"/sh/bc_sort.sh",outname_now,mergetree,s2v,tbl_now]
                 cmd_now=" ".join(cmd_now)
-                print(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 if s.returncode != 0:
                     print("Job failed: Barcode correspondence', file=sys.stderr")
