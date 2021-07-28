@@ -44,7 +44,7 @@ def configRewrite(cfgpath,outdir,outnamedict):
         line_split=line.split("=")
         outlist=[]
         if line_split[0] in outnamedict:
-            if not re.search("^WHITELIST_ASSIGNMENT(",line_split[1]):
+            if not re.search(r"^WHITELIST_ASSIGNMENT\(",line_split[1]):
                 raise UnknownError("Barcode correspondence can only by applied to WHITELIST_ASSIGNMENT.")
 
             outnameprefix=outnamedict[line_split[0]] #-> bc_sort_1th
