@@ -40,6 +40,7 @@ def configRewrite(cfgpath,outdir,outnamedict):
         cfg_orig=[re.sub("\\t|\\n| ","",i) for i in r]
     cfg_new=[]
     
+    print(outnamedict)
     for line in cfg_orig:
         line_split=line.split("=")
         outlist=[]
@@ -49,6 +50,10 @@ def configRewrite(cfgpath,outdir,outnamedict):
 
             outnameprefix=outnamedict[line_split[0]] #-> bc_sort_1th
             destname=line_split[0].split(",")        #-> [dest1,dest2]
+
+            print("\n##")
+            print(outnameprefix,destname)
+            print(outdir)
             for dest_each in destname:
                 targetwhitelistpath=glob.glob(outdir+"/"+outnameprefix+"*"+dest_each+"*_sorted_whitelist.tsv")
                 outlist+=targetwhitelistpath
@@ -56,8 +61,9 @@ def configRewrite(cfgpath,outdir,outnamedict):
                     raise UnknownError("More than 1 file were found in "+outdir)
             
             outlist=",".join(outlist)
-            line=re.sub("(path:)[^,\)]+", "\\1"+outlist, line)
-            line=re.sub("(correspondence_table:)[^,\)]+", "\\1"+"", line)
+            print(outlist)
+            line=re.sub(r"(path:)[^,\)]+", "\\1"+outlist, line)
+            line=re.sub(r"(correspondence_table:)[^,\)]+", "\\1"+"", line)
         cfg_new.append(line)
 
     with open(outdir+"/sorted.conf",mode="wt") as w:
