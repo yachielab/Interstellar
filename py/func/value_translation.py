@@ -40,7 +40,7 @@ def configRewrite(cfgpath,outdir,outnamedict):
         cfg_orig=[re.sub("\\t|\\n| ","",i) for i in r]
     cfg_new=[]
     
-    for line in enumerate(cfg_orig):
+    for line in cfg_orig:
         line_split=line.split("=")
         outlist=[]
         if line_split[0] in outnamedict:
