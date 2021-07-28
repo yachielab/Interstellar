@@ -163,7 +163,7 @@ def func_parse(func_line,func_collection,dest=False):
                         dict_out[opt]=[val]
                     else:
                         dict_out[opt]=val
-                if str(dict_out["source"])==list:
+                if "source" in dict_out and str(dict_out["source"])==list:
                     dict_out["source"]=sorted(dict_out["source"])
             d[funcname]=dict_out
         funcname_list.append(funcname)
