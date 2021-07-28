@@ -36,7 +36,7 @@ class BARISTA_BC_SORT(object):
             src_components.append(func_dict[i][fun]["source"])
 
         conversion_table=pd.read_csv(self.opt.table,sep="\t",header=0)
-        table_src=[i for i in conversion_table.columns if i in self.value_segment]
+        table_src=[i for i in self.value_segment if i in conversion_table.columns]
         table_dest=[i for i in conversion_table.columns if i not in self.value_segment]
         # print("Warning: On the header line of the table, the barcode name included in the source reference file is regarded as ")
         print("source barcode(s):",table_src)
@@ -84,7 +84,7 @@ class BARISTA_BC_SORT(object):
                 src_value_series=src_value_series.str.cat(src_value_series_tmp,sep="+")
 
         #reinex source sequences in the conversion table into optimized value list
-        src_value_prime=src_value_series.apply(barcodeConverter.get_reindex,d_component=d_component,tree=tree)
+        src_value_prime=src_value_series.apply(barcodeConverter.get_reindex,d_component="+".join(self.table_src),tree=tree)
         
         #start dealing with dest whitelist
         dest_df=pd.DataFrame(self.conversion_table[self.table_dest])

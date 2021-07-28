@@ -175,7 +175,6 @@ def buildTree(s_val_chunk,roots,edge_dict,Tree):
             if not childs:
                 continue
 
-            # print(s_val_chunk.head())
                 
             for child in childs:
                 ancestor_list = getAncestor(child,edge_dict) #from the root to leaf

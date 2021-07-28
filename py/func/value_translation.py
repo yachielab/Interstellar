@@ -213,7 +213,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 print("Running qsub jobs...: Barcode correspondence",flush=True)
                 qoption=qcfg["QOPTION"]
                 qoption=qoption.replace("<mem>",qcfg[mem_key])
-                qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd,qoption]
+                qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"],qoption]
                     
                 qcmd_now=qcmd_base+[sampledir_list[0]+"/sh/bc_sort.sh",outname_now,mergetree,s2v,tbl_now]
                 qcmd_now=" ".join(qcmd_now)
