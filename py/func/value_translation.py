@@ -197,7 +197,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         cmd="bc_sort"
         print("Runnning qsub jobs...: bc_sort",flush=True)
         mergetree=sampledir_list[0]+"/value_translation/_work/mergeTree/merge_mergeTree.pkl.gz"
-        s2v=glob.glob(sampledir_list[0]+"/value_translation/_work/mk_sval/*_sseq_to_svalue.pkl.gz")[0]
+        s2v=glob.glob(sampledir_list[0]+"/value_extraction/_work/mk_sval/*_sseq_to_svalue.pkl.gz")[0]
         njobs=0
         outnamedict=dict()
         
