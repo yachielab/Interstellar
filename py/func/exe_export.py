@@ -48,10 +48,8 @@ class settings_export(object):
         self.func_dict=func_dict
         self.func_dict_ext=func_dict_ext
         self.exportReadStructure=exportReadStructure
-        print(func_dict)
 
         self.dest_barcode_segment=[i for i in self.dest_segments if func_dict[i]["func_ordered"][0]=="WHITELIST_ASSIGNMENT" or func_dict[i]["func_ordered"][0]=="RANDSEQ_ASSIGNMENT"]
-        print(self.dest_barcode_segment)
         outname=self.opt.outname
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=outdir+"/"+outname
@@ -75,7 +73,6 @@ class BARISTA_EXPORT(object):
             opt_now=func_dict_cp[seg]
             func_now=opt_now["func_ordered"][0]
             opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"]) #concatenate source value (stored in a list as a default)
-            print(opt_now)
 
             seg_split=seg.split(",")
 
@@ -89,7 +86,7 @@ class BARISTA_EXPORT(object):
                 if func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
                     #bc sort
                     if func_now=="WHITELIST_ASSIGNMENT" and opt_now["WHITELIST_ASSIGNMENT"].get("correspondence_table"):
-                        wl_now=opt_now["path"][n_each]
+                        wl_now=opt_now["WHITELIST_ASSIGNMENT"]["path"][n_each]
                         with open(wl_now,mode="rt",encoding="utf-8") as f:
                             referenceDict[seg_each]=[regex.sub("\n","",i) for i in f]
                         continue
