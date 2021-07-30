@@ -58,7 +58,7 @@ def configRewrite(cfgpath,outdir,outnamedict):
             
             outlist=",".join(outlist)
             line=re.sub(r"(path:)[^,\)]+", "\\1"+outlist, line)
-            line=re.sub(r"(correspondence_table:)[^,\)]+", "\\1"+"", line)
+            line=re.sub(r"(correspondence_table:)[^,\)]+", "\\1"+"TRUE", line)
             if not "path:" in line:
                 line=re.sub(r"\)$", ",path:"+outlist+")", line)
         cfg_new.append(line)
