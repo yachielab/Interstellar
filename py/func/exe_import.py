@@ -235,7 +235,7 @@ class BARISTA_IMPORT(object):
                 n_chunk+=1
             except NameError:
                 n_chunk=0
-
+            
             if not (nrow+1)%4000000==0:
                 for i in self.settings.barcodes:
                     if parsedSeqDict.get(i):
