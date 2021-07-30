@@ -75,6 +75,7 @@ class BARISTA_EXPORT(object):
             opt_now=func_dict_cp[seg]
             func_now=opt_now["func_ordered"][0]
             opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"]) #concatenate source value (stored in a list as a default)
+            print(opt_now)
 
             seg_split=seg.split(",")
 
