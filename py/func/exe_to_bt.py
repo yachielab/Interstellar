@@ -57,19 +57,22 @@ class BARISTA_TO_BT(object):
                                 w.write(entry+","+str(dic_rowcount[bc])+"\n")
     def bartender(self):
         func_dict_bartender=dict()
-        for bc in self.settings.bt_target:
+        for bc in self.settings.bt_targets:
             for val in self.settings.func_dict:
                 if "BARTENDER" in self.settings.func_dict[val]:
                     if self.settings.func_dict[val]["BARTENDER"]["source"]==bc:
                         func_dict_bartender[bc]=self.settings.func_dict[val]["BARTENDER"]
+        
 
-        for bc in self.settings.bt_target:
+        for bc in self.settings.bt_targets:
             input_filename=self.settings.outFilePath_and_Prefix+"_"+bc+".csv"
             cmd=["bartender_single_com","-f",input_filename,"-o",self.settings.outFilePath_and_Prefix+"_"+bc+"_bartender"]
-            for key in func_dict_bartender:
+            for key in func_dict_bartender[bc]:
                 if not key=="source":
-                    cmd+=[key,func_dict_bartender[key]]
-        
+                    cmd+=[key,func_dict_bartender[bc][key]]
+
+            print(cmd)
+
             cmdline=" ".join(cmd)
             s=subprocess.run(cmdline,shell=True)
             if s.returncode != 0:

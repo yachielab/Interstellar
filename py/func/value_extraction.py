@@ -76,7 +76,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
                 qcmd_now=qcmd_base+[sampledir+"/sh/import.sh",outname_now]+list(infile)
                 qcmd_now=" ".join(qcmd_now)
-                print(qcmd_now,flush=True)
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
                 if s.returncode != 0:
@@ -85,7 +84,21 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             njobdict[sampledir]=len(file_pool[0])
         else:
             #collect input files
-            file_pool=[sorted(glob.glob(param_dict[os.path.basename(sampledir)]["read_valid"][i]+"/*")) for i in param_dict[os.path.basename(sampledir)]["read_valid"] if not param_dict[os.path.basename(sampledir)]["read_valid"][i]==""]
+            file_pool=[]
+            for r in ['read1','read2','index1','index2']:
+                if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
+                    file_pool.append([])
+
+            all_files=glob.glob(sampledir+"/filesplit/*/*")
+            for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
+                idx=0
+                for r in ['read1','read2','index1','index2']:
+                    if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
+                        read_identifier=param_dict[os.path.basename(sampledir)]["read_iden_dict"][r]
+
+                        target_files=[i for i in glob.glob(param_dict[os.path.basename(sampledir)]["read_valid"][r]+"/*") if re.search(fileprefix+read_identifier+r".*"+endfix_input,os.path.basename(i))]
+                        file_pool[idx]+=sorted(target_files)
+                        idx+=1
 
             for infile in zip(*file_pool):
                 outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))

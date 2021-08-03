@@ -154,7 +154,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
 
     cmd="convert"
     njobdict=dict()
-    print("Runnning qsub jobs...: convert",flush=True)
     if is_multisample:
         mergetree_dir=proj_dir+"/_multisample/mergeTree"
         sampledir_to_mergetree={k:glob.glob(mergetree_dir+"/merge_"+os.path.basename(k)+"_mergeTree.pkl.gz")[0] for k in sampledir_list}
@@ -257,11 +256,10 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         for outname_now in file_prefix:
             dval =sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_value.tsv.gz"
             dqual=sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_qual.tsv.gz"
+            sseq =sampledir+"/value_extraction/_work/mk_sval/"+outname_now+"_correct_result.tsv.gz"
             if is_qc:
-                sseq =sampledir+"/value_extraction/_work/qc/"+outname_now+file_endfix
                 squal=sampledir+"/value_extraction/_work/qc/"+outname_now+"_srcQual.QC.tsv.gz"
             else:
-                sseq =sampledir+"/value_extraction/_work/import/"+outname_now+file_endfix
                 squal=sampledir+"/value_extraction/_work/import/"+outname_now+"_srcQual.tsv.gz"
             
             if is_multisample:

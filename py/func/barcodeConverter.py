@@ -28,8 +28,8 @@ def parse_constraint(value_segment,values_in_destarg,child2parent_val,value_vari
         edge_dict["parent"].append(child2parent_val[component])
     for val in value_segment:
         if not val in edge_dict["child"]:
-            noParentSegments.append(component)
-
+            noParentSegments.append(val)
+    
     roots=list(set(edge_dict["parent"])-set(edge_dict["child"]))
     # tips =list(set(edge_dict["child"])-set(edge_dict["parent"]))
     globalComponents=list(set(noParentSegments+values_in_destarg)-set(roots)-set(edge_dict["child"]))

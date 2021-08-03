@@ -172,17 +172,15 @@ class BARISTA_EXPORT(object):
                     opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"])
 
                     if func_now=="PASS":
-                        s_seq_component=opt_now[func_now]["source"]
-                        func_tmp=self.settings.func_dict_ext[s_seq_component]["func_ordered"][0]
-                        s_seq_component=self.settings.func_dict_ext[s_seq_component][func_tmp]["source"]
+                        s_seq_component_clean=opt_now[func_now]["source"]
+                        func_tmp=self.settings.func_dict_ext[s_seq_component_clean]["func_ordered"][0]
+                        s_seq_component_raw=self.settings.func_dict_ext[s_seq_component_clean][func_tmp]["source"]
+                        s_seq_component=s_seq_component_raw+":"+s_seq_component_clean
                         seq_export_tmp=s_seq_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="seq",add_nuc=opt_now.get("add_nucleotide"))
-                        qual_export_tmp=s_qual_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="qual",baseQuality=None)
+                        qual_export_tmp=s_qual_chunk[s_seq_component_raw].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="qual",baseQuality=None)
                     
                     elif func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
                         d_val_component=opt_now[func_now]["source"]
-
-                        print(funcdict_key)
-                        print(component)
 
                         reference_now=referenceDict[component]
                         d_val_chunk[funcdict_key]=d_val_chunk[funcdict_key].map(int)
@@ -190,8 +188,6 @@ class BARISTA_EXPORT(object):
                         seq_export_tmp=d_val_chunk[funcdict_key].apply(barcodeConverter.getConvSeq,reference=reference_now)
                         df_tmp_cat=seq_export_tmp.str.cat(d_qual_chunk[funcdict_key].astype(str),sep="_")
                         qual_export_tmp=df_tmp_cat.map(barcodeConverter.getConvQual_ver2)
-                        print(seq_export_tmp.head())
-                        print("##\n")
 
                         if self.settings.is_barcodelist:
                             barcode_correspondence[component]=seq_export_tmp

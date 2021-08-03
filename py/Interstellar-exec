@@ -64,7 +64,7 @@ if __name__=="__main__":
         baristaImport.exportExtractedComponents()
 
     elif cmd=="qc":
-        print("\ndnaSynergizer qc",flush=True)
+        print("\nInterstellar qc",flush=True)
         s=exe_qc.settings_qc(opt)
         s.settingGetter()
         print("start segment QC...",flush=True)
@@ -72,14 +72,15 @@ if __name__=="__main__":
         obj_qc.qualityCheck()
 
     elif cmd=="to_bt":
-        print("\ndnaSynergizer to_bt",flush=True)
+        print("\nInterstellar to_bt",flush=True)
         s=exe_to_bt.settings_to_bt(opt)
         s.settingGetter()
         obj_to_bt=exe_to_bt.BARISTA_TO_BT(s)
         obj_to_bt.to_bt()
+        obj_to_bt.bartender()
 
     elif cmd=="correct":
-        print("\ndnaSynergizer correct",flush=True)
+        print("\nInterstellar correct",flush=True)
         s=exe_correct.settings_correct(opt)
         s.settingGetter()
         obj_correct=exe_correct.BARISTA_CORRECT(s)
@@ -87,7 +88,7 @@ if __name__=="__main__":
         obj_correct.correct_component()
 
     elif cmd=="mk_sval":
-        print("\ndnaSynergizer mk_sval",flush=True)
+        print("\nInterstellar mk_sval",flush=True)
         s=exe_mk_sval.settings_make_s(opt)
         s.settingGetter()
         obj_s=exe_mk_sval.BARISTA_MAKE_S(s)
@@ -97,34 +98,34 @@ if __name__=="__main__":
             obj_s.make_s_value()
             
     elif cmd=="buildTree":
-        print("\ndnaSynergizer buildTree",flush=True)
+        print("\nInterstellar buildTree",flush=True)
         s=exe_buildTree.settings_buildTree(opt)
         s.settingGetter()
         baristaTree=exe_buildTree.BARISTA_BUILDTREE(s)
         baristaTree.buildTree()        
 
     elif cmd=="mergeTree":
-        print("\ndnaSynergizer mergeTree",flush=True)
+        print("\nInterstellar mergeTree",flush=True)
         s=exe_mergeTree.settings_mergetree(opt)
         s.settingGetter()
         baristaMergetree=exe_mergeTree.BARISTA_MERGETREE(s)
         baristaMergetree.mergeTree_v2()
 
     elif cmd=="convert":
-        print("\ndnaSynergizer convert",flush=True)
+        print("\nInterstellar convert",flush=True)
         s=exe_convert.settings_convert(opt)
         s.settingGetter()
         baristaConvert=exe_convert.BARISTA_CONVERT(s)
         baristaConvert.convert()
 
     elif cmd=="bc_sort":
-        print("\ndnaSynergizer bc_sort",flush=True)
+        print("\nInterstellar bc_sort",flush=True)
         barista_bc_sort=exe_bc_sort.BARISTA_BC_SORT(opt)
         barista_bc_sort.bc_sort_settingGetter()
         barista_bc_sort.bc_sort()
 
     elif cmd=="export":
-        print("\ndnaSynergizer export",flush=True)
+        print("\nInterstellar export",flush=True)
         s=exe_export.settings_export(opt)
         s.settingGetter()
 
@@ -133,7 +134,7 @@ if __name__=="__main__":
         baristaExport.exportSequence()
 
     elif cmd=="demultiplex":
-        print("\ndnaSynergizer demultiplex",flush=True)
+        print("\nInterstellar demultiplex",flush=True)
         s=exe_demultiplex.settings_demultiplex(opt)
         s.settingGetter()
 
@@ -141,7 +142,7 @@ if __name__=="__main__":
         baristaDemulti.demultiplex()
 
     elif cmd=="tag":
-        print("\ndnaSynergizer tag",flush=True)
+        print("\nInterstellar tag",flush=True)
         s=exe_tag.settings_tag(opt)
         s.settingGetter()
 
