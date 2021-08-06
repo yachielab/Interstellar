@@ -49,9 +49,12 @@ class BARISTA_MAKE_S(object):
             func_tmp=self.settings.correctOptDict[k]["func_ordered"][0]
             components_raw.append(self.settings.correctOptDict[k][func_tmp]["source"])
         self.components_raw=components_raw
+        print(components_raw)
         for cnt,parsedSeq_raw_df in enumerate(parsedSeq_raw_chunk):
             print("Making a sequence table for chunk",cnt,"...",flush=True)
-            for ncol,component_raw_now in enumerate(parsedSeq_raw_df.columns):
+            cols_ordered=["Header"]+[i for i in sorted(parsedSeq_raw_df.columns) if not i=="Header"]
+            cols_ordered_final=[]
+            for ncol,component_raw_now in enumerate(cols_ordered):
                 if ncol>0:
                     if not component_raw_now in components_raw:
                         parsedSeq_raw_df=parsedSeq_raw_df.drop(component_raw_now,axis=1)
@@ -63,7 +66,10 @@ class BARISTA_MAKE_S(object):
                     if (component_corrected_now in correctionDictionaries) and ("KNEE_CORRECT" in opt_now["func_ordered"] or "WHITELIST_CORRECT" in opt_now["func_ordered"] or "BARTENDER" in opt_now["func_ordered"]):
                         parsedSeq_raw_df[component_raw_now]=parsedSeq_raw_df[component_raw_now].map(lambda x: barcodeCorrecter.seq_correct_and_write(x,reference=correctionDictionaries[component_corrected_now]["correctionDict"]))
                     parsedSeq_raw_df.rename(columns={component_raw_now:component_raw_now+":"+component_corrected_now},inplace=True)
-
+                    cols_ordered_final.append(component_raw_now+":"+component_corrected_now)
+                else:
+                    cols_ordered_final.append("Header")
+            parsedSeq_raw_df = parsedSeq_raw_df[cols_ordered_final]
             if cnt==0:
                 parsedSeq_raw_df.to_csv(self.settings.outFilePath_and_Prefix+"_correct_result.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
             else:

@@ -198,7 +198,8 @@ class BARISTA_EXPORT(object):
                         baseQuality=30 #hard coded
                         const_quality=chr(baseQuality+33)*length_now
                         qual_export_tmp=[const_quality]*d_val_chunk.shape[0]
-
+                        
+                    
                     if cnt_comp==0:
                         fastq_parse["seq"]=seq_export_tmp
                         fastq_parse["qual"]=qual_export_tmp

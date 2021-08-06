@@ -113,10 +113,11 @@ class BARISTA_CONVERT(object):
         #Quality conversion
         print("Start converting read qualities...")
         dest_value_segments=list(set(roots+globalComponents+list(edge_dict["parent"])+list(edge_dict["child"])))
+        components_used=list(set(dest_value_segments) & set(dval_to_sval_relationship.values()))
         for n_chunk,q_val_chunk in enumerate(s_qual):
             print("Processing chunk",n_chunk,"...",flush=True)
             compressed_qvalue=pd.DataFrame({"Header":q_val_chunk["Header"]})
-            for component in dest_value_segments:
+            for component in components_used:
                 if "+" in component:
                     svalues=component.split("+")
                     average_qvalue=q_val_chunk[svalues].mean(axis=1).round().astype(int)
