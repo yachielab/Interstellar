@@ -46,6 +46,76 @@ def genSampleDir(proj_dir,samplesheet):
     return sampledir_list
 
 
+def concat_extended_process(cfg_value_ext,untreated_segment_pool):
+    additional_value_dict={}
+    parents=set()
+    process_inherit_dict=collections.defaultdict(dict)
+    for seg in untreated_segment_pool:
+        line_now=cfg_value_ext[seg]
+        func_blocks=line_now.split(">>")
+        first_block=func_blocks[0]
+        fisrt_block_contents=re.search(r"[^\(]+\(([^\)]*)\)",first_block)
+        fisrt_block_contents=fisrt_block_contents.group(1)
+        for i in fisrt_block_contents.split(","):
+            key=i.split(":")[0]
+            val=i.split(":")[1]
+            if key=="source":
+                process_inherit_dict[seg]["parent_segment"]=val
+                process_inherit_dict[seg]["func_line"]=re.sub(r"source:"+val+",|,source:"+val+"|source:"+val,"",line_now)
+                parents.add(val)
+    
+    # ancestors=parents-set(untreated_segment_pool)
+    ancestors=cfg_value_ext["segments"]
+    dict_to_terminal={}
+    for seg_anc in ancestors:
+        function_list=[]
+        target_anc=copy.copy(seg_anc)
+        segment_lineage=[target_anc]
+        while True:
+            terminal=True
+            for seg in process_inherit_dict:
+                if target_anc == process_inherit_dict[seg]["parent_segment"]:
+                    terminal=False
+                    function_list.append(process_inherit_dict[seg]["func_line"])
+                    target_anc=copy.copy(seg)
+                    segment_lineage.append(seg)
+                    break
+            if not function_list: #In case no processes happened after regex segmentation for the segment
+                idx=0
+                while True:
+                    if not seg_anc+".clean"+str(idx) in (parents | set(untreated_segment_pool)):
+                        new_key=seg_anc+".clean"+str(idx)
+                        break
+                    idx+=1
+
+                segment_lineage.append(new_key)
+                target_anc=new_key
+                if seg_anc in set(list(cfg_value_ext["parent"].keys())+list(cfg_value_ext["parent"].values())):
+                    additional_value_dict[new_key]="SEQ2VALUE(source:"+seg_anc+")"
+                else:
+                    additional_value_dict[new_key]="PASS(source:"+seg_anc+")"
+                break
+            else: #In case some processes done for the segment
+                if terminal:
+                    first_block_split=function_list[0].split(">>")
+                    if re.search("\(\)",first_block_split[0]):
+                        fisrt_block_contents=re.sub("\(","(source:"+seg_anc,first_block_split[0])
+                    else:
+                        fisrt_block_contents=re.sub("\(","(source:"+seg_anc+",",first_block_split[0])
+                    first_block_split[0]=fisrt_block_contents
+                    function_list[0]=">>".join(first_block_split)
+                    process_streamline=">>".join(function_list)
+                    if seg_anc in set(list(cfg_value_ext["parent"].keys())+list(cfg_value_ext["parent"].values())):
+                        if not "SEQ2VALUE" in process_streamline:
+                            process_streamline+=">>SEQ2VALUE()"
+                    additional_value_dict[target_anc]=process_streamline
+                    break
+        for i in segment_lineage:
+            dict_to_terminal[i]=target_anc
+    
+    return additional_value_dict,dict_to_terminal
+
+
 def config_extract_value_ext(cfg_raw):
     cfg=copy.deepcopy(cfg_raw)
     cfg_value_ext=cfg["value_extraction"]
@@ -54,16 +124,16 @@ def config_extract_value_ext(cfg_raw):
     for key in cfg_value_ext:
         if "READ1_STRUCTURE" in key or "READ2_STRUCTURE" in key or "INDEX1_STRUCTURE" in key or "INDEX2_STRUCTURE" in key or "READ_FLASH" in key:
             segments+=re.findall(r"\?P\<([^\>]+)\>",cfg_value_ext[key])
-    cfg_value_ext["segments"]=list(set(segments))
+    cfg_value_ext["segments"]=sorted(list(set(segments)))
 
     #parental-local allocation
     cfg_value_ext["parent"]={}
-    for key in cfg_value_ext:
-        if not type(cfg_value_ext[key])==str:
+    for child in cfg_value_ext:
+        if not type(cfg_value_ext[child])==str:
             continue
-        if re.search(r"CHILD_OF\([^\)]+\)",cfg_value_ext[key]):
-            parent=cfg_value_ext[key].replace("CHILD_OF(","").replace(")","")
-            cfg_value_ext["parent"][key]=parent
+        if re.search(r"CHILD_OF\([^\)]+\)",cfg_value_ext[child]):
+            parent=cfg_value_ext[child].replace("CHILD_OF(","").replace(")","")
+            cfg_value_ext["parent"][child]=parent
     # for seg in cfg_value_ext["segments"]:
     #     if cfg_value_ext.get(seg):
     #         parents_list=cfg_value_ext[seg].replace("CHILD_OF(","").replace(")","").split(",")
@@ -75,17 +145,23 @@ def config_extract_value_ext(cfg_raw):
     keys_tmp|=set(["READ1_DIR","READ2_DIR","INDEX1_DIR","INDEX2_DIR"])
     keys_tmp|=set(["FLASH","FLASH_MIN_OVERLAP","FLASH_MAX_OVERLAP"])
     keys_tmp|=set(cfg_value_ext["segments"]+["segments","parent"]+list(cfg_value_ext["parent"].keys()))
-    cfg_value_ext["value_segment"]=sorted(list(all_keys-keys_tmp))
+
+    untreated_segment_pool=list(all_keys-keys_tmp)
+
+    process_dict,dict_to_terminal=concat_extended_process(cfg_value_ext,untreated_segment_pool)
+
+    cfg_value_ext["value_segment"]=sorted(list(process_dict.keys()))
+    for k in process_dict:
+        cfg_value_ext[k]=process_dict[k]
 
     #detecting functions
     functions_used=[]
     for key in cfg_value_ext["value_segment"]:
-        # print(cfg_value_ext[key])
         commandline=cfg_value_ext[key].split(">>")
         functions_used+=[re.sub(r"\(.*\)","",i) for i in commandline]
     cfg_value_ext["functions_used"]=set(functions_used)
 
-    return cfg_value_ext
+    return cfg_value_ext,dict_to_terminal
 
 
 
@@ -119,10 +195,12 @@ def funcSetDefault(val,func_dict,funcname,option_list,default_list,opt_int=[]):
 
         if funcname=="WHITELIST_CORRECT":
             func_dict[val][funcname]["path"]=os.path.expanduser(func_dict[val][funcname]["path"])
+        elif funcname=="SEQ2SEQ":
+            func_dict[val][funcname]["conversion_table"]=os.path.expanduser(func_dict[val][funcname]["conversion_table"])
         elif funcname=="WHITELIST_ASSIGNMENT":
-            if "path" in func_dict[val][funcname]:
-                func_dict[val][funcname]["path"]=list(map(os.path.expanduser,func_dict[val][funcname]["path"]))
-            func_dict[val][funcname]["correspondence_table"]=os.path.expanduser(func_dict[val][funcname]["correspondence_table"])
+            if "whitelist_path" in func_dict[val][funcname]:
+                func_dict[val][funcname]["whitelist_path"]=list(map(os.path.expanduser,func_dict[val][funcname]["whitelist_path"]))
+            # func_dict[val][funcname]["conversion_table"]=os.path.expanduser(func_dict[val][funcname]["conversion_table"])
 
         for i in opt_int:
             if type(func_dict[val][funcname][i])==list:
@@ -132,48 +210,72 @@ def funcSetDefault(val,func_dict,funcname,option_list,default_list,opt_int=[]):
     return func_dict
 
 
-def func_parse(func_line,func_collection,dest=False):
+def func_parse(func_line,func_collection,dest=False,dict_to_terminal=""):
     func_line=func_line.split(">>")
     d=dict()
     funcname_list=[]
     for func in func_line:
         m=re.search(r"([^\(]+)\(([^\)]*)\)",func)
-        funcname=m.group(1)
-        if not funcname in func_collection:
-            raise KeyError("Function '"+funcname+"' doesn't exist.")
-        contents=m.group(2).split(",")
+        if m:
+            funcname=m.group(1)
+            if not funcname in func_collection:
+                raise KeyError("Function '"+funcname+"' doesn't exist.")
+            contents=m.group(2).split(",")
+        elif re.search(r"^\".+\"|\'.+\'$", func):
+            m2=re.search(r"^\"(.+)\"|\'(.+)\'$", func)
+            seq=m2.group(1)
+            funcname="CONSTANT"
+            contents=["sequence:"+seq]
+        else:
+            funcname="PASS"
+            contents=["source:"+func]
 
+        #Packing func options into a dict
         if not dest:
             contents={i.split(":")[0]:i.split(":")[1] for i in contents if not i==""}
             d[funcname]=contents
-        else:
+        else:                
             opt=""
             dict_out=dict()
             for i in contents:
                 if opt=="source" and len(i.split(":"))==1:
-                    dict_out["source"].append(i)
-                elif opt=="path" and len(i.split(":"))==1:
-                    dict_out["path"].append(i)
-                elif funcname=="RANDSEQ_ASSIGNMENT" and opt=="length":
-                    dict_out["length"].append(i)
+                    dict_out["source"].append(dict_to_terminal[i]) #translate the given source segment name into terminal source name
+
+                elif (opt=="whitelist_path" or opt=="randseq_length") and len(i.split(":"))==1:
+                    dict_out[opt].append(i)
+
                 else:
                     opt=i.split(":")[0]
-                    val=i.split(":")[1]
-                    if opt=="source" or opt=="path" or (funcname=="RANDSEQ_ASSIGNMENT" and opt=="length"):
+                    val=i.split(":")[1] 
+                    if opt=="source":
+                        dict_out[opt]=[dict_to_terminal[val]] #translate the given source segment name into terminal source name
+                    elif opt=="whitelist_path" or opt=="randseq_length":
                         dict_out[opt]=[val]
                     else:
                         dict_out[opt]=val
+
                 if "source" in dict_out and str(dict_out["source"])==list:
                     dict_out["source"]=sorted(dict_out["source"])
+            # Convert VALUE2SEQ into WHITELIST or RANDSEQ
+            if funcname=="VALUE2SEQ":
+                # if dict_out.get("whitelist_path") or dict_out.get("conversion_table"):
+                if dict_out.get("whitelist_path"):
+                    funcname="WHITELIST_ASSIGNMENT"
+                elif dict_out.get("randseq_length"):
+                    funcname="RANDSEQ_ASSIGNMENT"
+                else:
+                    # raise KeyError("Whitelist path, sequence conversion table or random sequence length are required.")
+                    raise KeyError("Whitelist path or random sequence length are required.")
             d[funcname]=dict_out
         funcname_list.append(funcname)
     d["func_ordered"]=funcname_list
+
     return d
 
 
 
 def parse_function_value_ext(cfg):
-    func_collection=["QUALITY_FILTER","PASS","KNEE_CORRECT","WHITELIST_CORRECT","BARTENDER","VALUE"]
+    func_collection=["QUALITY_FILTER","PASS","KNEE_CORRECT","WHITELIST_CORRECT","BARTENDER","SEQ2VALUE"]
     value_names=cfg["value_segment"]
     func_dict=dict()
     for val in value_names:
@@ -182,14 +284,14 @@ def parse_function_value_ext(cfg):
     return func_dict
 
 
-
-def parse_function_value_trans(cfg):
-    func_collection=["WHITELIST_ASSIGNMENT","RANDSEQ_ASSIGNMENT","PASS","CONSTANT"]
+#Around here, treatment of adding "PASS" func / VALUE2SEQ classification into WHITE / RAND
+def parse_function_value_trans(cfg,dict_to_terminal):
+    func_collection=["SEQ2SEQ","VALUE2SEQ","PASS","CONSTANT"]
     destseg_names=cfg["dest_segment"]
     func_dict=dict()
     for seg in destseg_names:
         func_line=cfg[seg]
-        func_dict[seg]=func_parse(func_line,func_collection,dest=True)
+        func_dict[seg]=func_parse(func_line,func_collection,dest=True,dict_to_terminal=dict_to_terminal)
     return func_dict
 
 
@@ -218,31 +320,31 @@ def func_check(cfg):
             raise ArgumentError("Functions BARTENDER cannot be performed with KNEE_CORRECT or WHITELIST_CORRECT.")
 
         #QUALITY_FILTER Correct option check
-        funcIllegalOptionCheck(val,func_dict,"QUALITY_FILTER",["source","min_base_score","min_avg_score"])
-        func_dict=funcSetDefault(val,func_dict,"QUALITY_FILTER",["min_base_score","min_avg_score"],[5,20],opt_int=["min_base_score","min_avg_score"])
+        funcIllegalOptionCheck(val,func_dict,"QUALITY_FILTER",["source","min_nucleotide_Q-score","min_avg_Q-score"])
+        func_dict=funcSetDefault(val,func_dict,"QUALITY_FILTER",["min_nucleotide_Q-score","min_avg_Q-score"],[5,20],opt_int=["min_nucleotide_Q-score","min_avg_Q-score"])
 
         #KNEE Correct option check
-        funcIllegalOptionCheck(val,func_dict,"KNEE_CORRECT",["source","rank","dist"])
-        func_dict=funcSetDefault(val,func_dict,"KNEE_CORRECT",["rank","dist"],["auto",1],opt_int=["dist"])
+        funcIllegalOptionCheck(val,func_dict,"KNEE_CORRECT",["source","rank","levenshtein_distance"])
+        func_dict=funcSetDefault(val,func_dict,"KNEE_CORRECT",["rank","levenshtein_distance"],["auto",1],opt_int=["levenshtein_distance"])
 
         #WHITELIST Correct option check
-        funcIllegalOptionCheck(val,func_dict,"WHITELIST_CORRECT",["source","path","dist"])
+        funcIllegalOptionCheck(val,func_dict,"WHITELIST_CORRECT",["source","path","levenshtein_distance"])
         funcRequiredOptionCheck(val,func_dict,"WHITELIST_CORRECT",["path"])
-        func_dict=funcSetDefault(val,func_dict,"WHITELIST_CORRECT",["dist"],[1],opt_int=["dist"])
+        func_dict=funcSetDefault(val,func_dict,"WHITELIST_CORRECT",["levenshtein_distance"],[1],opt_int=["levenshtein_distance"])
 
         #Bartender option check
         funcIllegalOptionCheck(val,func_dict,"BARTENDER",["source","-c","-d","-l","-z","-s"])
 
-        #VALUE option check
-        funcIllegalOptionCheck(val,func_dict,"VALUE",["source"])
+        #SEQ2VALUE option check
+        funcIllegalOptionCheck(val,func_dict,"SEQ2VALUE",["source"])
 
         #PASS Correct option check
-        funcIllegalOptionCheck(val,func_dict,"PASS",["source","length"])
+        funcIllegalOptionCheck(val,func_dict,"PASS",["source"])
         funcRequiredOptionCheck(val,func_dict,"PASS",["source"])
         func_dict=funcSetDefault(val,func_dict,"PASS",["length"],[0],opt_int=["length"])
 
         #Values
-        if "VALUE" in func_oredered or "KNEE_CORRECT" in func_oredered or "WHITELIST_CORRECT" in func_oredered or "BARTENDER" in func_oredered:
+        if "SEQ2VALUE" in func_oredered or "KNEE_CORRECT" in func_oredered or "WHITELIST_CORRECT" in func_oredered or "BARTENDER" in func_oredered:
             barcode_list.append(segment_now[0])
         for func in func_dict[val]:
             if not func=="func_ordered":
@@ -254,7 +356,7 @@ def func_check(cfg):
 
 def config_extract_value_trans(cfg_raw):
     cfg=copy.deepcopy(cfg_raw)
-    cfg_value_ext=config_extract_value_ext(cfg)
+    cfg_value_ext,dict_to_terminal=config_extract_value_ext(cfg)
     cfg_value_trans=cfg["value_translation"]
     cfg_value_trans["parent"]=cfg_value_ext["parent"]
     
@@ -263,7 +365,7 @@ def config_extract_value_trans(cfg_raw):
     keys_tmp =set([i for i in cfg_value_trans if "READ1_STRUCTURE" in i or "READ2_STRUCTURE" in i or "INDEX1_STRUCTURE" in i or "INDEX2_STRUCTURE" in i])
     keys_tmp|=set(["parent"])
     cfg_value_trans["dest_segment"]=list(all_keys-keys_tmp)
-
+    
     #detecting functions
     functions_used=[]
     for key in cfg_value_trans["dest_segment"]:
@@ -272,15 +374,15 @@ def config_extract_value_trans(cfg_raw):
     cfg_value_trans["functions_used"]=set(functions_used)
 
     #sort bc?
-    cfg_value_trans["bc_sort"]=False
-    cfg_value_trans["val2table"]={}
-    func_dict=parse_function_value_trans(cfg_value_trans)
-    for dest_seg in func_dict:
-        for fun in func_dict[dest_seg]["func_ordered"]:
-            if "correspondence_table" in func_dict[dest_seg][fun]:
-                if not func_dict[dest_seg][fun]["correspondence_table"]=="":
-                    cfg_value_trans["bc_sort"]=True
-                    cfg_value_trans["val2table"][dest_seg]=func_dict[dest_seg][fun]["correspondence_table"]
+    # cfg_value_trans["bc_sort"]=False
+    # cfg_value_trans["val2table"]={}
+    # func_dict=parse_function_value_trans(cfg_value_trans,dict_to_terminal)
+    # for dest_seg in func_dict:
+    #     for fun in func_dict[dest_seg]["func_ordered"]:
+    #         if "conversion_table" in func_dict[dest_seg][fun]:
+    #             if not func_dict[dest_seg][fun]["conversion_table"]=="":
+    #                 cfg_value_trans["bc_sort"]=True
+    #                 cfg_value_trans["val2table"][dest_seg]=func_dict[dest_seg][fun]["conversion_table"]
     
     #available segments
     cfg_value_trans["available_seg"]=[]
@@ -291,8 +393,8 @@ def config_extract_value_trans(cfg_raw):
     return cfg_value_trans
 
 
-def func_check_trans(cfg):
-    func_dict=parse_function_value_trans(cfg)
+def func_check_trans(cfg,dict_to_terminal):
+    func_dict=parse_function_value_trans(cfg,dict_to_terminal)
     for val in func_dict:
         # segment_now=[]
         # func_oredered=func_dict[val]["func_ordered"]
@@ -302,17 +404,23 @@ def func_check_trans(cfg):
         #         segment_now+=content_dict["source"]
         
         #WHITELIST_ASSIGNMENT Correct option check
-        funcIllegalOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","path","correspondence_table"])
-        func_dict=funcSetDefault(val,func_dict,"WHITELIST_ASSIGNMENT",["correspondence_table"],[""])
-        if "WHITELIST_ASSIGNMENT" in func_dict[val] and func_dict[val]["WHITELIST_ASSIGNMENT"]["correspondence_table"]=="":
-            funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","path"])
-        else:
-            funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source"])
+        # funcIllegalOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path","conversion_table"])
+        funcIllegalOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path"])
+        # func_dict=funcSetDefault(val,func_dict,"WHITELIST_ASSIGNMENT",["conversion_table"],[""])
+        # if "WHITELIST_ASSIGNMENT" in func_dict[val] and func_dict[val]["WHITELIST_ASSIGNMENT"]["conversion_table"]=="":
+        #     funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path"])
+        # else:
+        #     funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source"])
+        funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path"])
+        
+        #SEQ2SEQ Correct option check
+        funcIllegalOptionCheck(val,func_dict,"SEQ2SEQ",["source","conversion_table"])
+        funcRequiredOptionCheck(val,func_dict,"SEQ2SEQ",["source","conversion_table"])
 
         #RANDSEQ_ASSIGNMENT Correct option check
-        funcIllegalOptionCheck(val,func_dict,"RANDSEQ_ASSIGNMENT",["source","length"])
-        funcRequiredOptionCheck(val,func_dict,"RANDSEQ_ASSIGNMENT",["source","length"])
-        func_dict=funcSetDefault(val,func_dict,"RANDSEQ_ASSIGNMENT",[],[],opt_int=["length"])
+        funcIllegalOptionCheck(val,func_dict,"RANDSEQ_ASSIGNMENT",["source","randseq_length"])
+        funcRequiredOptionCheck(val,func_dict,"RANDSEQ_ASSIGNMENT",["source","randseq_length"])
+        func_dict=funcSetDefault(val,func_dict,"RANDSEQ_ASSIGNMENT",[],[],opt_int=["randseq_length"])
 
         #CONSTANT Correct option check
         funcIllegalOptionCheck(val,func_dict,"CONSTANT",["sequence"])
@@ -320,7 +428,7 @@ def func_check_trans(cfg):
         func_dict=funcSetDefault(val,func_dict,"CONSTANT",["source"],[["constant"]])
 
         #PASS Correct option check
-        funcIllegalOptionCheck(val,func_dict,"PASS",["source","length","add"])
+        funcIllegalOptionCheck(val,func_dict,"PASS",["source"])
         funcRequiredOptionCheck(val,func_dict,"PASS",["source"])
         func_dict=funcSetDefault(val,func_dict,"PASS",["length","add"],[0,"A"],opt_int=["length"])
 
@@ -330,33 +438,9 @@ def func_check_trans(cfg):
 
 def config_extract_value_demulti(cfg_raw):
     cfg=copy.deepcopy(cfg_raw)
-    cfg_value_ext=config_extract_value_ext(cfg)
+    cfg_value_ext,dict_to_terminal=config_extract_value_ext(cfg)
     cfg_value_demulti=cfg["demultiplex"]
-    
-    #value segment label extraction
-    # all_keys =set(cfg_value_trans.keys())
-    # keys_tmp =set([i for i in cfg_value_trans if "READ1_STRUCTURE" in i or "READ2_STRUCTURE" in i or "INDEX1_STRUCTURE" in i or "INDEX2_STRUCTURE" in i])
-    # keys_tmp|=set(["parent"])
-    # cfg_value_trans["dest_segment"]=list(all_keys-keys_tmp)
-
-    #detecting functions
-    # functions_used=[]
-    # for key in cfg_value_trans["dest_segment"]:
-    #     commandline=cfg_value_trans[key]
-    #     functions_used.append(re.sub(r"\(.*\)","",commandline))
-    # cfg_value_trans["functions_used"]=set(functions_used)
-
-    # #sort bc?
-    # cfg_value_trans["bc_sort"]=False
-    # cfg_value_trans["val2table"]={}
-    # func_dict=parse_function_value_trans(cfg_value_trans)
-    # for dest_seg in func_dict:
-    #     for fun in func_dict[dest_seg]["func_ordered"]:
-    #         if "correspondence_table" in func_dict[dest_seg][fun]:
-    #             if not func_dict[dest_seg][fun]["correspondence_table"]=="":
-    #                 cfg_value_trans["bc_sort"]=True
-    #                 cfg_value_trans["val2table"][dest_seg]=func_dict[dest_seg][fun]["correspondence_table"]
-    
+      
     #available segments
     cfg_value_demulti["available_seg"]=[]
     for i in cfg_value_ext["value_segment"]:
@@ -367,7 +451,7 @@ def config_extract_value_demulti(cfg_raw):
 
 def config_extract_value_tag(cfg_raw):
     cfg=copy.deepcopy(cfg_raw)
-    cfg_value_ext=config_extract_value_ext(cfg)
+    cfg_value_ext,dict_to_terminal=config_extract_value_ext(cfg)
     cfg_value_tag=cfg["tag"]
        
     #available segments
@@ -392,7 +476,7 @@ def getQscoreDict(func_dict):
             #     min_avg=int(func_dict[val]["QUALITY_FILTER"]["min_avg_score"])
             # else:
             #     min_avg=20
-            qscore_dict[segment]={"min_base":func_dict[val]["QUALITY_FILTER"]["min_base_score"],"min_avg":func_dict[val]["QUALITY_FILTER"]["min_avg_score"]}
+            qscore_dict[segment]={"min_base":func_dict[val]["QUALITY_FILTER"]["min_nucleotide_Q-score"],"min_avg":func_dict[val]["QUALITY_FILTER"]["min_avg_Q-score"]}
     return qscore_dict
 
 

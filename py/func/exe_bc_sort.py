@@ -16,9 +16,9 @@ class BARISTA_BC_SORT(object):
         cfg=settingImporter.readconfig(self.opt.config)
         cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
         cfg=settingRequirementCheck.setDefaultConfig(cfg)
-        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        cfg_value_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg)
         cfg_value_trans = settingImporter.config_extract_value_trans(cfg)
-        func_dict=settingImporter.func_check_trans(cfg_value_trans)
+        func_dict=settingImporter.func_check_trans(cfg_value_trans,dict_to_terminal)
         self.dest_segments=cfg_value_trans["dest_segment"]       
         self.value_segment=cfg_value_ext["value_segment"]
         # cvrtOptDict={}
@@ -36,7 +36,9 @@ class BARISTA_BC_SORT(object):
             src_components.append(func_dict[i][fun]["source"])
 
         conversion_table=pd.read_csv(self.opt.table,sep="\t",header=0)
-        table_src=[i for i in self.value_segment if i in conversion_table.columns]
+        source_terminal_pool=[dict_to_terminal[i] for i in conversion_table.columns if i in dict_to_terminal]
+        print(list(conversion_table.columns)+source_terminal_pool)
+        table_src=[i for i in self.value_segment if i in list(conversion_table.columns)+source_terminal_pool]
         table_dest=[i for i in conversion_table.columns if i not in self.value_segment]
         # print("Warning: On the header line of the table, the barcode name included in the source reference file is regarded as ")
         print("source barcode(s):",table_src)

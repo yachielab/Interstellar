@@ -15,7 +15,7 @@ class settings_qc(object):
         cfg=settingImporter.readconfig(self.opt.config)
         cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
         cfg=settingRequirementCheck.setDefaultConfig(cfg)
-        cfg_value_ext = settingImporter.config_extract_value_ext(cfg)
+        cfg_value_ext,dict_to_terminal = settingImporter.config_extract_value_ext(cfg)
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.qc_targets=[func_dict[val]["QUALITY_FILTER"]["source"] for val in func_dict if "QUALITY_FILTER" in func_dict[val]]
         self.seq=self.opt.rawSeq

@@ -18,10 +18,10 @@ class settings_demultiplex(object):
         cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
         cfg=settingRequirementCheck.setDefaultConfig(cfg)
         cfg_demulti=settingImporter.config_extract_value_demulti(cfg)
-        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        cfg_value_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg)
         self.key=cfg_demulti["KEY"].split(",")
         self.target=cfg_demulti["TARGET"].split(",")
-        if len(self.target)==0:
+        if cfg_demulti["TARGET"]=="":
             self.target=cfg_value_ext["value_segment"]
         self.exportReadStructure={}
         for i in cfg_demulti:
@@ -66,7 +66,10 @@ class BARISTA_DEMULTIPLEX(object):
             colnames=list(s_seq_chunk.columns)
             raw_component_names=[i.split(":")[0] for i in colnames if not i=="Header"]
             corrected_component_names=[i.split(":")[1] for i in colnames if not i=="Header"]
-            s_seq_chunk.columns=["Header"]+corrected_component_names            
+            s_seq_chunk.columns=["Header"]+corrected_component_names       
+
+            print(s_seq_chunk.head())     
+            print(self.settings.target)
 
             if self.settings.export_tsv:
                 key_series=s_seq_chunk[self.settings.key].apply("_".join,axis=1)

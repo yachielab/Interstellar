@@ -70,8 +70,9 @@ def configRewrite(cfgpath,outdir,outnamedict):
 
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,cfgpath):
     cfg=settingImporter.config_extract_value_trans(cfg_raw)
-    cfg_ext=settingImporter.config_extract_value_ext(cfg_raw)
-    func_dict=settingImporter.func_check_trans(cfg)
+    cfg["bc_sort"]=False
+    cfg_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
+    func_dict=settingImporter.func_check_trans(cfg,dict_to_terminal)
     func_dict_ext=settingImporter.func_check(cfg_ext)
 
     d=settingImporter.getAllocation(func_dict_ext,cfg,cfg_ext)

@@ -125,9 +125,9 @@ if __name__=="__main__":
 
     # value translation
     flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
-    if "value_translation" in cmds_execute and not "_valuetranslatioon" in flg_files:
+    if "value_translation" in cmds_execute and not "_valuetranslation" in flg_files:
         value_translation.run(sampledir_list,cfg,qcfg,is_qsub,is_multisample,param_dict,proj_dir,opt.config)
-        with open(proj_dir+"/_flg/_valuetranslatioon",mode="wt") as w:
+        with open(proj_dir+"/_flg/_valuetranslation",mode="wt") as w:
             w.write("")
 
     # demultiplex

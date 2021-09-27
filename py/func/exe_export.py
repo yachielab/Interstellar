@@ -20,12 +20,14 @@ class settings_export(object):
         cfg=settingImporter.readconfig(self.opt.config)
         cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
         cfg=settingRequirementCheck.setDefaultConfig(cfg)
-        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        cfg_value_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg)
         func_dict_ext=settingImporter.func_check(cfg_value_ext)
         cfg_value_trans = settingImporter.config_extract_value_trans(cfg)
-        func_dict=settingImporter.func_check_trans(cfg_value_trans)
+        func_dict=settingImporter.func_check_trans(cfg_value_trans,dict_to_terminal)
+        self.value_segment=cfg_value_ext["value_segment"]
         self.dest_segments=cfg_value_trans["dest_segment"]
-
+        self.dict_to_terminal=dict_to_terminal
+        
         self.destValue=self.opt.destValue
         self.destQual=self.opt.destQual
         self.rawSeq=self.opt.rawSeq
@@ -49,7 +51,7 @@ class settings_export(object):
         self.func_dict_ext=func_dict_ext
         self.exportReadStructure=exportReadStructure
 
-        self.dest_barcode_segment=[i for i in self.dest_segments if func_dict[i]["func_ordered"][0]=="WHITELIST_ASSIGNMENT" or func_dict[i]["func_ordered"][0]=="RANDSEQ_ASSIGNMENT"]
+        self.dest_barcode_segment=[i for i in self.dest_segments if func_dict[i]["func_ordered"][0]=="WHITELIST_ASSIGNMENT" or func_dict[i]["func_ordered"][0]=="RANDSEQ_ASSIGNMENT" or func_dict[i]["func_ordered"][0]=="SEQ2SEQ"]
         outname=self.opt.outname
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=outdir+"/"+outname
@@ -66,14 +68,15 @@ class BARISTA_EXPORT(object):
         referenceDict=collections.defaultdict(list)
         dest_segments=self.settings.dest_segments
         processed_components_list=[]
+        seq2seq_refs=collections.defaultdict(dict)
         for seg in self.settings.dest_barcode_segment:
             if seg in processed_components_list:
                 continue
             processed_components_list.append(seg)
             opt_now=func_dict_cp[seg]
             func_now=opt_now["func_ordered"][0]
-            opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"]) #concatenate source value (stored in a list as a default)
-
+            source_keys=sorted(opt_now[func_now]["source"])
+            
             seg_split=seg.split(",")
 
             """
@@ -81,15 +84,23 @@ class BARISTA_EXPORT(object):
             seg_split = [destseg1,destseg2,destseg3]
             seg_each = destseg1
             """
+            if func_now=="SEQ2SEQ":
+                convtable_path=opt_now["SEQ2SEQ"]["conversion_table"]
+                conversiono_table=pd.read_csv(convtable_path,sep="\t",header=0)
+                ref_dict_seq2seq=barcodeConverter.build_SEQ2SEQ(conversion_table=conversiono_table,dict_to_terminal=self.settings.dict_to_terminal,value_segment=self.settings.value_segment,ref_dict=seq2seq_refs)
+                seq2seq_refs.update(ref_dict_seq2seq)
+                continue
+
+            opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"]) #concatenate source value (stored in a list as a default)
             reference_group=[]
             for n_each,seg_each in enumerate(seg_split):
                 if func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
                     #bc sort
-                    if func_now=="WHITELIST_ASSIGNMENT" and opt_now["WHITELIST_ASSIGNMENT"].get("correspondence_table"):
-                        wl_now=opt_now["WHITELIST_ASSIGNMENT"]["path"][n_each]
-                        with open(wl_now,mode="rt",encoding="utf-8") as f:
-                            referenceDict[seg_each]=[regex.sub("\n","",i) for i in f]
-                        continue
+                    # if func_now=="WHITELIST_ASSIGNMENT" and opt_now["WHITELIST_ASSIGNMENT"].get("correspondence_table"):
+                    #     wl_now=opt_now["WHITELIST_ASSIGNMENT"]["path"][n_each]
+                    #     with open(wl_now,mode="rt",encoding="utf-8") as f:
+                    #         referenceDict[seg_each]=[regex.sub("\n","",i) for i in f]
+                    #     continue
                     
                     #normal
                     ref_now=barcodeConverter.buildReference(opt_now,n_each,self.settings.size_info)
@@ -125,6 +136,7 @@ class BARISTA_EXPORT(object):
                 print("Destination barcode library size: ",eachComponent,len(referenceDict[eachComponent]),flush=True)
  
         self.referenceDict=referenceDict
+        self.seq2seq_refs=seq2seq_refs
 
 
     def exportSequence(self):
@@ -179,6 +191,28 @@ class BARISTA_EXPORT(object):
                         seq_export_tmp=s_seq_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="seq",add_nuc=opt_now.get("add_nucleotide"))
                         qual_export_tmp=s_qual_chunk[s_seq_component_raw].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="qual",baseQuality=None)
                     
+                    elif func_now=="SEQ2SEQ": #Fix this part next to apply a new dictionary format
+                        s_seq_component_clean=opt_now[func_now]["source"]
+                        s_seq_component_clean_list=sorted(s_seq_component_clean.split("+"))
+                        func_tmp_list=[self.settings.func_dict_ext[i]["func_ordered"][0] for i in s_seq_component_clean_list]
+                        s_seq_component_raw_list=[self.settings.func_dict_ext[i][func_tmp_list[idx]]["source"] for idx,i in enumerate(s_seq_component_clean_list)]
+                        s_seq_component_list=[i+":"+s_seq_component_clean_list[idx] for idx,i in enumerate(s_seq_component_raw_list)]
+                        seq_export_tmp=s_seq_chunk[s_seq_component_list]
+                        qual_export_tmp=s_qual_chunk[s_seq_component_raw_list]
+
+                        if len(seq_export_tmp.columns) > 1:
+                            seq_export_tmp=seq_export_tmp[seq_export_tmp.columns[0]].str.cat(seq_export_tmp[seq_export_tmp.columns[1:]],sep="_")
+                            qual_export_tmp=qual_export_tmp[qual_export_tmp.columns[0]].str.cat(qual_export_tmp[qual_export_tmp.columns[1:]])
+                        else:
+                            seq_export_tmp=seq_export_tmp[seq_export_tmp.columns[0]]
+                            qual_export_tmp=qual_export_tmp[qual_export_tmp.columns[0]]
+
+                        seq_export_tmp=seq_export_tmp.apply(barcodeConverter.SEQ2SEQ,dest_seg=component,dic=self.seq2seq_refs)
+                        qual_export_tmp=qual_export_tmp.apply(barcodeConverter.toQscore).astype(str)
+                        qual_export_tmp=seq_export_tmp.str.cat(qual_export_tmp,sep="_")
+                        qual_export_tmp=qual_export_tmp.map(barcodeConverter.getConvQual_ver2)
+
+                    
                     elif func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
                         d_val_component=opt_now[func_now]["source"]
 
@@ -194,6 +228,7 @@ class BARISTA_EXPORT(object):
 
                     elif func_now=="CONSTANT":
                         seq_export_tmp=[opt_now[func_now]["sequence"]]*d_val_chunk.shape[0]
+                        print(seq_export_tmp[:5])
                         length_now=len(opt_now[func_now]["sequence"])
                         baseQuality=30 #hard coded
                         const_quality=chr(baseQuality+33)*length_now

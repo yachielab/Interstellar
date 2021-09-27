@@ -26,7 +26,7 @@ class settings_import(object):
         cfg=settingImporter.readconfig(self.opt.config)
         cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
         cfg=settingRequirementCheck.setDefaultConfig(cfg)
-        cfg_value_ext = settingImporter.config_extract_value_ext(cfg)
+        cfg_value_ext,dict_to_terminal = settingImporter.config_extract_value_ext(cfg)
         
         input_files=[i for i in [self.opt.config,self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2,self.opt.outdir] if not i==""]
         settingRequirementCheck.pathExistCheck(input_files)
@@ -281,7 +281,7 @@ class BARISTA_IMPORT(object):
                 for n_read,path in enumerate(filepaths):
                     dict_merged=collections.defaultdict(list)
                     for chunk in path:
-                        print("chunk:",chunk)
+                        # print("chunk:",chunk)
                         if self.settings.flash:
                             try:
                                 to_be_processed
@@ -314,10 +314,12 @@ class BARISTA_IMPORT(object):
                     elif iter_num>0 and n_read==1:
                         f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="at",encoding="utf-8")
 
-                    d_order = {k:c for c,k in enumerate(["Header"]+self.settings.components)}
-                    dict_merged_sorted=sorted(dict_merged.items(), key=lambda x: d_order[x[0]])
-                    dict_merged_key=[i[0] for i in dict_merged_sorted]
-                    dict_merged_val=[i[1] for i in dict_merged_sorted]
+                    # d_order = {k:c for c,k in enumerate(["Header"]+self.settings.components)}
+                    # print(d_order)
+                    # print(dict_merged.keys())
+                    # dict_merged_sorted=sorted(dict_merged.items(), key=lambda x: d_order[x[0]])
+                    dict_merged_key=["Header"]+self.settings.components
+                    dict_merged_val=[dict_merged[i] for i in ["Header"]+self.settings.components]
                     if iter_num==0:
                         csvwriter_index=csv.writer(f,delimiter="\t")
                         csvwriter_index.writerow(dict_merged_key)

@@ -8,7 +8,7 @@ import os
 import re
 import glob
 import sys
-import copy
+import shutil
 
 class UnknownError(Exception):
     pass
@@ -31,7 +31,7 @@ def checkRequiredFile(key,flist):
 
 
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,cfgpath):
-    shell_template=cfg_raw["general"]["TEMPLATE_SHELLSCRIPT"]
+    shell_template=cfg_raw["general"]["SET_SHELL_ENV"]
     cfg=settingImporter.config_extract_value_demulti(cfg_raw)
     cfg_ext=settingImporter.config_extract_value_ext(cfg_raw)
     
@@ -50,6 +50,10 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     cmd="demultiplex"
     njobdict=dict()
     for sampledir in sampledir_list:
+        L_tmp=glob.glob(sampledir+"/demultiplex/_work/*")
+        for l in L_tmp:
+            shutil.rmtree(l) #clearance
+
         file_endfix="_correct_result.tsv.gz"
         file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*") if re.search(file_endfix,i)]
         is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))

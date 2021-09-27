@@ -38,7 +38,7 @@ def setUpSampleDir(sampledir,cmds_execute):
             shell_cmd="mkdir -p "+sampledir+"/"+dir+"/_work/buildTree"
             shell_cmd+=" "+sampledir+"/"+dir+"/_work/mergeTree"
             shell_cmd+=" "+sampledir+"/"+dir+"/_work/convert"
-            shell_cmd+=" "+sampledir+"/"+dir+"/_work/bc_sort"
+            # shell_cmd+=" "+sampledir+"/"+dir+"/_work/bc_sort"
             shell_cmd+=" "+sampledir+"/"+dir+"/_work/export"
             subprocess.run(shell_cmd,shell=True)
 
@@ -228,20 +228,20 @@ class SETUP(object):
                     if r in self.settings.read_valid and not self.settings.read_valid[r]=="":
                         input_read_files.append(glob.glob(self.settings.read_valid[r]+"/"+prefix+"*")[0])
                 
-                sh_cmd_list_template=["seqkit","split2","-s",str(self.settings.cfg["general"]["CHUNKSIZE"])]
+                sh_cmd_list_template=["seqkit","split2","-s",str(self.settings.qcfg["qsub"]["NUM_READS"])]
                 nfile_divmod=divmod(len(input_read_files),2)
                 fileindex=0
                 for n in range(nfile_divmod[0]):
                     files_now=["-1",input_read_files[2*n],"-2",input_read_files[2*n+1]]
                     sh_cmd_list=sh_cmd_list_template+["-O",self.settings.sampledir+"/filesplit/"+prefix+"_"+str(fileindex)]+files_now
                     sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(fileindex))
+                    generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(fileindex))
                     fileindex+=1
                 if len(input_read_files)<4:
                     for n in range(2*nfile_divmod[0],2*nfile_divmod[0]+nfile_divmod[1]):
                         sh_cmd_list=sh_cmd_list_template+["-O",self.settings.sampledir+"/filesplit/"+prefix+"_"+str(fileindex)]+[input_read_files[n]]
                         sh_cmd_line=" ".join(sh_cmd_list)
-                        generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(fileindex))
+                        generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(fileindex))
                 
                 #get read identifier
                 # read_iden_dict[prefix]={}
@@ -262,8 +262,7 @@ class SETUP(object):
                     if not self.settings.read_valid[r]=="":
                         read_iden_dict[r]=os.path.basename(input_read_files[n]).replace(self.settings.file_suffix,"").replace(prefix,"")
         self.read_iden_dict=read_iden_dict
-
-            
+ 
         
         #Generate shell scripts for specified commands
         if "value_extraction" in self.settings.cmds_execute:
@@ -283,23 +282,23 @@ class SETUP(object):
                 elif i=="index2" and not self.settings.read_valid[i]=="":
                     sh_cmd_list+=["-I2","$"+str(n+2)]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"import")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"import")
             # qc
             sh_cmd_list=["Interstellar-exec","qc","-conf",self.cfgpath,"-d",outdir+"/qc","-o","$1","-rs","$2","-rq","$3"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"qc")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"qc")
             # to_bt
             sh_cmd_list=["Interstellar-exec","to_bt","-conf",self.cfgpath,"-d",outdir+"/to_bt","-o","$1","-rs","$2"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"to_bt")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"to_bt")
             # correct
             sh_cmd_list=["Interstellar-exec","correct","-conf",self.cfgpath,"-d",outdir+"/correct","-o","$1","-ip","$2"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"correct")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"correct")
             # mk_sval
             sh_cmd_list=["Interstellar-exec","mk_sval","-conf",self.cfgpath,"-d",outdir+"/mk_sval","-o","$1","-rs","$2","-rq","$3","-crp","$4"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"mk_sval")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"mk_sval")
         
 
         if "value_translation" in self.settings.cmds_execute:
@@ -311,7 +310,7 @@ class SETUP(object):
                 sh_cmd_list.append("-samplemerge")
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"buildTree")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"buildTree")
             #mergeTree
             sh_cmd_list=["Interstellar-exec","mergeTree","-conf",self.cfgpath,"-o","$1","-lp","$2"]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
@@ -320,26 +319,26 @@ class SETUP(object):
             else:
                 sh_cmd_list+=["-d",outdir+"/mergeTree"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"mergeTree")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"mergeTree")
             #convert
             sh_cmd_list=["Interstellar-exec","convert","-conf",self.cfgpath,"-d",outdir+"/convert","-o","$1","-tree","$2","-sv","$3","-sq","$4"]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"convert")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"convert")
             # bc_sort (cannot executed in multi-sample mode.)
-            sh_cmd_list=["Interstellar-exec","bc_sort","-conf",self.cfgpath,"-d",outdir+"/bc_sort","-o","$1","-tree","$2","-sseq_to_svalue","$3","-tbl","$4"]
-            sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"bc_sort")
+            # sh_cmd_list=["Interstellar-exec","bc_sort","-conf",self.cfgpath,"-d",outdir+"/bc_sort","-o","$1","-tree","$2","-sseq_to_svalue","$3","-tbl","$4"]
+            # sh_cmd_line=" ".join(sh_cmd_list)
+            # generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"bc_sort")
             # export: normal
             sh_cmd_list=["Interstellar-exec","export","-conf",self.cfgpath,"-d",outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6","-export_bclist"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"export")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"export")
             # export: bc_sort
-            sh_cmd_list=["Interstellar-exec","export","-conf",outdir+"/bc_sort/sorted.conf","-d",outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6","-export_bclist"]
-            sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"export_bc_sort")
+            # sh_cmd_list=["Interstellar-exec","export","-conf",outdir+"/bc_sort/sorted.conf","-d",outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6","-export_bclist"]
+            # sh_cmd_line=" ".join(sh_cmd_list)
+            # generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"export_bc_sort")
 
 
         # demultiplex
@@ -349,7 +348,7 @@ class SETUP(object):
             if self.settings.cfg["demultiplex"]["FORMAT"]=="tsv":
                 sh_cmd_list.append("-export_tsv")
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"demultiplex")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"demultiplex")
 
 
         # tag
@@ -357,7 +356,7 @@ class SETUP(object):
             outdir=self.settings.sampledir+"/tag/_work"
             sh_cmd_list=["Interstellar-exec","tag","-conf",self.cfgpath,"-d",outdir,"-o","$1","-cs","$2","-cq","$3","-rq","$4"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["TEMPLATE_SHELLSCRIPT"],sh_cmd_line,shelldir,"tag")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"tag")
     
         subprocess.run("chmod u+x "+shelldir+"/*",shell=True)
 

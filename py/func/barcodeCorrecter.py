@@ -89,13 +89,13 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
                 for seqm in seq_majority:
                     w.write(seqm+"\n")
 
-            symspelldb=SymSpell(correctOpt["KNEE_CORRECT"]["dist"],seedlen)
+            symspelldb=SymSpell(correctOpt["KNEE_CORRECT"]["levenshtein_distance"],seedlen)
             symspelldb.create_dictionary(fname)
 
             t0=time.time()
             print("Minority correction has been started...",flush=True)
             seq_minority_pd=pd.Series(seq_minority)
-            seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["KNEE_CORRECT"]["dist"],symspelldb))
+            seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["KNEE_CORRECT"]["levenshtein_distance"],symspelldb))
 
             correctionDict_maj={k:v for k,v in zip(list(seq_minority_pd),list(seq_minority_pd_corrected))}
             t1=time.time()
@@ -125,13 +125,13 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
 
         wlset=set(wl)
         print("Seed length: ",seedlen,flush=True)
-        symspelldb=SymSpell(correctOpt["WHITELIST_CORRECT"]["dist"],seedlen)
+        symspelldb=SymSpell(correctOpt["WHITELIST_CORRECT"]["levenshtein_distance"],seedlen)
         symspelldb.create_dictionary(correctOpt["WHITELIST_CORRECT"]["path"])
         print("Reference build done.",flush=True)
         seq_majority_pd=pd.Series(seq_majority)
         print("correct...",flush=True)
         t0=time.time()
-        seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["WHITELIST_CORRECT"]["dist"],symspelldb,wlset))
+        seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["WHITELIST_CORRECT"]["levenshtein_distance"],symspelldb,wlset))
         t1=time.time()
         print("Whitelist correction done",t1-t0,"sec",flush=True)
         correctionDict_wl={k:v for k,v in zip(list(seq_majority_pd),list(seq_majority_pd_corrected))}

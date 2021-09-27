@@ -1,5 +1,6 @@
 from . import settingImporter
 from . import barcodeConverter
+from . import settingRequirementCheck
 import regex
 import pandas as pd
 import numpy as np
@@ -12,15 +13,22 @@ import datetime
 class settings_tag(object):
     def __init__(self,opt):
         self.opt=opt
+    
     def settingGetter(self):
         cfgPath=self.opt.config
         cfg_tag=settingImporter.readconfig(cfgPath)["tag"]
         cfg_tag=settingImporter.configClean(cfg_tag)
+
+        cfg_raw=settingImporter.readconfig(cfgPath)
+        cfg_raw={k:settingImporter.configClean(cfg_raw[k]) for k in cfg_raw}
+        cfg_raw=settingRequirementCheck.setDefaultConfig(cfg_raw)
+        cfg_value_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
+        
         self.exportReadStructure={}
         self.tags={}
         for i in cfg_tag:
             if i in ["READ1_STRUCTURE","READ2_STRUCTURE","INDEX1_STRUCTURE","INDEX2_STRUCTURE"] and cfg_tag.get(i):
-                self.exportReadStructure[i]=cfg_tag[i].split("+")
+                self.exportReadStructure[i]=[dict_to_terminal[x] for x in cfg_tag[i].split("+")]
             elif i in ["READ1_TAG","READ2_TAG","INDEX1_TAG","INDEX2_TAG"] and cfg_tag.get(i):
                 self.tags[i.split("_")[0]+"_STRUCTURE"]=cfg_tag[i].split(",")
             
@@ -55,11 +63,20 @@ class BARISTA_TAG(object):
             s_seq_chunk.columns=["Header"]+corrected_component_names
 
             for exportRead in self.settings.exportReadStructure:
-                tag_now=self.settings.tags[exportRead]
+                if exportRead in self.settings.tags:
+                    tag_now=self.settings.tags[exportRead]
+                else:
+                    tag_now=""
                 structure_now=self.settings.exportReadStructure[exportRead]
 
                 export_pd=pd.DataFrame()
-                export_pd["Header"]=s_seq_chunk["Header"].str.cat(s_seq_chunk[tag_now],sep="_")
+
+                #Deal with non-tag reads
+                if not tag_now=="":
+                    export_pd["Header"]=s_seq_chunk["Header"].str.cat(s_seq_chunk[tag_now],sep="_")
+                else:
+                    export_pd["Header"]=s_seq_chunk["Header"]
+
                 if len(structure_now)>1:
                     export_pd["seq"]=s_seq_chunk[structure_now[0]].str.cat(s_seq_chunk[structure_now[1:]],sep="")
                 else:

@@ -16,10 +16,10 @@ class settings_mergetree(object):
         cfg=settingImporter.readconfig(self.opt.config)
         cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
         cfg=settingRequirementCheck.setDefaultConfig(cfg)
-        cfg_value_ext=settingImporter.config_extract_value_ext(cfg)
+        cfg_value_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg)
         func_dict_ext=settingImporter.func_check(cfg_value_ext)
         cfg_value_trans = settingImporter.config_extract_value_trans(cfg)
-        func_dict=settingImporter.func_check_trans(cfg_value_trans)
+        func_dict=settingImporter.func_check_trans(cfg_value_trans,dict_to_terminal)
         self.child2parent_val=settingImporter.getAllocation(func_dict_ext,cfg_value_trans,cfg_value_ext)
         self.dest_segments=cfg_value_trans["dest_segment"]       
         self.value_segment=cfg_value_ext["value_segment"]
@@ -32,7 +32,7 @@ class settings_mergetree(object):
         self.outFilePath_and_Prefix=outdir+"/"+outname
         value_variables=[]
         for i in self.value_segment:
-            if "VALUE" in func_dict_ext[i]["func_ordered"]:
+            if "SEQ2VALUE" in func_dict_ext[i]["func_ordered"]:
                 value_variables.append(i)
         self.value_variables=value_variables
 

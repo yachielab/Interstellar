@@ -32,14 +32,15 @@ def checkRequiredFile(key,flist):
 
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,cfgpath):
     cfg=settingImporter.config_extract_value_tag(cfg_raw)
-    cfg_ext=settingImporter.config_extract_value_ext(cfg_raw)
+    cfg_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
     
     for key in cfg:
         if "READ1_STRUCTURE" in key or "READ2_STRUCTURE" in key or "INDEX1_STRUCTURE" in key or "INDEX2_STRUCTURE" in key:
-            dest_segments=cfg[key].split("+")
+            src_segments=cfg[key].split("+")
             if cfg[key]:
-                for i in dest_segments:
-                    if not i in cfg["available_seg"]:
+                for i in src_segments:
+                    terminal = dict_to_terminal[i]
+                    if not terminal in cfg["available_seg"]:
                         raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
 
 

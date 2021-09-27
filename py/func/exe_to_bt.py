@@ -14,7 +14,7 @@ class settings_to_bt(object):
         cfg=settingImporter.readconfig(self.opt.config)
         cfg={k:settingImporter.configClean(cfg[k]) for k in cfg}
         cfg=settingRequirementCheck.setDefaultConfig(cfg)
-        cfg_value_ext = settingImporter.config_extract_value_ext(cfg)
+        cfg_value_ext,dict_to_terminal = settingImporter.config_extract_value_ext(cfg)
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.func_dict=func_dict
         self.bt_targets=[func_dict[val]["BARTENDER"]["source"] for val in func_dict if "BARTENDER" in func_dict[val]]

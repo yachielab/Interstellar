@@ -49,7 +49,7 @@ def setDefaultConfig(cfg):
     cfg["general"]["PROJECT_NAME"]=tryAndFill(cfg,"general","PROJECT_NAME","Interstellar")
     cfg["general"]["PROJECT_DIR"] =tryAndFill(cfg,"general","PROJECT_DIR","",required=True,parse_home=True)
     cfg["general"]["SAMPLESHEET"] =tryAndFill(cfg,"general","SAMPLESHEET","")
-    cfg["general"]["TEMPLATE_SHELLSCRIPT"]=tryAndFill(cfg,"general","TEMPLATE_SHELLSCRIPT","",required=True,parse_home=True)
+    cfg["general"]["SET_SHELL_ENV"]=tryAndFill(cfg,"general","SET_SHELL_ENV","",required=True,parse_home=True)
     cfg["general"]["CHUNKSIZE"]   =tryAndFill(cfg,"general","CHUNKSIZE","2000000")
     
     #Section=value_extraction
@@ -99,8 +99,9 @@ def setDefaultConfig(cfg):
 
 def setDefaultQConfig(cfg):
     cfg["qsub"]["MEM_MAX"]=tryAndFill(cfg,"qsub","MEM_MAX","",required=True)
+    cfg["qsub"]["NUM_READS"]=tryAndFill(cfg,"qsub","NUM_READS","2000000")
     cfg["qsub"]["QOPTION"]=tryAndFill(cfg,"qsub","QOPTION","",required=True)
-    # cfg["qsub"]["TEMPLATE_SHELLSCRIPT"]=tryAndFill(cfg,"qsub","TEMPLATE_SHELLSCRIPT","",required=True)
+    # cfg["qsub"]["SET_SHELL_ENV"]=tryAndFill(cfg,"qsub","SET_SHELL_ENV","",required=True)
     cfg["qsub"]["MEM_RATIO"] =tryAndFill(cfg,"qsub","MEM_RATIO","0.05")
     cfg["qsub"]["mem_import"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
     cfg["qsub"]["mem_qc"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)

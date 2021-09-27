@@ -389,7 +389,7 @@ def sortCounter(counterDict):
 def buildReference(opt_now,seg_idx,info_dic,max_default=7000000): #n_each?
     func_now=opt_now["func_ordered"][0]
     if func_now=="WHITELIST_ASSIGNMENT":
-        with open(opt_now[func_now]["path"][seg_idx],mode="rt",encoding="utf-8") as f:
+        with open(opt_now[func_now]["whitelist_path"][seg_idx],mode="rt",encoding="utf-8") as f:
             reference_now=[regex.sub("\n","",i) for i in f]
             random.seed(0)
             random.shuffle(reference_now)
@@ -399,7 +399,7 @@ def buildReference(opt_now,seg_idx,info_dic,max_default=7000000): #n_each?
         if maxsize < max_default:
             maxsize=max_default
 
-        seqlength=int(opt_now[func_now]["length"][seg_idx])
+        seqlength=int(opt_now[func_now]["randseq_length"][seg_idx])
         reference_iter=it.product(*(["ATGC"]*seqlength))
         reference_now=[]
         for cnt,i in enumerate(reference_iter):
@@ -504,3 +504,37 @@ def get_reindex(query,d_component,tree):
         return None
     else:
         return reindex_dict[query]
+
+def build_SEQ2SEQ(conversion_table,dict_to_terminal,value_segment,ref_dict):
+    source_terminal_pool=[dict_to_terminal[i] for i in conversion_table.columns if i in dict_to_terminal]
+    table_src =[i for i in value_segment if i in list(conversion_table.columns)+source_terminal_pool]
+    table_dest=[i for i in conversion_table.columns if i not in value_segment]
+
+    print("source segment(s):",table_src)
+    print("destination segment(s):",table_dest)
+
+    conversion_table_src = conversion_table[sorted(table_src)]
+    conversion_table_dest= conversion_table[table_dest]
+
+    if len(table_src) > 1:
+        conversion_table_src = conversion_table_src[conversion_table_src.columns[0]].str.cat(conversion_table_src[conversion_table_src.columns[1:]],sep="_")
+    else:
+        conversion_table_src = conversion_table_src[conversion_table_src.columns[0]]
+
+    for dest in conversion_table_dest.columns:
+        ser = conversion_table_dest[dest]
+        for idx,srcseq in enumerate(conversion_table_src):
+            ref_dict[dest][srcseq]=ser[idx]
+        ref_dict[dest]["-"]="-"
+    
+    return ref_dict
+
+def SEQ2SEQ(seq,dest_seg,dic):
+    if "-" in seq:
+        return "-"
+    else:
+        return dic[dest_seg][seq]
+
+def toQscore(query):
+    baseQuality=round(sum(map(ord,query))/int(len(query)))
+    return baseQuality
