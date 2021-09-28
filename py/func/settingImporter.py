@@ -406,7 +406,7 @@ def func_check_trans(cfg,dict_to_terminal):
         #WHITELIST_ASSIGNMENT Correct option check
         # funcIllegalOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path","conversion_table"])
         funcIllegalOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path"])
-        # func_dict=funcSetDefault(val,func_dict,"WHITELIST_ASSIGNMENT",["conversion_table"],[""])
+        func_dict=funcSetDefault(val,func_dict,"WHITELIST_ASSIGNMENT",[""],[""])
         # if "WHITELIST_ASSIGNMENT" in func_dict[val] and func_dict[val]["WHITELIST_ASSIGNMENT"]["conversion_table"]=="":
         #     funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path"])
         # else:
