@@ -228,7 +228,7 @@ class SETUP(object):
                     if r in self.settings.read_valid and not self.settings.read_valid[r]=="":
                         input_read_files.append(glob.glob(self.settings.read_valid[r]+"/"+prefix+"*")[0])
                 
-                sh_cmd_list_template=["seqkit","split2","-s",str(self.settings.qcfg["qsub"]["NUM_READS"])]
+                sh_cmd_list_template=["seqkit","split2","-s",str(self.settings.qcfg["NUM_READS"])]
                 nfile_divmod=divmod(len(input_read_files),2)
                 fileindex=0
                 for n in range(nfile_divmod[0]):

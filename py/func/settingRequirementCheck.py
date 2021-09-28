@@ -115,7 +115,7 @@ def setDefaultQConfig(cfg):
     cfg["qsub"]["mem_export"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],3)
     cfg["qsub"]["mem_demultiplex"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
     cfg["qsub"]["mem_tag"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
-    return cfg
+    return cfg["qsub"]
 
 
 # def setDefaultFunc_ext(func_dict):
