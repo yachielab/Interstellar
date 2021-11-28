@@ -33,7 +33,7 @@ def checkRequiredFile(key,flist):
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,cfgpath):
     shell_template=cfg_raw["general"]["SET_SHELL_ENV"]
     cfg=settingImporter.config_extract_value_demulti(cfg_raw)
-    cfg_ext=settingImporter.config_extract_value_ext(cfg_raw)
+    cfg_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
     
     for key in cfg:
         if "READ1_STRUCTURE" in key or "READ2_STRUCTURE" in key or "INDEX1_STRUCTURE" in key or "INDEX2_STRUCTURE" in key:
@@ -43,7 +43,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     if not i in cfg["available_seg"]:
                         raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
 
-    print(cfg_ext)
     for segment in cfg["TARGET"].split(","):
         if not segment=="" and not segment in cfg_ext["value_segment"]:
             raise UnknownError("Segment "+segment+" is not defined in the config file.")
