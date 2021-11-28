@@ -43,6 +43,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     if not i in cfg["available_seg"]:
                         raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
 
+    print(cfg_ext["value_segment"])
     for segment in cfg["TARGET"].split(","):
         if not segment=="" and not segment in cfg_ext["value_segment"]:
             raise UnknownError("Segment "+segment+" is not defined in the config file.")
