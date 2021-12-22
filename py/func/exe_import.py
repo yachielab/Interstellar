@@ -62,7 +62,7 @@ class settings_import(object):
                 regerx_arg_list.append(pat)
         regerx_arg_list = sorted(regerx_arg_list)
 
-        for pat in regerx_arg_list:
+        for pat in cfg_value_ext:
             if regex.search("^READ1_STRUCTURE",pat):
                 regexDict["Read1_src"].append(cfg_value_ext[pat])
             elif regex.search("^READ2_STRUCTURE",pat):
@@ -96,6 +96,9 @@ class settings_import(object):
         #         patternDict[readKey]={k.split(":")[0]:int(k.split(":")[1]) for k in pat_now}
         #     self.patternDict=patternDict
         # else:
+
+        print(regexDict)
+        
         regexDictCompiled={}
         for readKey in regexDict:
             regexDictCompiled[readKey]=[regex.compile(i) for i in regexDict[readKey]]

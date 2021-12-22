@@ -205,7 +205,7 @@ Description
 
     * ``source``: Target segment name. If this argument is already specified at the upstream of >>, this is not required.
     * ``rank``: Method to determine the rank corresponding to the knee point in the rank-count plot. If ‘auto’ is specified, the knee point is automatically computed by kneed. A numerical value can also be provided to manually indicate the rank for the knee point. Default=auto.
-    * ``levenshtein_dist``: Maximum Levenshtein distance to correct the minority sequences to the nearest sequences in the majority sequence population. Default=1.
+    * ``levenshtein_distance``: Maximum Levenshtein distance to correct the minority sequences to the nearest sequences in the majority sequence population. Default=1.
 
   * ``WHITELIST_CORRECT()``
     
