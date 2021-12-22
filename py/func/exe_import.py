@@ -55,7 +55,14 @@ class settings_import(object):
         self.tmpdir=tmpdir
 
         regexDict=dict(Read1_src=[],Read2_src=[],Index1_src=[],Index2_src=[],merge_src=[])
+
+        regerx_arg_list=[]
         for pat in cfg_value_ext:
+            if regex.search(r"^READ1_STRUCTURE|^READ2_STRUCTURE|^INDEX1_STRUCTURE|^INDEX2_STRUCTURE|^READ_FLASH_STRUCTURE",pat):
+                regerx_arg_list.append(pat)
+        regerx_arg_list = sorted(regerx_arg_list)
+
+        for pat in regerx_arg_list:
             if regex.search("^READ1_STRUCTURE",pat):
                 regexDict["Read1_src"].append(cfg_value_ext[pat])
             elif regex.search("^READ2_STRUCTURE",pat):
