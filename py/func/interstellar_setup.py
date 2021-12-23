@@ -116,8 +116,11 @@ def job_wait(cmd,jid_now,outdir,njobs):
     status_ok=False
     print("Waiting for the jobs...:",cmd,flush=True)
     while not status_ok:
-        time.sleep(20)
         status_ok=jobCheck(jid_now,outdir,njobs)
+        if not status_ok:
+            break
+        time.sleep(20)
+        
     print("Jobs completed:",cmd,flush=True)
     return
 
