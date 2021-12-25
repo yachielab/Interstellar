@@ -72,7 +72,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         seq_majority=seqCountSummary["seq"][:kneepoint_idx]
         seq_minority=seqCountSummary["seq"][kneepoint_idx:analyzedPosition]
         seq_discarded=seqCountSummary["seq"][analyzedPosition:]
-        print("majority length",str(len(seq_majority)),flush=True)
+        print("Majority length",str(len(seq_majority)),flush=True)
 
         #store majority dictionary
         correctionDict_maj={}
@@ -129,7 +129,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         symspelldb.create_dictionary(correctOpt["WHITELIST_CORRECT"]["path"])
         print("Reference build done.",flush=True)
         seq_majority_pd=pd.Series(seq_majority)
-        print("correct...",flush=True)
+        print("Correct...",flush=True)
         t0=time.time()
         seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["WHITELIST_CORRECT"]["levenshtein_distance"],symspelldb,wlset))
         t1=time.time()
@@ -152,13 +152,13 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
 
     total_count=0
     t3=time.time()
-    print("make plotting data...",flush=True)
+    # print("make plotting data...",flush=True)
     rawSeqIndexDict={k:v for v,k in enumerate(seqCountSummary["seq"])}
     for i in correctionDict["correctionDict"]:
         if correctionDict["correctionDict"][i]!="-":
             total_count+=seqCountSummary["count"][rawSeqIndexDict[i]]
-    print("plotting data was made",round(time.time()-t3),flush=True)
-    print("plotting...\n",flush=True)
+    # print("plotting data was made",round(time.time()-t3),flush=True)
+    # print("plotting...\n",flush=True)
     fig=plt.figure()
     p1=fig.add_subplot(1,1,1)
     if "-" in seqCountSummary["seq"]:

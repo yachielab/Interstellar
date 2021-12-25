@@ -95,7 +95,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*") if re.search(file_endfix,i)]
         if is_qsub:
             mem_key="mem_buildTree"
-            print("Running qsub jobs...: buildTree",flush=True)
+            # print("Running qsub jobs...: buildTree",flush=True)
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
                 
             for f in file_pool:
@@ -104,7 +104,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 if s.returncode != 0:
-                    print("qsub failed: Building tree', file=sys.stderr")
+                    print("qsub failed: Building tree", file=sys.stderr)
                     sys.exit(1)
             njobdict[sampledir]=len(file_pool)
         else:
@@ -114,7 +114,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 cmd_now=" ".join(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 if s.returncode != 0:
-                    print("Job failed: Building tree', file=sys.stderr")
+                    print("Job failed: Building tree", file=sys.stderr)
                     sys.exit(1)
     if is_qsub:
         for sampledir in sampledir_list:
@@ -126,7 +126,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     cmd="mergeTree"    
     if is_qsub:
         mem_key="mem_mergeTree"
-        print("Running qsub jobs...: Merging trees",flush=True)
+        # print("Running qsub jobs...: Merging trees",flush=True)
         qoption=qcfg["QOPTION"]
         qoption=qoption.replace("<mem>",qcfg[mem_key])
         qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"],qoption]
@@ -136,7 +136,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         qcmd_now=" ".join(qcmd_now)
         s=subprocess.run(qcmd_now,shell=True)
         if s.returncode != 0:
-            print("qsub failed: Merging tree', file=sys.stderr")
+            print("qsub failed: Merging tree", file=sys.stderr)
             sys.exit(1)
         njob=1
     else:
@@ -145,7 +145,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         cmd_now=" ".join(cmd_now)
         s=subprocess.run(cmd_now,shell=True)
         if s.returncode != 0:
-            print("Job failed: Merging tree', file=sys.stderr")
+            print("Job failed: Merging tree", file=sys.stderr)
             sys.exit(1)
     if is_qsub:
         jid_now=cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"]
@@ -168,7 +168,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         
         if is_qsub:
             mem_key="mem_convert"
-            print("Running qsub jobs...: Value optimization",flush=True)
+            # print("Running qsub jobs...: Value optimization",flush=True)
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
                 
             for f in file_pool:
@@ -177,7 +177,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 if s.returncode != 0:
-                    print("qsub failed: Value optimization', file=sys.stderr")
+                    print("qsub failed: Value optimization", file=sys.stderr)
                     sys.exit(1)
             njobdict[sampledir]=len(file_pool)
         else:
@@ -187,7 +187,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 cmd_now=" ".join(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 if s.returncode != 0:
-                    print("Job failed: Value optimization', file=sys.stderr")
+                    print("Job failed: Value optimization", file=sys.stderr)
                     sys.exit(1)
     if is_qsub:
         for sampledir in sampledir_list:
@@ -198,7 +198,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
 
     if cfg["bc_sort"]:
         cmd="bc_sort"
-        print("Runnning qsub jobs...: bc_sort",flush=True)
+        # print("Runnning qsub jobs...: bc_sort",flush=True)
         mergetree=sampledir_list[0]+"/value_translation/_work/mergeTree/merge_mergeTree.pkl.gz"
         s2v=glob.glob(sampledir_list[0]+"/value_extraction/_work/mk_sval/*_sseq_to_svalue.pkl.gz")[0]
         njobs=0
@@ -220,14 +220,14 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 if s.returncode != 0:
-                    print("qsub failed: Barcode correspondence', file=sys.stderr")
+                    print("qsub failed: Barcode correspondence", file=sys.stderr)
                     sys.exit(1)
             else:
                 cmd_now=[sampledir_list[0]+"/sh/bc_sort.sh",outname_now,mergetree,s2v,tbl_now]
                 cmd_now=" ".join(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 if s.returncode != 0:
-                    print("Job failed: Barcode correspondence', file=sys.stderr")
+                    print("Job failed: Barcode correspondence", file=sys.stderr)
                     sys.exit(1)
         if is_qsub:
             for sampledir in sampledir_list:
@@ -277,7 +277,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 if s.returncode != 0:
-                    print("qsub failed: Export', file=sys.stderr")
+                    print("qsub failed: Export", file=sys.stderr)
                     sys.exit(1)
             else:
                 if cfg["bc_sort"]:
@@ -287,7 +287,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 cmd_now=" ".join(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 if s.returncode != 0:
-                    print("Job failed: Export', file=sys.stderr")
+                    print("Job failed: Export", file=sys.stderr)
                     sys.exit(1)
     if is_qsub:
         for sampledir in sampledir_list:
@@ -306,5 +306,5 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 cmd=" ".join(cmd)
                 s=subprocess.run(cmd,shell=True)
                 if s.returncode != 0:
-                    print("Job failed: Sequence export', file=sys.stderr")
+                    print("Job failed: Sequence export", file=sys.stderr)
                     sys.exit(1)

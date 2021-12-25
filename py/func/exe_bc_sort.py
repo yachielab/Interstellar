@@ -37,12 +37,11 @@ class BARISTA_BC_SORT(object):
 
         conversion_table=pd.read_csv(self.opt.table,sep="\t",header=0)
         source_terminal_pool=[dict_to_terminal[i] for i in conversion_table.columns if i in dict_to_terminal]
-        print(list(conversion_table.columns)+source_terminal_pool)
         table_src=[i for i in self.value_segment if i in list(conversion_table.columns)+source_terminal_pool]
         table_dest=[i for i in conversion_table.columns if i not in self.value_segment]
         # print("Warning: On the header line of the table, the barcode name included in the source reference file is regarded as ")
-        print("source barcode(s):",table_src)
-        print("destination barcode(s):",table_dest)
+        # print("source barcode(s):",table_src)
+        # print("destination barcode(s):",table_dest)
 
         self.conversion_table=conversion_table
         self.table_src=table_src

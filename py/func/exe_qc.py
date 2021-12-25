@@ -32,13 +32,10 @@ class BARISTA_QC(object):
     def __init__(self,settings):
         self.settings=settings
     def qualityCheck(self):
-        # print("Minimum base quality threshold:",self.settings.min_base_quality)
-        # print("Average base quality threshold:",self.settings.min_avg_quality)
         seq_raw=pd.read_csv(self.settings.seq, sep='\t',chunksize=1000000)
         seq_qual=pd.read_csv(self.settings.qual, sep="\t",chunksize=1000000)
         counterDict={}
         for n_chunk,seq_qual_zip in enumerate(zip(seq_raw,seq_qual)):
-            print("quality filtering for chunk",n_chunk)
             seq_chunk=seq_qual_zip[0]
             qual_chunk=seq_qual_zip[1]
             for component in self.settings.qc_targets:

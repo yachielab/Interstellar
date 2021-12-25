@@ -42,8 +42,6 @@ def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
 
 
 def sequenceGenerator(fq_path,settings,from_flash=False):
-    print(settings.input_fastq_gzipped)
-    print(fq_path)
     if settings.input_fastq_gzipped or from_flash:
         with gzip.open(fq_path,mode="rt") as input_file:
             for i in input_file:

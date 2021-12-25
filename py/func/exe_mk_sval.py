@@ -49,7 +49,6 @@ class BARISTA_MAKE_S(object):
             func_tmp=self.settings.correctOptDict[k]["func_ordered"][0]
             components_raw.append(self.settings.correctOptDict[k][func_tmp]["source"])
         self.components_raw=components_raw
-        print(components_raw)
         for cnt,parsedSeq_raw_df in enumerate(parsedSeq_raw_chunk):
             print("Making a sequence table for chunk",cnt,"...",flush=True)
             cols_ordered=["Header"]+[i for i in sorted(parsedSeq_raw_df.columns) if not i=="Header"]

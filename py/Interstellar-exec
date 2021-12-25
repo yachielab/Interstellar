@@ -50,24 +50,22 @@ if __name__=="__main__":
     opt=arg.getargs(cmd)
 
     if cmd == "import":
+        print("\nInterstellar import",flush=True)
         s=exe_import.settings_import(opt)
         s.settingGetter()
         baristaImport=exe_import.BARISTA_IMPORT(s)
         baristaImport.importFastq()
-        print("start read extraction...",flush=True)
         # if s.simple:
         #     print("\nextraction method: Simple extraction\n",flush=True)
         #     baristaImport.simple_extract()
         # else:
         baristaImport.extractComponents()
-        print("export extracted file...",flush=True)
         baristaImport.exportExtractedComponents()
 
     elif cmd=="qc":
         print("\nInterstellar qc",flush=True)
         s=exe_qc.settings_qc(opt)
         s.settingGetter()
-        print("start segment QC...",flush=True)
         obj_qc=exe_qc.BARISTA_QC(s)
         obj_qc.qualityCheck()
 

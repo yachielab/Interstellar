@@ -97,7 +97,6 @@ class settings_import(object):
         #     self.patternDict=patternDict
         # else:
 
-        print(regexDict)
         
         regexDictCompiled={}
         for readKey in regexDict:
@@ -185,7 +184,7 @@ class BARISTA_IMPORT(object):
         headerSplitRegex=regex.compile(r"[ |\t]+")
 
         for nread,readKey in enumerate(self.settings.src_readPathDict):
-            print(readKey,flush=True)
+            print("Extracting segments: "+readKey,flush=True)
             segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
             segment_parsed_set=set(segment_parsed)
             
@@ -340,6 +339,6 @@ class BARISTA_IMPORT(object):
                     f.close()
                 
         shutil.rmtree(self.tmpdir)
-        print("exporting count dictionary...",flush=True)
+        print("Exporting count dictionary...",flush=True)
         with gzip.open(self.settings.outFilePath_and_Prefix+"_srcCount.pkl.gz",mode="wb") as p:
             pickle.dump(self.counterDict,p)

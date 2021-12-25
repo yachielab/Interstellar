@@ -39,7 +39,6 @@ class BARISTA_TO_BT(object):
                 df_selected=df_tmp[self.settings.need_match].replace("-",np.nan)
                 df_selected=df_selected.dropna()
                 row_index_survive=list(df_selected.index)
-                print("Survived index",row_index_survive)
                 df_tmp=df_tmp.loc[row_index_survive]
 
             for bc in self.settings.bt_targets:
@@ -71,7 +70,6 @@ class BARISTA_TO_BT(object):
                 if not key=="source":
                     cmd+=[key,func_dict_bartender[bc][key]]
 
-            print(cmd)
 
             cmdline=" ".join(cmd)
             s=subprocess.run(cmdline,shell=True)

@@ -59,7 +59,7 @@ class BARISTA_DEMULTIPLEX(object):
         cnt_chunk=0
         key_iden_list=[]
         for s_seq_chunk,s_avg_qual_chunk,s_raw_qual_chunk in zip(s_seq,s_avg_qual,s_raw_qual):
-            print("start demultiplexing for chunk",cnt_chunk)
+            print("Start demultiplexing for chunk",cnt_chunk,flush=True)
             s_avg_qual_chunk=s_avg_qual_chunk.drop("Header",axis=1)
             s_raw_qual_chunk=s_raw_qual_chunk.drop("Header",axis=1)
 
@@ -67,9 +67,6 @@ class BARISTA_DEMULTIPLEX(object):
             raw_component_names=[i.split(":")[0] for i in colnames if not i=="Header"]
             corrected_component_names=[i.split(":")[1] for i in colnames if not i=="Header"]
             s_seq_chunk.columns=["Header"]+corrected_component_names       
-
-            print(s_seq_chunk.head())     
-            print(self.settings.target)
 
             if self.settings.export_tsv:
                 key_series=s_seq_chunk[self.settings.key].apply("_".join,axis=1)
@@ -137,7 +134,6 @@ class BARISTA_DEMULTIPLEX(object):
                         key_iden_list.append("_"+eachkey+"_"+readIden+".fastq.gz")
             cnt_chunk+=1
         key_iden_list=list(set(key_iden_list))
-        print(key_iden_list[:5])
         with open(self.settings.outFilePath_and_Prefix+"_demulti_key_list.txt",mode="wt") as w:
             for i in key_iden_list:
                 w.write(i+"\n")

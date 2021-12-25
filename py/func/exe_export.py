@@ -62,7 +62,7 @@ class BARISTA_EXPORT(object):
         self.settings=settings
 
     def generateReferences(self):
-        print("generating reference...",flush=True)
+        print("Generating reference...",flush=True)
         func_dict=self.settings.func_dict
         func_dict_cp=copy.deepcopy(func_dict)
         referenceDict=collections.defaultdict(list)
@@ -140,7 +140,7 @@ class BARISTA_EXPORT(object):
 
 
     def exportSequence(self):
-        print("exporting sequence...",flush=True)
+        print("Exporting sequence...",flush=True)
         
         func_dict=self.settings.func_dict
         funcdict_key_list=list(func_dict.keys())
@@ -162,7 +162,7 @@ class BARISTA_EXPORT(object):
 
 
             for read_now in export_read_exist:
-                print("start processing for",read_now,"and chunk",chunkCount,"...",flush=True)
+                print("Start processing ",read_now,"and chunk",chunkCount,"...",flush=True)
                 fastq_parse=pd.DataFrame()
                 fastq_parse["Header"]=s_seq_chunk["Header"]
                 fastq_parse["Third"]=["+"]*fastq_parse.shape[0]
@@ -228,7 +228,6 @@ class BARISTA_EXPORT(object):
 
                     elif func_now=="CONSTANT":
                         seq_export_tmp=[opt_now[func_now]["sequence"]]*d_val_chunk.shape[0]
-                        print(seq_export_tmp[:5])
                         length_now=len(opt_now[func_now]["sequence"])
                         baseQuality=30 #hard coded
                         const_quality=chr(baseQuality+33)*length_now
@@ -241,7 +240,7 @@ class BARISTA_EXPORT(object):
                     else:
                         fastq_parse["seq"]=fastq_parse["seq"].str.cat(seq_export_tmp,sep="")
                         fastq_parse["qual"]=fastq_parse["qual"].str.cat(qual_export_tmp,sep="")
-                    print("processing for",component,"end:",time.time()-t0,flush=True)
+                    # print("processing for",component,"end:",time.time()-t0,flush=True)
 
                 fastq_parse=fastq_parse.dropna(how="any")
                 survived_idx=fastq_parse.index
@@ -264,7 +263,7 @@ class BARISTA_EXPORT(object):
                 else:
                     barcode_correspondence.to_csv(self.settings.outFilePath_and_Prefix+"_bclist.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
               
-            print("merging fastq...",flush=True)
+            print("Merging fastq...",flush=True)
             merged_idx=set()
             for c,key in enumerate(survived_idx_dict):
                 if c==0:
@@ -274,7 +273,6 @@ class BARISTA_EXPORT(object):
             merged_idx=sorted(list(merged_idx))
 
             for read_now in export_read_exist:
-                print(read_now)
                 if read_now=="READ1_STRUCTURE":
                     read_now_out="R1"
                 elif read_now=="READ2_STRUCTURE":
@@ -290,14 +288,14 @@ class BARISTA_EXPORT(object):
                 fastq_parse=fastq_parse.stack()
                 fastq_parse=fastq_parse.reset_index()
                 fastq_parse=pd.DataFrame(fastq_parse[0])
-                print(read_now_out,"exporting...")
+                # print(read_now_out,"exporting...")
 
                 if chunkCount==0:
                     fastq_parse.to_csv(self.settings.outFilePath_and_Prefix+"_"+read_now_out+".fastq.gz",mode="w",compression="gzip",sep="\t",index=False,header=False)
                 else:
                     fastq_parse.to_csv(self.settings.outFilePath_and_Prefix+"_"+read_now_out+".fastq.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
             chunkCount+=1
-            print("\n")
+            # print("\n")
 
         for read_now in export_read_exist:
             os.remove(self.settings.outFilePath_and_Prefix+read_now+"tmp.pkl")

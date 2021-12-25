@@ -99,7 +99,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     
 
     #merging files
-    print("Merging files...")
+    print("Merging files...",flush=True)
     njobdict=dict()
     for sampledir in sampledir_list:
         demulti_dirs=glob.glob(sampledir+"/demultiplex/_work/*")

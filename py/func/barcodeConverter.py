@@ -510,8 +510,8 @@ def build_SEQ2SEQ(conversion_table,dict_to_terminal,value_segment,ref_dict):
     table_src =[i for i in value_segment if i in list(conversion_table.columns)+source_terminal_pool]
     table_dest=[i for i in conversion_table.columns if i not in value_segment]
 
-    print("source segment(s):",table_src)
-    print("destination segment(s):",table_dest)
+    print("Source segment(s):",table_src)
+    print("Destination segment(s):",table_dest)
 
     conversion_table_src = conversion_table[sorted(table_src)]
     conversion_table_dest= conversion_table[table_dest]

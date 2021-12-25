@@ -49,7 +49,6 @@ class BARISTA_TAG(object):
 
         cnt_chunk=0
         for s_seq_chunk,s_avg_qual_chunk,s_raw_qual_chunk in zip(s_seq,s_avg_qual,s_raw_qual):
-            print("chunk",cnt_chunk)
             s_avg_qual_chunk=s_avg_qual_chunk.drop("Header",axis=1)
             s_raw_qual_chunk=s_raw_qual_chunk.drop("Header",axis=1)
             s_avg_qual_chunk=s_avg_qual_chunk.astype("int8")

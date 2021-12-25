@@ -47,11 +47,9 @@ class BARISTA_CORRECT(object):
     def importExtractedComponents(self):
         counterDict_pileup=collections.defaultdict(lambda: collections.Counter())
         for i in self.settings.importPkl:
-            print("start unzip",flush=True)
-            print(i)
+            print("Merging file: "+i,flush=True)
             with gzip.open(i,mode="rb") as p:
                 counter_tmp=pickle.load(p)
-            print("start pileup",flush=True)
             for component in counter_tmp:
                 counterDict_pileup[component].update(counter_tmp[component])
         counterDict=dict(counterDict_pileup)   

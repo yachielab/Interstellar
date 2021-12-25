@@ -79,7 +79,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
                 if s.returncode != 0:
-                    print("qsub failed: import', file=sys.stderr")
+                    print("qsub failed: import", file=sys.stderr)
                     sys.exit(1)
             njobdict[sampledir]=len(file_pool[0])
         else:
@@ -107,7 +107,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 s=subprocess.run(cmd_now,shell=True)
                 used_commands.append(cmd_now)
                 if s.returncode != 0:
-                    print("script failed: import', file=sys.stderr")
+                    print("script failed: import", file=sys.stderr)
                     sys.exit(1)
     if is_qsub:
         for sampledir in sampledir_list:
@@ -132,7 +132,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                     s=subprocess.run(qcmd_now,shell=True)
                     used_commands.append(qcmd_now)
                     if s.returncode != 0:
-                        print("qsub failed: Quality filtering', file=sys.stderr")
+                        print("qsub failed: Quality filtering", file=sys.stderr)
                         sys.exit(1)
                 njobdict[sampledir]=len(file_pool)
             else:
@@ -144,7 +144,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                     s=subprocess.run(cmd_now,shell=True)
                     used_commands.append(cmd_now)
                     if s.returncode != 0:
-                        print("Job failed: Quality filtering', file=sys.stderr")
+                        print("Job failed: Quality filtering", file=sys.stderr)
                         sys.exit(1)
                 
         if is_qsub:
@@ -172,7 +172,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
                 if s.returncode != 0:
-                    print("qsub failed: Bartender', file=sys.stderr")
+                    print("qsub failed: Bartender", file=sys.stderr)
                     sys.exit(1)
             else:
                 is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
@@ -185,7 +185,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 s=subprocess.run(cmd_now,shell=True)
                 used_commands.append(cmd_now)
                 if s.returncode != 0:
-                    print("Job: Bartender', file=sys.stderr")
+                    print("Job: Bartender", file=sys.stderr)
                     sys.exit(1)
         if is_qsub:    
             njobs=1
@@ -212,7 +212,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             s=subprocess.run(qcmd_now,shell=True)
             used_commands.append(qcmd_now)
             if s.returncode != 0:
-                print("qsub failed: Sequence error correction', file=sys.stderr")
+                print("qsub failed: Sequence error correction", file=sys.stderr)
                 sys.exit(1)
         else:
             is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
@@ -225,7 +225,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             s=subprocess.run(cmd_now,shell=True)
             used_commands.append(cmd_now)
             if s.returncode != 0:
-                print("Job: Sequence error correction', file=sys.stderr")
+                print("Job failed: Sequence error correction", file=sys.stderr)
                 sys.exit(1)
     if is_qsub:    
         njobs=1
@@ -259,7 +259,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
                 if s.returncode != 0:
-                    print("qsub failed: Sequence to value conversion', file=sys.stderr")
+                    print("qsub failed: Sequence to value conversion", file=sys.stderr)
                     sys.exit(1)
 
             njobdict[sampledir]=len(file_pool)
@@ -279,7 +279,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 s=subprocess.run(cmd_now,shell=True)
                 used_commands.append(cmd_now)
                 if s.returncode != 0:
-                    print("Job failed: Sequence to value conversion', file=sys.stderr")
+                    print("Job failed: Sequence to value conversion", file=sys.stderr)
                     sys.exit(1)
     if is_qsub:
         for sampledir in sampledir_list:
@@ -289,7 +289,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
     
 
     #Generating a samplesheet
-    print(is_multisample)
     if is_multisample:
         valuefile_list=[]
         for sampledir in sampledir_list:
@@ -319,5 +318,5 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 for cmd in [cmd1,cmd2,cmd3,cmd4]:
                     s=subprocess.run(cmd,shell=True)
                     if s.returncode != 0:
-                        print("Job failed: Tagged file merge', file=sys.stderr")
+                        print("Job failed: Tagged file merge", file=sys.stderr)
                         sys.exit(1)
