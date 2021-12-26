@@ -157,6 +157,14 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     njobdict=dict()
     if is_multisample:
         mergetree_dir=proj_dir+"/_multisample/mergeTree"
+
+        for i in sampledir_list:
+            print(i)
+            print(mergetree_dir+"/merge_"+os.path.basename(i)+"_mergeTree.pkl.gz")
+            print(glob.glob(mergetree_dir+"/merge_"+os.path.basename(i)+"_mergeTree.pkl.gz"))
+            print("##")
+
+
         sampledir_to_mergetree={k:glob.glob(mergetree_dir+"/merge_"+os.path.basename(k)+"_mergeTree.pkl.gz")[0] for k in sampledir_list}
     else:
         sampledir_to_mergetree={k:k+"/value_translation/_work/mergeTree/merge_mergeTree.pkl.gz" for k in sampledir_list}
