@@ -36,6 +36,7 @@ def getOpt():
 
 if __name__=="__main__":
     opt=getOpt()
+    print("aaa")
     print("Interstellar 1.0",flush=True)
 
     # read config file
