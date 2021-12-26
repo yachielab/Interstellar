@@ -36,9 +36,7 @@ def getOpt():
 
 if __name__=="__main__":
     opt=getOpt()
-    print("aaa")
-    print("Interstellar 1.0")
-    print("bbb")
+    print("Interstellar 1.0",flush=True)
 
     # read config file
     print(opt.config)
@@ -62,13 +60,10 @@ if __name__=="__main__":
             if not "value_extraction" in cmds:
                 raise KeyError("The section 'value_extraction' is required to execute"+cmd)
 
-    print("Start loading config")
 
-    
     #Filling default values into the config file
     cfg=settingRequirementCheck.setDefaultConfig(cfg)
 
-    print("Config loaded.")
 
 
     # Multi-sample?
@@ -84,7 +79,6 @@ if __name__=="__main__":
     proj_dir=os.path.expanduser(cfg["general"]["PROJECT_DIR"])
     sampledir_list=settingImporter.genSampleDir(proj_dir,samplesheet)
 
-    print(sampledir_list)
 
 
     # identify qsub or not
@@ -120,7 +114,7 @@ if __name__=="__main__":
         if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
             setup_obj.fastq_split()
 
-    print("set up done")
+    print("set up done",flush=True)
 
     # fastq split job monitoring
     if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:

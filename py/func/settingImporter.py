@@ -14,7 +14,6 @@ import copy
 
 
 def readconfig(input_cfg):
-    print("hoge")
     cfg=configparser.ConfigParser()
     cfg.optionxform = str
     cfg.read(input_cfg)
