@@ -130,7 +130,7 @@ if __name__=="__main__":
         with open(proj_dir+"/_flg/_valueextraction",mode="wt") as w:
             w.write("")
 
-    print("value translation")
+    print("value translation",flush=True)
 
     # value translation
     flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
