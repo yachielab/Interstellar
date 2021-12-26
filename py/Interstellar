@@ -39,12 +39,10 @@ if __name__=="__main__":
     print("Interstellar 1.0",flush=True)
 
     # read config file
-    print(opt.config)
     cfg=settingImporter.readconfig(opt.config)
     cfg={k:settingImporter.configClean(cfg[k]) for k in cfg if k in ["general","value_extraction","value_translation","tag","demultiplex"]}
     cmds=list(cfg.keys())
 
-    print(cmds)
 
     if not "general" in cmds:
         raise KeyError("The section 'general' is required.")
