@@ -86,7 +86,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     if not i in cfg["available_seg"]:
                         raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
 
-    
+    print("starting...")
 
     cmd="buildTree"
     njobdict=dict()
