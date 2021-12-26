@@ -43,6 +43,8 @@ if __name__=="__main__":
     cfg={k:settingImporter.configClean(cfg[k]) for k in cfg if k in ["general","value_extraction","value_translation","tag","demultiplex"]}
     cmds=list(cfg.keys())
 
+    print(cmds)
+
     if not "general" in cmds:
         raise KeyError("The section 'general' is required.")
     for cmd in cmds:
@@ -56,6 +58,8 @@ if __name__=="__main__":
         if cmd=="value_translation" or cmd=="tag" or cmd=="demultiplex":
             if not "value_extraction" in cmds:
                 raise KeyError("The section 'value_extraction' is required to execute"+cmd)
+
+    print("Start loading config")
 
     
     #Filling default values into the config file
