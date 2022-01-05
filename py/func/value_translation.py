@@ -86,8 +86,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     if not i in cfg["available_seg"]:
                         raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
 
-    print("starting...",flush=True)
-
     cmd="buildTree"
     njobdict=dict()
     for sampledir in sampledir_list:
@@ -158,11 +156,11 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     if is_multisample:
         mergetree_dir=proj_dir+"/_multisample/mergeTree"
 
-        for i in sampledir_list:
-            print(i,flush=True)
-            print(mergetree_dir+"/merge_"+os.path.basename(i)+"_mergeTree.pkl.gz",flush=True)
-            print(glob.glob(mergetree_dir+"/merge_"+os.path.basename(i)+"_mergeTree.pkl.gz"),flush=True)
-            print("##",flush=True)
+        # for i in sampledir_list:
+        #     print(i,flush=True)
+        #     print(mergetree_dir+"/merge_"+os.path.basename(i)+"_mergeTree.pkl.gz",flush=True)
+        #     print(glob.glob(mergetree_dir+"/merge_"+os.path.basename(i)+"_mergeTree.pkl.gz"),flush=True)
+        #     print("##",flush=True)
 
 
         sampledir_to_mergetree={k:glob.glob(mergetree_dir+"/merge_"+os.path.basename(k)+"_mergeTree.pkl.gz")[0] for k in sampledir_list}

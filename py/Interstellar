@@ -112,7 +112,6 @@ if __name__=="__main__":
         if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
             setup_obj.fastq_split()
 
-    print("set up done",flush=True)
 
     # fastq split job monitoring
     if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
@@ -128,7 +127,6 @@ if __name__=="__main__":
         with open(proj_dir+"/_flg/_valueextraction",mode="wt") as w:
             w.write("")
 
-    print("value translation",flush=True)
 
     # value translation
     flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
@@ -151,5 +149,5 @@ if __name__=="__main__":
         with open(proj_dir+"/_flg/_tag",mode="wt") as w:
             w.write("")
 
-    # print("DONE!",flush=True)
+    print("DONE!",flush=True)
 
