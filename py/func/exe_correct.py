@@ -24,10 +24,11 @@ class settings_correct(object):
         self.correctOptDict=func_dict
         self.corrected_components=cfg_value_ext["value_segment"]
         
-        if type(self.opt.pickle)==list:
+        if "*" in self.opt.pickle[0]:
+            self.importPkl=glob.glob(self.opt.pickle[0])
+        else:
             self.importPkl=self.opt.pickle
-        elif type(self.opt.pickle)==str and "*" in self.opt.pickle:
-            self.importPkl=glob.glob(self.opt.pickle)
+            
         # correctOptDict={}
         # for i in self.corrected_components:
         #    correctOption_now=cfg_correct[i]
