@@ -9,6 +9,7 @@ import csv
 import pandas as pd
 import os
 import re
+import glob
 
 
 class settings_correct(object):
@@ -22,7 +23,11 @@ class settings_correct(object):
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.correctOptDict=func_dict
         self.corrected_components=cfg_value_ext["value_segment"]
-        self.importPkl=self.opt.pickle
+        
+        if type(self.opt.pickle)==list:
+            self.importPkl=self.opt.pickle
+        elif type(self.opt.pickle)==str and "*" in self.opt.pickle:
+            self.importPkl=glob.glob(self.opt.pickle)
         # correctOptDict={}
         # for i in self.corrected_components:
         #    correctOption_now=cfg_correct[i]
