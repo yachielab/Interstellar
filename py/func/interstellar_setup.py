@@ -104,7 +104,6 @@ def jobCheck(jid,outdir,n_jobs):
         print("streamline: job check failed.', file=sys.stderr")
         sys.exit(1)
     # os.remove(outdir+"/qlog.tmp")
-    print(jid,outdir,stat_table.shape[0])
     
     if sum(stat_table[1])>0:
         raise UnknownError("qsub failed.")
@@ -118,9 +117,8 @@ def job_wait(cmd,jid_now,outdir,njobs):
     status_ok=False
     print("Waiting for the jobs...:",cmd,flush=True)
     while not status_ok:
-        print(cmd,jid_now,status_ok)
         status_ok=jobCheck(jid_now,outdir,njobs)
-        if not status_ok:
+        if status_ok:
             break
         time.sleep(20)
         
