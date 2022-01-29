@@ -104,6 +104,8 @@ def jobCheck(jid,outdir,n_jobs):
         print("streamline: job check failed.', file=sys.stderr")
         sys.exit(1)
     # os.remove(outdir+"/qlog.tmp")
+    print(jid,outdir,stat_table.shape[0])
+    
     if sum(stat_table[1])>0:
         raise UnknownError("qsub failed.")
     elif stat_table.shape[0]==2*n_jobs:
