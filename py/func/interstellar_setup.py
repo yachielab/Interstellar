@@ -95,7 +95,7 @@ def generateShellTemplate(template,cmdline,shelloutdir,shelloutname):
 
 
 def jobCheck(jid,outdir,n_jobs):
-    s=subprocess.run("qacct -d 7 -j "+jid+" 2> /dev/null | grep -E 'failed|exit_status' > "+outdir+"/qlog.tmp",shell=True)
+    s=subprocess.run("qacct -j "+jid+" 2> /dev/null | grep -E 'failed|exit_status' > "+outdir+"/qlog.tmp",shell=True)
     if os.path.getsize(outdir+"/qlog.tmp")==0:
         return False
 
