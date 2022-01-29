@@ -109,10 +109,8 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 if s.returncode != 0:
                     print("script failed: import", file=sys.stderr)
                     sys.exit(1)
-    print(is_qsub)
     if is_qsub:
         for sampledir in sampledir_list:
-            print("import, qsubcheck",sampledir)
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Read segmentation",jid_now,sampledir+"/qlog",njobdict[sampledir])
     
