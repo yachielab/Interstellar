@@ -229,7 +229,7 @@ class BARISTA_EXPORT(object):
                     elif func_now=="CONSTANT":
                         seq_export_tmp=[opt_now[func_now]["sequence"]]*d_val_chunk.shape[0]
                         length_now=len(opt_now[func_now]["sequence"])
-                        baseQuality=32 #hard coded
+                        baseQuality=40 #hard coded
                         const_quality=chr(baseQuality+33)*length_now
                         qual_export_tmp=[const_quality]*d_val_chunk.shape[0]
                         

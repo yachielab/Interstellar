@@ -1,6 +1,7 @@
 from . import settingImporter
 from . import barcodeCorrecter
 from . import settingRequirementCheck
+from . import interstellar_setup
 import regex
 import collections
 import gzip
@@ -10,6 +11,8 @@ import pandas as pd
 import os
 import re
 import glob
+import subprocess
+import sys
 
 
 class settings_correct(object):
@@ -28,7 +31,7 @@ class settings_correct(object):
             self.importPkl=glob.glob(self.opt.pickle[0])
         else:
             self.importPkl=self.opt.pickle
-            
+
         # correctOptDict={}
         # for i in self.corrected_components:
         #    correctOption_now=cfg_correct[i]
@@ -71,14 +74,48 @@ class BARISTA_CORRECT(object):
         corresponding_key=list(correspondicgDict.keys())
         corresponding_val=list(correspondicgDict.values())
         correctionDictionaries={}
-        # correctedQualDict={}
+
+        #Setup custom corection
+        is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/qc/*"))
+        custom_correction_segments=list()
         for rawSegment in self.counterDict:
             if rawSegment not in corresponding_val:
                 continue
             correctedComponent=corresponding_key[corresponding_val.index(rawSegment)]
             correctOpt=self.settings.correctOptDict[correctedComponent]
             #component_raw_corresponding=correctOpt["src_raw_components"]
-            if "BARTENDER" in correctOpt["func_ordered"]:
+            if "CUSTOM_CORRECTION" in correctOpt["func_ordered"]:
+                custom_correction_segments.append(rawSegment)
+        src_seq_paths=glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/qc/*_srcSeq.QC.tsv.gz")
+        barcodeCorrecter.custom_correction_setup(custom_correction_segments,self.settings.outdir,src_seq_paths)
+
+        #Correction        
+        for rawSegment in self.counterDict:
+            if rawSegment not in corresponding_val:
+                continue
+            correctedComponent=corresponding_key[corresponding_val.index(rawSegment)]
+            correctOpt=self.settings.correctOptDict[correctedComponent]
+            if "CUSTOM_CORRECTION" in correctOpt["func_ordered"]:
+                
+                input_filename=self.settings.outdir+"/custom"+"_"+rawSegment+".input.csv"
+                output_filename=self.settings.outdir+"/custom"+"_"+rawSegment+".output.csv"
+                cmd=["bash",correctOpt["CUSTOM_CORRECTION"]["shell_script"],input_filename,output_filename]
+                cmdline=" ".join(cmd)
+                s=subprocess.run(cmdline,shell=True)
+                if s.returncode != 0:
+                    print("Custom correction failed', file=sys.stderr")
+                    sys.exit(1)
+
+                correctionDictionaries[correctedComponent]={}
+                df_corrected = pd.read_csv(output_filename,header=None,sep="\t")
+                counter_dict=collections.Counter(df_corrected[1])
+                correctionDictionaries[correctedComponent]["reference"]=sorted(counter_dict.keys(),key=counter_dict.__getitem__,reverse=True)
+                correctionDictionaries[correctedComponent]["correctionDict"]=barcodeCorrecter.gen_custom_dict(df_corrected)
+
+                print("ACCCCCAGAGCA")
+                print(correctionDictionaries[correctedComponent]["correctionDict"]["ACCCCCAGAGCA"])
+
+            elif "BARTENDER_CORRECTION" in correctOpt["func_ordered"]:
                 bartender_path=os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/to_bt/to_bt"+"_"+rawSegment+"_bartender"
                 correctionDictionaries[correctedComponent]={}
                 bc_file=bartender_path+"_barcode.csv"
@@ -86,9 +123,11 @@ class BARISTA_CORRECT(object):
                 df_clstr=pd.read_csv(clstr_file)
                 correctionDictionaries[correctedComponent]["reference"]=list(df_clstr["Center"])
                 correctionDictionaries[correctedComponent]["correctionDict"]=barcodeCorrecter.gen_bt_dict(bc_file,clstr_file)
-            elif "KNEE_CORRECT" in correctOpt["func_ordered"] or "WHITELIST_CORRECT" in correctOpt["func_ordered"]:
+
+            elif "I2M_CORRECTION" in correctOpt["func_ordered"] or "M2A_CORRECTION" in correctOpt["func_ordered"]:
                 correctedTables=barcodeCorrecter.bcCorrect(correctOpt,self.counterDict,self.settings.yaxis_scale,self.settings.show_summary,self.settings.outFilePath_and_Prefix)
                 correctionDictionaries[correctedComponent]=correctedTables
+            
             else:
                 correctionDictionaries[correctedComponent]={}
                 correctionDictionaries[correctedComponent]["reference"]=list(self.counterDict[rawSegment].keys())

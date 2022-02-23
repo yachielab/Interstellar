@@ -193,13 +193,13 @@ def funcSetDefault(val,func_dict,funcname,option_list,default_list,opt_int=[]):
             except:
                 func_dict[val][funcname][opt]=default_list[n]
 
-        if funcname=="WHITELIST_CORRECT":
+        if funcname=="M2A_CORRECTION":
             func_dict[val][funcname]["path"]=os.path.expanduser(func_dict[val][funcname]["path"])
         elif funcname=="SEQ2SEQ":
             func_dict[val][funcname]["conversion_table"]=os.path.expanduser(func_dict[val][funcname]["conversion_table"])
         elif funcname=="WHITELIST_ASSIGNMENT":
-            if "whitelist_path" in func_dict[val][funcname]:
-                func_dict[val][funcname]["whitelist_path"]=list(map(os.path.expanduser,func_dict[val][funcname]["whitelist_path"]))
+            if "allowlist_path" in func_dict[val][funcname]:
+                func_dict[val][funcname]["allowlist_path"]=list(map(os.path.expanduser,func_dict[val][funcname]["allowlist_path"]))
             # func_dict[val][funcname]["conversion_table"]=os.path.expanduser(func_dict[val][funcname]["conversion_table"])
 
         for i in opt_int:
@@ -241,7 +241,7 @@ def func_parse(func_line,func_collection,dest=False,dict_to_terminal=""):
                 if opt=="source" and len(i.split(":"))==1:
                     dict_out["source"].append(dict_to_terminal[i]) #translate the given source segment name into terminal source name
 
-                elif (opt=="whitelist_path" or opt=="randseq_length") and len(i.split(":"))==1:
+                elif (opt=="allowlist_path" or opt=="randseq_pattern") and len(i.split(":"))==1:
                     dict_out[opt].append(i)
 
                 else:
@@ -249,7 +249,7 @@ def func_parse(func_line,func_collection,dest=False,dict_to_terminal=""):
                     val=i.split(":")[1] 
                     if opt=="source":
                         dict_out[opt]=[dict_to_terminal[val]] #translate the given source segment name into terminal source name
-                    elif opt=="whitelist_path" or opt=="randseq_length":
+                    elif opt=="allowlist_path" or opt=="randseq_pattern":
                         dict_out[opt]=[val]
                     else:
                         dict_out[opt]=val
@@ -258,10 +258,10 @@ def func_parse(func_line,func_collection,dest=False,dict_to_terminal=""):
                     dict_out["source"]=sorted(dict_out["source"])
             # Convert VALUE2SEQ into WHITELIST or RANDSEQ
             if funcname=="VALUE2SEQ":
-                # if dict_out.get("whitelist_path") or dict_out.get("conversion_table"):
-                if dict_out.get("whitelist_path"):
+                # if dict_out.get("allowlist_path") or dict_out.get("conversion_table"):
+                if dict_out.get("allowlist_path"):
                     funcname="WHITELIST_ASSIGNMENT"
-                elif dict_out.get("randseq_length"):
+                elif dict_out.get("randseq_pattern"):
                     funcname="RANDSEQ_ASSIGNMENT"
                 else:
                     # raise KeyError("Whitelist path, sequence conversion table or random sequence length are required.")
@@ -275,7 +275,7 @@ def func_parse(func_line,func_collection,dest=False,dict_to_terminal=""):
 
 
 def parse_function_value_ext(cfg):
-    func_collection=["QUALITY_FILTER","PASS","KNEE_CORRECT","WHITELIST_CORRECT","BARTENDER","SEQ2VALUE"]
+    func_collection=["QUALITY_FILTER","PASS","I2M_CORRECTION","M2A_CORRECTION","BARTENDER_CORRECTION","CUSTOM_CORRECTION","SEQ2VALUE"]
     value_names=cfg["value_segment"]
     func_dict=dict()
     for val in value_names:
@@ -315,25 +315,31 @@ def func_check(cfg):
 
         #Order check
         if "PASS" in func_oredered and len(func_oredered)>1:
-            raise ArgumentError("Functions PASS cannot be performed with other functions.")      
-        if ("BARTENDER" in func_oredered and "KNEE_CORRECT" in func_oredered) or ("BARTENDER" in func_oredered and "WHITELIST_CORRECT" in func_oredered):
-            raise ArgumentError("Functions BARTENDER cannot be performed with KNEE_CORRECT or WHITELIST_CORRECT.")
+            raise ArgumentError("Function PASS cannot be performed with other functions.")      
+        if ("BARTENDER_CORRECTION" in func_oredered) and ("I2M_CORRECTION" in func_oredered or "M2A_CORRECTION" in func_oredered or "CUSTOM_CORRECTION" in func_oredered):
+            raise ArgumentError("Function BARTENDER_CORRECTION cannot be performed with other correction functions.")
+        if ("CUSTOM_CORRECTION" in func_oredered) and ("I2M_CORRECTION" in func_oredered or "M2A_CORRECTION" in func_oredered or "BARTENDER_CORRECTION" in func_oredered):
+            raise ArgumentError("Function CUSTOM_CORRECTION cannot be performed with other correction functions.")
 
         #QUALITY_FILTER Correct option check
         funcIllegalOptionCheck(val,func_dict,"QUALITY_FILTER",["source","min_nucleotide_Q-score","min_avg_Q-score"])
         func_dict=funcSetDefault(val,func_dict,"QUALITY_FILTER",["min_nucleotide_Q-score","min_avg_Q-score"],[5,20],opt_int=["min_nucleotide_Q-score","min_avg_Q-score"])
 
         #KNEE Correct option check
-        funcIllegalOptionCheck(val,func_dict,"KNEE_CORRECT",["source","rank","levenshtein_distance"])
-        func_dict=funcSetDefault(val,func_dict,"KNEE_CORRECT",["rank","levenshtein_distance"],["auto",1],opt_int=["levenshtein_distance"])
+        funcIllegalOptionCheck(val,func_dict,"I2M_CORRECTION",["source","rank","levenshtein_distance"])
+        func_dict=funcSetDefault(val,func_dict,"I2M_CORRECTION",["rank","levenshtein_distance"],["auto",1],opt_int=["levenshtein_distance"])
 
         #WHITELIST Correct option check
-        funcIllegalOptionCheck(val,func_dict,"WHITELIST_CORRECT",["source","path","levenshtein_distance"])
-        funcRequiredOptionCheck(val,func_dict,"WHITELIST_CORRECT",["path"])
-        func_dict=funcSetDefault(val,func_dict,"WHITELIST_CORRECT",["levenshtein_distance"],[1],opt_int=["levenshtein_distance"])
+        funcIllegalOptionCheck(val,func_dict,"M2A_CORRECTION",["source","path","levenshtein_distance"])
+        funcRequiredOptionCheck(val,func_dict,"M2A_CORRECTION",["path"])
+        func_dict=funcSetDefault(val,func_dict,"M2A_CORRECTION",["levenshtein_distance"],[1],opt_int=["levenshtein_distance"])
 
         #Bartender option check
-        funcIllegalOptionCheck(val,func_dict,"BARTENDER",["source","-c","-d","-l","-z","-s"])
+        funcIllegalOptionCheck(val,func_dict,"BARTENDER_CORRECTION",["source","-c","-d","-l","-z","-s"])
+
+        #CUSTOM_CORRECTION option check
+        funcIllegalOptionCheck(val,func_dict,"CUSTOM_CORRECTION",["source","shell_script"])
+        funcRequiredOptionCheck(val,func_dict,"CUSTOM_CORRECTION",["shell_script"])
 
         #SEQ2VALUE option check
         funcIllegalOptionCheck(val,func_dict,"SEQ2VALUE",["source"])
@@ -344,7 +350,7 @@ def func_check(cfg):
         func_dict=funcSetDefault(val,func_dict,"PASS",["length"],[0],opt_int=["length"])
 
         #Values
-        if "SEQ2VALUE" in func_oredered or "KNEE_CORRECT" in func_oredered or "WHITELIST_CORRECT" in func_oredered or "BARTENDER" in func_oredered:
+        if ("SEQ2VALUE" in func_oredered) or ("I2M_CORRECTION" in func_oredered) or ("M2A_CORRECTION" in func_oredered) or ("BARTENDER_CORRECTION" in func_oredered) or ("CUSTOM_CORRECTION" in func_oredered):
             barcode_list.append(segment_now[0])
         for func in func_dict[val]:
             if not func=="func_ordered":
@@ -404,23 +410,23 @@ def func_check_trans(cfg,dict_to_terminal):
         #         segment_now+=content_dict["source"]
         
         #WHITELIST_ASSIGNMENT Correct option check
-        # funcIllegalOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path","conversion_table"])
-        funcIllegalOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path"])
+        # funcIllegalOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","allowlist_path","conversion_table"])
+        funcIllegalOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","allowlist_path"])
         func_dict=funcSetDefault(val,func_dict,"WHITELIST_ASSIGNMENT",[""],[""])
         # if "WHITELIST_ASSIGNMENT" in func_dict[val] and func_dict[val]["WHITELIST_ASSIGNMENT"]["conversion_table"]=="":
-        #     funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path"])
+        #     funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","allowlist_path"])
         # else:
         #     funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source"])
-        funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","whitelist_path"])
+        funcRequiredOptionCheck(val,func_dict,"WHITELIST_ASSIGNMENT",["source","allowlist_path"])
         
         #SEQ2SEQ Correct option check
         funcIllegalOptionCheck(val,func_dict,"SEQ2SEQ",["source","conversion_table"])
         funcRequiredOptionCheck(val,func_dict,"SEQ2SEQ",["source","conversion_table"])
 
         #RANDSEQ_ASSIGNMENT Correct option check
-        funcIllegalOptionCheck(val,func_dict,"RANDSEQ_ASSIGNMENT",["source","randseq_length"])
-        funcRequiredOptionCheck(val,func_dict,"RANDSEQ_ASSIGNMENT",["source","randseq_length"])
-        func_dict=funcSetDefault(val,func_dict,"RANDSEQ_ASSIGNMENT",[],[],opt_int=["randseq_length"])
+        funcIllegalOptionCheck(val,func_dict,"RANDSEQ_ASSIGNMENT",["source","randseq_pattern"])
+        funcRequiredOptionCheck(val,func_dict,"RANDSEQ_ASSIGNMENT",["source","randseq_pattern"])
+        func_dict=funcSetDefault(val,func_dict,"RANDSEQ_ASSIGNMENT",[],[])
 
         #CONSTANT Correct option check
         funcIllegalOptionCheck(val,func_dict,"CONSTANT",["sequence"])

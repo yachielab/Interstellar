@@ -51,12 +51,12 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
     seq_minority=[]
     seq_discarded=[]
 
-    if "KNEE_CORRECT" in correctOpt:
-        rank_threshold=correctOpt["KNEE_CORRECT"]["rank"]
+    if "I2M_CORRECTION" in correctOpt:
+        rank_threshold=correctOpt["I2M_CORRECTION"]["rank"]
     else:
         rank_threshold=len(seqCountSummary["count"])
     
-    if "KNEE_CORRECT" in correctOpt["func_ordered"]:
+    if "I2M_CORRECTION" in correctOpt["func_ordered"]:
          # seed_min=correctOpt.get("seed_min")
             
         if rank_threshold=="auto":
@@ -89,13 +89,13 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
                 for seqm in seq_majority:
                     w.write(seqm+"\n")
 
-            symspelldb=SymSpell(correctOpt["KNEE_CORRECT"]["levenshtein_distance"],seedlen)
+            symspelldb=SymSpell(correctOpt["I2M_CORRECTION"]["levenshtein_distance"],seedlen)
             symspelldb.create_dictionary(fname)
 
             t0=time.time()
             print("Minority correction has been started...",flush=True)
             seq_minority_pd=pd.Series(seq_minority)
-            seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["KNEE_CORRECT"]["levenshtein_distance"],symspelldb))
+            seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["I2M_CORRECTION"]["levenshtein_distance"],symspelldb))
 
             correctionDict_maj={k:v for k,v in zip(list(seq_minority_pd),list(seq_minority_pd_corrected))}
             t1=time.time()
@@ -110,8 +110,8 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
             correctionDict_maj[seq]="-"
         correctionDict=dict(correctionDict=correctionDict_maj,reference=seq_majority)
 
-    if "WHITELIST_CORRECT" in correctOpt["func_ordered"]:
-        if not "KNEE_CORRECT" in correctOpt["func_ordered"]:
+    if "M2A_CORRECTION" in correctOpt["func_ordered"]:
+        if not "I2M_CORRECTION" in correctOpt["func_ordered"]:
             seq_majority=seqCountSummary["seq"][:kneepoint_idx]
             correctionDict_maj={}
             for seq in seq_majority:
@@ -120,18 +120,18 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
 
         print("Whitelist correction has been started...",flush=True)
         print("Reference building...",flush=True)
-        with open(correctOpt["WHITELIST_CORRECT"]["path"],mode="rt",encoding="utf-8") as f:
+        with open(correctOpt["M2A_CORRECTION"]["path"],mode="rt",encoding="utf-8") as f:
             wl=[regex.sub("\n","",i) for i in f]
 
         wlset=set(wl)
         print("Seed length: ",seedlen,flush=True)
-        symspelldb=SymSpell(correctOpt["WHITELIST_CORRECT"]["levenshtein_distance"],seedlen)
-        symspelldb.create_dictionary(correctOpt["WHITELIST_CORRECT"]["path"])
+        symspelldb=SymSpell(correctOpt["M2A_CORRECTION"]["levenshtein_distance"],seedlen)
+        symspelldb.create_dictionary(correctOpt["M2A_CORRECTION"]["path"])
         print("Reference build done.",flush=True)
         seq_majority_pd=pd.Series(seq_majority)
         print("Correct...",flush=True)
         t0=time.time()
-        seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["WHITELIST_CORRECT"]["levenshtein_distance"],symspelldb,wlset))
+        seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["M2A_CORRECTION"]["levenshtein_distance"],symspelldb,wlset))
         t1=time.time()
         print("Whitelist correction done",t1-t0,"sec",flush=True)
         correctionDict_wl={k:v for k,v in zip(list(seq_majority_pd),list(seq_majority_pd_corrected))}
@@ -226,3 +226,28 @@ def gen_bt_dict(bt_barcode,bt_cluster):
     correctionDict={k:df_barcode["Center"][i] for i,k in enumerate(df_barcode["Unique.reads"])}
     return correctionDict
 
+def custom_correction_setup(target_segment_list,outdir,src_seq_paths):
+        dic_rowcount={k:0 for k in target_segment_list}
+        for processCount,input_filepath in enumerate(src_seq_paths):
+            df_tmp=pd.read_csv(input_filepath,sep="\t")
+
+            for bc in target_segment_list:
+                seg_seqs=[i for i in list(df_tmp[bc]) if i != "-"]
+                row_list=list(map(str,list(dic_rowcount[bc]+np.array(range(len(seg_seqs)))+1)))
+                dic_rowcount[bc]+=len(seg_seqs)
+
+                if processCount==0:
+                    with open(outdir+"/custom"+"_"+bc+".input.csv",mode="wt") as w:
+                        for seq,row in zip(seg_seqs,row_list):
+                            w.write(seq+"\t"+row+"\n")
+                else:
+                    with open(outdir+"/custom"+"_"+bc+".input.csv",mode="at") as w:
+                        for seq,row in zip(seg_seqs,row_list):
+                            w.write(seq+"\t"+row+"\n")
+
+
+def gen_custom_dict(df_corrected):
+    seq_raw=df_corrected[0]
+    seq_corrected=df_corrected[1]
+    correctionDict={k:seq_corrected[i] for i,k in enumerate(seq_raw)}
+    return correctionDict

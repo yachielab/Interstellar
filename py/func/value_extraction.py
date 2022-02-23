@@ -155,7 +155,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
 
 
     #to_bt
-    if "BARTENDER" in cfg["functions_used"]:
+    if "BARTENDER_CORRECTION" in cfg["functions_used"]:
         cmd="to_bt"
         outname_now="to_bt"
         for sampledir in sampledir_list:
@@ -192,7 +192,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             for sampledir in sampledir_list:
                 jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
                 interstellar_setup.job_wait("Bartender",jid_now,sampledir+"/qlog",njobs)
-
 
 
     #correct

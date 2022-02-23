@@ -62,7 +62,7 @@ class BARISTA_MAKE_S(object):
                     component_corrected_now=self.settings.corrected_components[col_index]
                     opt_now=self.settings.correctOptDict[component_corrected_now]
                     
-                    if (component_corrected_now in correctionDictionaries) and ("KNEE_CORRECT" in opt_now["func_ordered"] or "WHITELIST_CORRECT" in opt_now["func_ordered"] or "BARTENDER" in opt_now["func_ordered"]):
+                    if (component_corrected_now in correctionDictionaries) and ("I2M_CORRECTION" in opt_now["func_ordered"] or "M2A_CORRECTION" in opt_now["func_ordered"] or "BARTENDER_CORRECTION" in opt_now["func_ordered"] or "CUSTOM_CORRECTION" in opt_now["func_ordered"]):
                         parsedSeq_raw_df[component_raw_now]=parsedSeq_raw_df[component_raw_now].map(lambda x: barcodeCorrecter.seq_correct_and_write(x,reference=correctionDictionaries[component_corrected_now]["correctionDict"]))
                     parsedSeq_raw_df.rename(columns={component_raw_now:component_raw_now+":"+component_corrected_now},inplace=True)
                     cols_ordered_final.append(component_raw_now+":"+component_corrected_now)

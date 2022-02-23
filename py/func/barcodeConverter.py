@@ -5,6 +5,9 @@ import random
 import pandas as pd
 import numpy as np
 import gzip,pickle
+
+class UnknownError(Exception):
+    pass
 # random.seed(0)
 
 
@@ -386,10 +389,42 @@ def sortCounter(counterDict):
         dict_tmp[k]=idx
     return dict_tmp
 
+def IUPAC(x,seed):
+    random.seed(seed)
+    if x in ["A","T","G","C"]:
+        return x
+    elif x=="R":
+        y = "AG"
+    elif x=="Y":
+        y =  "CT"
+    elif x=="S":
+        y =  "GC"
+    elif x=="W":
+        y =  "AT"
+    elif x=="K":
+        y =  "GT"
+    elif x=="M":
+        y =  "AC"
+    elif x=="B":
+        y =  "CGT"
+    elif x=="D":
+        y =  "AGT"
+    elif x=="H":
+        y =  "ACT"
+    elif x=="V":
+        y =  "ACG"
+    elif x=="N":
+        y =  "ATGC"
+    else:
+        raise UnknownError("The chracter",x,"is not in the IUPAC code list!")
+
+    random.seed(seed)
+    return ''.join(random.sample(y ,len(y)))
+
 def buildReference(opt_now,seg_idx,info_dic,max_default=7000000): #n_each?
     func_now=opt_now["func_ordered"][0]
     if func_now=="WHITELIST_ASSIGNMENT":
-        with open(opt_now[func_now]["whitelist_path"][seg_idx],mode="rt",encoding="utf-8") as f:
+        with open(opt_now[func_now]["allowlist_path"][seg_idx],mode="rt",encoding="utf-8") as f:
             reference_now=[regex.sub("\n","",i) for i in f]
             random.seed(0)
             random.shuffle(reference_now)
@@ -399,8 +434,9 @@ def buildReference(opt_now,seg_idx,info_dic,max_default=7000000): #n_each?
         if maxsize < max_default:
             maxsize=max_default
 
-        seqlength=int(opt_now[func_now]["randseq_length"][seg_idx])
-        reference_iter=it.product(*(["ATGC"]*seqlength))
+        # seqlength=int(opt_now[func_now]["randseq_length"][seg_idx])
+        randseq=opt_now[func_now]["randseq_pattern"][seg_idx]
+        reference_iter=it.product(*([IUPAC(i,seed) for seed,i in enumerate(randseq)]))
         reference_now=[]
         for cnt,i in enumerate(reference_iter):
             if cnt>=maxsize:

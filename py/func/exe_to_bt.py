@@ -17,7 +17,7 @@ class settings_to_bt(object):
         cfg_value_ext,dict_to_terminal = settingImporter.config_extract_value_ext(cfg)
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.func_dict=func_dict
-        self.bt_targets=[func_dict[val]["BARTENDER"]["source"] for val in func_dict if "BARTENDER" in func_dict[val]]
+        self.bt_targets=[func_dict[val]["BARTENDER_CORRECTION"]["source"] for val in func_dict if "BARTENDER_CORRECTION" in func_dict[val]]
         # if cfg_to_bt["need_match"]:
         #     self.need_match=cfg_to_bt["need_match"].split(",")
         # else:
@@ -58,9 +58,9 @@ class BARISTA_TO_BT(object):
         func_dict_bartender=dict()
         for bc in self.settings.bt_targets:
             for val in self.settings.func_dict:
-                if "BARTENDER" in self.settings.func_dict[val]:
-                    if self.settings.func_dict[val]["BARTENDER"]["source"]==bc:
-                        func_dict_bartender[bc]=self.settings.func_dict[val]["BARTENDER"]
+                if "BARTENDER_CORRECTION" in self.settings.func_dict[val]:
+                    if self.settings.func_dict[val]["BARTENDER_CORRECTION"]["source"]==bc:
+                        func_dict_bartender[bc]=self.settings.func_dict[val]["BARTENDER_CORRECTION"]
         
 
         for bc in self.settings.bt_targets:
