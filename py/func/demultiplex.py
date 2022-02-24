@@ -119,9 +119,9 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             target_files=[t for t in demulti_filename_list if key in os.path.basename(t)]
             if cfg["FORMAT"]=="tsv":
                 key_gunzip=key.replace(".gz","")
-                cmd1=["cat"]+target_files+[" | zcat | head -n1 >",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip]
+                cmd1=["zcat"]+[target_files[0]]+["| head -n1 >",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip]
                 cmd1=" ".join(cmd1)
-                cmd2=["cat"]+target_files+[" | zgrep -v Header >",sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip]
+                cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip]
                 cmd2=" ".join(cmd2)
                 cmd3=["cat",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip,sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip+" | gzip -c > ",sampledir+"/demultiplex/out/demultiplex"+key]
                 cmd3=" ".join(cmd3)
@@ -152,7 +152,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                         sys.exit(1)
                 
             else:
-                cmd=["cat"]+target_files+[">",sampledir+"/demultiplex/out/demultiplex"+key]
+                cmd=["echo"]+target_files+["| xargs cat >",sampledir+"/demultiplex/out/demultiplex"+key]
                 cmd=" ".join(cmd)
                 
                 if not is_qsub:

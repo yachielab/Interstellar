@@ -306,9 +306,9 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for key in key_list:
             target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
             if len(target_files)>0:
-                cmd1=["cat"]+target_files+[" | zcat | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
+                cmd1=["cat"]+[target_files[0]]+[" | zcat | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
                 cmd1=" ".join(cmd1)
-                cmd2=["cat"]+target_files+[" | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
+                cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
                 cmd2=" ".join(cmd2)
                 cmd3=["cat",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content | gzip -c > ",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
                 cmd3=" ".join(cmd3)

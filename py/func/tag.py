@@ -96,7 +96,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
             target_files=sorted(target_files)
             if len(target_files)>0:
-                cmd=["cat"]+target_files+[">",sampledir+"/tag/out/tag"+key]
+                cmd=["echo"]+target_files+["| xargs cat >",sampledir+"/tag/out/tag"+key]
                 cmd=" ".join(cmd)
                 s=subprocess.run(cmd,shell=True)
                 if s.returncode != 0:
