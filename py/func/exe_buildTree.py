@@ -53,8 +53,15 @@ class BARISTA_BUILDTREE(object):
         func_dict=self.settings.func_dict
         dval_to_sval_relationship = barcodeConverter.dval_to_sval_relationship(func_dict,self.settings.dest_segments)
         values_in_destarg=list(dval_to_sval_relationship.values())
-        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(self.settings.value_segment,values_in_destarg,self.settings.child2parent_val,self.settings.value_variables)
         
+        # Get value2seq segments
+        value2seq_sources=[]
+        for dest_segment in func_dict:
+            if "RANDSEQ_ASSIGNMENT" in func_dict[dest_segment]["func_ordered"] or "WHITELIST_ASSIGNMENT" in func_dict[dest_segment]["func_ordered"]:
+                value2seq_sources.append(dval_to_sval_relationship[dest_segment]) 
+        
+        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(self.settings.value_segment,values_in_destarg,self.settings.child2parent_val,self.settings.value_variables,value2seq_sources)
+
         count_tree={}
         s_val=pd.read_csv(self.settings.path_to_sval,sep='\t',dtype=str,chunksize=1000000)
         for n_chunk,s_val_chunk in enumerate(s_val):

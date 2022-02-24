@@ -45,7 +45,12 @@ class BARISTA_MERGETREE(object):
         func_dict=self.settings.func_dict
         dval_to_sval_relationship = barcodeConverter.dval_to_sval_relationship(func_dict,self.settings.dest_segments)
         values_in_destarg=list(dval_to_sval_relationship.values())
-        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(self.settings.value_segment,values_in_destarg,self.settings.child2parent_val,self.settings.value_variables)
+        value2seq_sources=[]
+        for dest_segment in func_dict:
+            if "RANDSEQ_ASSIGNMENT" in func_dict[dest_segment]["func_ordered"] or "WHITELIST_ASSIGNMENT" in func_dict[dest_segment]["func_ordered"]:
+                value2seq_sources.append(dval_to_sval_relationship[dest_segment]) 
+
+        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(self.settings.value_segment,values_in_destarg,self.settings.child2parent_val,self.settings.value_variables,value2seq_sources)
         
 
         #Pile up counttree
@@ -121,7 +126,7 @@ class BARISTA_MERGETREE(object):
                             child_freq_now=counttree_tmp[parent]
                             subTree[component][parent]=child_freq_now
                 
-                print("Sorting done for",sample_name,". Compressing and exporting tree...",flush=True)
+                print("Sorting done for "+sample_name+". Compressing and exporting tree...",flush=True)
                 with gzip.open(self.settings.outFilePath_and_Prefix+"_"+sample_name+"_mergeTree.pkl.gz",mode="wb") as p:
                         pickle.dump(subTree,p)
 

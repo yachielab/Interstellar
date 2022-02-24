@@ -23,7 +23,7 @@ def dval_to_sval_relationship(func_dict,dest_segment):
     return dval_to_sval_relationship
 
 
-def parse_constraint(value_segment,values_in_destarg,child2parent_val,value_variables):
+def parse_constraint(value_segment,values_in_destarg,child2parent_val,value_variables,value2seq_sources):
     noParentSegments=[]
     edge_dict=dict(parent=[],child=[])
     for component in child2parent_val:
@@ -36,7 +36,7 @@ def parse_constraint(value_segment,values_in_destarg,child2parent_val,value_vari
     roots=list(set(edge_dict["parent"])-set(edge_dict["child"]))
     # tips =list(set(edge_dict["child"])-set(edge_dict["parent"]))
     globalComponents=list(set(noParentSegments+values_in_destarg)-set(roots)-set(edge_dict["child"]))
-    globalComponents=[i for i in globalComponents if i in value_variables]
+    globalComponents=[i for i in globalComponents if i in value_variables+value2seq_sources]
 
     roots=[i.replace(",","+") for i in roots]
     globalComponents=[i.replace(",","+") for i in globalComponents]

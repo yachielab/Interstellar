@@ -52,7 +52,11 @@ class BARISTA_CONVERT(object):
         func_dict=self.settings.func_dict
         dval_to_sval_relationship = barcodeConverter.dval_to_sval_relationship(func_dict,self.settings.dest_segments)
         values_in_destarg=list(dval_to_sval_relationship.values())
-        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(self.settings.value_segment,values_in_destarg,self.settings.child2parent_val,self.settings.value_variables)
+        value2seq_sources=[]
+        for dest_segment in func_dict:
+            if "RANDSEQ_ASSIGNMENT" in func_dict[dest_segment]["func_ordered"] or "WHITELIST_ASSIGNMENT" in func_dict[dest_segment]["func_ordered"]:
+                value2seq_sources.append(dval_to_sval_relationship[dest_segment]) 
+        roots,edge_dict,globalComponents = barcodeConverter.parse_constraint(self.settings.value_segment,values_in_destarg,self.settings.child2parent_val,self.settings.value_variables,value2seq_sources)
         
         global_used_in_dest=list(set(globalComponents) & set(dval_to_sval_relationship.values()))
         destname_dict={dval_to_sval_relationship[k]:k for k in dval_to_sval_relationship}
