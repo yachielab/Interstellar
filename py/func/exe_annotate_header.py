@@ -10,14 +10,14 @@ import time
 import os
 import datetime
 
-class settings_tag(object):
+class settings_annotate_header(object):
     def __init__(self,opt):
         self.opt=opt
     
     def settingGetter(self):
         cfgPath=self.opt.config
-        cfg_tag=settingImporter.readconfig(cfgPath)["tag"]
-        cfg_tag=settingImporter.configClean(cfg_tag)
+        cfg_annotate_header=settingImporter.readconfig(cfgPath)["annotate_header"]
+        cfg_annotate_header=settingImporter.configClean(cfg_annotate_header)
 
         cfg_raw=settingImporter.readconfig(cfgPath)
         cfg_raw={k:settingImporter.configClean(cfg_raw[k]) for k in cfg_raw}
@@ -25,12 +25,12 @@ class settings_tag(object):
         cfg_value_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
         
         self.exportReadStructure={}
-        self.tags={}
-        for i in cfg_tag:
-            if i in ["READ1_STRUCTURE","READ2_STRUCTURE","INDEX1_STRUCTURE","INDEX2_STRUCTURE"] and cfg_tag.get(i):
-                self.exportReadStructure[i]=[dict_to_terminal[x] for x in cfg_tag[i].split("+")]
-            elif i in ["READ1_TAG","READ2_TAG","INDEX1_TAG","INDEX2_TAG"] and cfg_tag.get(i):
-                self.tags[i.split("_")[0]+"_STRUCTURE"]=cfg_tag[i].split(",")
+        self.annotate_headers={}
+        for i in cfg_annotate_header:
+            if i in ["READ1_STRUCTURE","READ2_STRUCTURE","INDEX1_STRUCTURE","INDEX2_STRUCTURE"] and cfg_annotate_header.get(i):
+                self.exportReadStructure[i]=[dict_to_terminal[x] for x in cfg_annotate_header[i].split("+")]
+            elif i in ["READ1_TAG","READ2_TAG","INDEX1_TAG","INDEX2_TAG"] and cfg_annotate_header.get(i):
+                self.annotate_headers[i.split("_")[0]+"_STRUCTURE"]=cfg_annotate_header[i].split(",")
             
         self.path_to_seq=self.opt.correctedSeq
         self.path_to_avg_qval=self.opt.correctedQual
@@ -39,10 +39,10 @@ class settings_tag(object):
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=outdir+"/"+outname
 
-class BARISTA_TAG(object):
+class BARISTA_annotate_header(object):
     def __init__(self,settings):
         self.settings=settings
-    def tag(self):
+    def annotate_header(self):
         s_seq=pd.read_csv(self.settings.path_to_seq,sep='\t',dtype=str,chunksize=500000)
         s_avg_qual=pd.read_csv(self.settings.path_to_avg_qval,sep='\t',dtype=str,chunksize=500000)
         s_raw_qual=pd.read_csv(self.settings.path_to_rawQual,sep="\t",dtype=str,chunksize=500000)
@@ -62,17 +62,17 @@ class BARISTA_TAG(object):
             s_seq_chunk.columns=["Header"]+corrected_component_names
 
             for exportRead in self.settings.exportReadStructure:
-                if exportRead in self.settings.tags:
-                    tag_now=self.settings.tags[exportRead]
+                if exportRead in self.settings.annotate_headers:
+                    annotate_header_now=self.settings.annotate_headers[exportRead]
                 else:
-                    tag_now=""
+                    annotate_header_now=""
                 structure_now=self.settings.exportReadStructure[exportRead]
 
                 export_pd=pd.DataFrame()
 
                 #Deal with non-tag reads
-                if not tag_now=="":
-                    export_pd["Header"]=s_seq_chunk["Header"].str.cat(s_seq_chunk[tag_now],sep="_")
+                if not annotate_header_now=="":
+                    export_pd["Header"]=s_seq_chunk["Header"].str.cat(s_seq_chunk[annotate_header_now],sep="_")
                 else:
                     export_pd["Header"]=s_seq_chunk["Header"]
 

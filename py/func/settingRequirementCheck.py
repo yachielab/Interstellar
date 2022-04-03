@@ -83,16 +83,16 @@ def setDefaultConfig(cfg):
         cfg["demultiplex"]["INDEX1_STRUCTURE"]=tryAndFill(cfg,"demultiplex","INDEX1_STRUCTURE","")
         cfg["demultiplex"]["INDEX2_STRUCTURE"]=tryAndFill(cfg,"demultiplex","INDEX2_STRUCTURE","")
     
-    #Section=tag
-    if "tag" in cfg:
-        cfg["tag"]["READ1_TAG"]=tryAndFill(cfg,"tag","READ1_TAG","")
-        cfg["tag"]["READ2_TAG"]=tryAndFill(cfg,"tag","READ2_TAG","")
-        cfg["tag"]["INDEX1_TAG"]=tryAndFill(cfg,"tag","INDEX1_TAG","")
-        cfg["tag"]["INDEX2_TAG"]=tryAndFill(cfg,"tag","INDEX2_TAG","")
-        cfg["tag"]["READ1_STRUCTURE"] =tryAndFill(cfg,"tag","READ1_STRUCTURE","")
-        cfg["tag"]["READ2_STRUCTURE"] =tryAndFill(cfg,"tag","READ2_STRUCTURE","")
-        cfg["tag"]["INDEX1_STRUCTURE"]=tryAndFill(cfg,"tag","INDEX1_STRUCTURE","")
-        cfg["tag"]["INDEX2_STRUCTURE"]=tryAndFill(cfg,"tag","INDEX2_STRUCTURE","")
+    #Section=annotate_header
+    if "annotate_header" in cfg:
+        cfg["annotate_header"]["READ1_TAG"]=tryAndFill(cfg,"annotate_header","READ1_TAG","")
+        cfg["annotate_header"]["READ2_TAG"]=tryAndFill(cfg,"annotate_header","READ2_TAG","")
+        cfg["annotate_header"]["INDEX1_TAG"]=tryAndFill(cfg,"annotate_header","INDEX1_TAG","")
+        cfg["annotate_header"]["INDEX2_TAG"]=tryAndFill(cfg,"annotate_header","INDEX2_TAG","")
+        cfg["annotate_header"]["READ1_STRUCTURE"] =tryAndFill(cfg,"annotate_header","READ1_STRUCTURE","")
+        cfg["annotate_header"]["READ2_STRUCTURE"] =tryAndFill(cfg,"annotate_header","READ2_STRUCTURE","")
+        cfg["annotate_header"]["INDEX1_STRUCTURE"]=tryAndFill(cfg,"annotate_header","INDEX1_STRUCTURE","")
+        cfg["annotate_header"]["INDEX2_STRUCTURE"]=tryAndFill(cfg,"annotate_header","INDEX2_STRUCTURE","")
     
     return cfg
 
@@ -114,7 +114,7 @@ def setDefaultQConfig(cfg):
     cfg["qsub"]["mem_bc_sort"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
     cfg["qsub"]["mem_export"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],3)
     cfg["qsub"]["mem_demultiplex"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
-    cfg["qsub"]["mem_tag"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
+    cfg["qsub"]["mem_annotate_header"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
     return cfg["qsub"]
 
 
@@ -182,7 +182,7 @@ def setDefaultValueInConfig(cmd,config,distribute=False):
             except (KeyError,EmptyError):
                 if i in ["import","qc","to_bt","bc_sort"]:
                     config["mem_"+i]='8'
-                elif i in ["mk_sval","buildTree","convert","export","tag","demultiplex"]:
+                elif i in ["mk_sval","buildTree","convert","export","annotate_header","demultiplex"]:
                     config["mem_"+i]='16'
                 elif i in ["mergeTree","correct"]:
                     config["mem_"+i]=config["mem_max"]
