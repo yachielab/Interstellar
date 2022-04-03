@@ -14,7 +14,7 @@ from func import exe_convert
 from func import exe_bc_sort
 from func import exe_export
 from func import exe_demultiplex
-from func import exe_tag
+from func import exe_annotate_header
 
 '''
 Current available commands
@@ -30,16 +30,16 @@ Current available commands
  - bc_sort
  - export
  - demultiplex
- - tag
+ - annotate_header
 '''
 
 # def call_general_help():
 #     print("\nCurrent available commands:",flush=True)
-#     print("\n".join([" - streamline"," - import"," - qc"," - correct"," - mk_sval"," - to_bt"," - buildTree"," - mergeTree"," - convert"," - bc_sort"," - export"," - demultiplex"," - tag"]),flush=True)
+#     print("\n".join([" - streamline"," - import"," - qc"," - correct"," - mk_sval"," - to_bt"," - buildTree"," - mergeTree"," - convert"," - bc_sort"," - export"," - demultiplex"," - annotate_header"]),flush=True)
 
 if __name__=="__main__":
     cmd=sys.argv[1]
-    if cmd not in ["streamline","import","qc","correct","mk_sval","to_bt","buildTree","mergeTree","convert","bc_sort","export","demultiplex","tag","-h"]:
+    if cmd not in ["streamline","import","qc","correct","mk_sval","to_bt","buildTree","mergeTree","convert","bc_sort","export","demultiplex","annotate_header","-h"]:
         print("\nCommand '"+cmd+"' is not found.",flush=True)
         exit()
 
@@ -139,13 +139,13 @@ if __name__=="__main__":
         baristaDemulti=exe_demultiplex.BARISTA_DEMULTIPLEX(s)
         baristaDemulti.demultiplex()
 
-    elif cmd=="tag":
-        print("\nInterstellar tag",flush=True)
-        s=exe_tag.settings_tag(opt)
+    elif cmd=="annotate_header":
+        print("\nInterstellar annotate_header",flush=True)
+        s=exe_annotate_header.settings_annotate_header(opt)
         s.settingGetter()
 
-        batistaTag=exe_tag.BARISTA_TAG(s)
-        batistaTag.tag()
+        batistaannotate_header=exe_annotate_header.BARISTA_annotate_header(s)
+        batistaannotate_header.annotate_header()
 
 
     # print("DONE!",flush=True)

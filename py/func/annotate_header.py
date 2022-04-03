@@ -31,7 +31,7 @@ def checkRequiredFile(key,flist):
 
 
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,cfgpath):
-    cfg=settingImporter.config_extract_value_tag(cfg_raw)
+    cfg=settingImporter.config_extract_value_annotate_header(cfg_raw)
     cfg_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
     
     for key in cfg:
@@ -44,7 +44,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                         raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
 
 
-    cmd="tag"
+    cmd="annotate_header"
     njobdict=dict()
     for sampledir in sampledir_list:
         file_endfix="_correct_result.tsv.gz"
@@ -66,7 +66,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 if s.returncode != 0:
-                    print("qsub failed: Tag', file=sys.stderr")
+                    print("qsub failed: annotate_header', file=sys.stderr")
                     sys.exit(1)
             njobdict[sampledir]=len(file_pool)
         else:
@@ -81,24 +81,24 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 cmd_now=" ".join(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 if s.returncode != 0:
-                    print("Job failed: Tag', file=sys.stderr")
+                    print("Job failed: annotate_header', file=sys.stderr")
                     sys.exit(1)
     if is_qsub:
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
-            interstellar_setup.job_wait("Tag",jid_now,sampledir+"/qlog",njobdict[sampledir])
+            interstellar_setup.job_wait("annotate_header",jid_now,sampledir+"/qlog",njobdict[sampledir])
 
     for sampledir in sampledir_list:
-        out_files=glob.glob(sampledir+"/tag/_work/*")
+        out_files=glob.glob(sampledir+"/annotate_header/_work/*")
         key_list=["_R1.fastq.gz","_R2.fastq.gz","_I1.fastq.gz","_I2.fastq.gz"]
         
         for key in key_list:
             target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
             target_files=sorted(target_files)
             if len(target_files)>0:
-                cmd=["echo"]+target_files+["| xargs cat >",sampledir+"/tag/out/tag"+key]
+                cmd=["echo"]+target_files+["| xargs cat >",sampledir+"/annotate_header/out/annotate_header"+key]
                 cmd=" ".join(cmd)
                 s=subprocess.run(cmd,shell=True)
                 if s.returncode != 0:
-                    print("Job failed: Tagged file merge', file=sys.stderr")
+                    print("Job failed: Annotated file merge', file=sys.stderr")
                     sys.exit(1)

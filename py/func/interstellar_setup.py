@@ -20,7 +20,7 @@ def setUpSampleDir(sampledir,cmds_execute):
         shell_cmd="mkdir -p "+sampledir+"/"+i
         subprocess.run(shell_cmd,shell=True)
 
-    for dir in ["value_extraction","value_translation","tag","demultiplex"]:
+    for dir in ["value_extraction","value_translation","annotate_header","demultiplex"]:
         if not dir in cmds_execute:
             continue
 
@@ -355,12 +355,12 @@ class SETUP(object):
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"demultiplex")
 
 
-        # tag
-        if "tag" in self.settings.cmds_execute:
-            outdir=self.settings.sampledir+"/tag/_work"
-            sh_cmd_list=["Interstellar-exec","tag","-conf",self.cfgpath,"-d",outdir,"-o","$1","-cs","$2","-cq","$3","-rq","$4"]
+        # annotate_header
+        if "annotate_header" in self.settings.cmds_execute:
+            outdir=self.settings.sampledir+"/annotate_header/_work"
+            sh_cmd_list=["Interstellar-exec","annotate_header","-conf",self.cfgpath,"-d",outdir,"-o","$1","-cs","$2","-cq","$3","-rq","$4"]
             sh_cmd_line=" ".join(sh_cmd_list)
-            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"tag")
+            generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"annotate_header")
     
         subprocess.run("chmod u+x "+shelldir+"/*",shell=True)
 

@@ -17,7 +17,7 @@ from distutils.util import strtobool
 # from func import dnaSyn_bc_sort
 # from func import dnaSyn_export
 # from func import dnaSyn_demultiplex
-# from func import dnaSyn_tag
+# from func import dnaSyn_annotate_header
 # from func import interstellar_streamline
 from func import settingImporter
 from func import settingRequirementCheck
@@ -25,7 +25,7 @@ from func import interstellar_setup
 from func import value_extraction
 from func import value_translation
 from func import demultiplex
-from func import tag
+from func import annotate_header
 
 
 def getOpt():
@@ -40,21 +40,21 @@ if __name__=="__main__":
 
     # read config file
     cfg=settingImporter.readconfig(opt.config)
-    cfg={k:settingImporter.configClean(cfg[k]) for k in cfg if k in ["general","value_extraction","value_translation","tag","demultiplex"]}
+    cfg={k:settingImporter.configClean(cfg[k]) for k in cfg if k in ["general","value_extraction","value_translation","annotate_header","demultiplex"]}
     cmds=list(cfg.keys())
 
 
     if not "general" in cmds:
         raise KeyError("The section 'general' is required.")
     for cmd in cmds:
-        if not cmd in ["general","value_extraction","value_translation","tag","demultiplex"]:
+        if not cmd in ["general","value_extraction","value_translation","annotate_header","demultiplex"]:
             raise KeyError("Unknown section name: "+cmd)
     
     cmds_execute=[]
-    for cmd in ["value_extraction","value_translation","tag","demultiplex"]:
+    for cmd in ["value_extraction","value_translation","annotate_header","demultiplex"]:
         if cmd in cmds:
             cmds_execute.append(cmd)
-        if cmd=="value_translation" or cmd=="tag" or cmd=="demultiplex":
+        if cmd=="value_translation" or cmd=="annotate_header" or cmd=="demultiplex":
             if not "value_extraction" in cmds:
                 raise KeyError("The section 'value_extraction' is required to execute"+cmd)
 
@@ -142,11 +142,11 @@ if __name__=="__main__":
         with open(proj_dir+"/_flg/_demultiplex",mode="wt") as w:
             w.write("")
 
-    # tag
+    # annotate_header
     flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
-    if "tag" in cmds_execute and not "_tag" in flg_files:
-        tag.run(sampledir_list,cfg,qcfg,is_qsub,is_multisample,param_dict,proj_dir,opt.config)
-        with open(proj_dir+"/_flg/_tag",mode="wt") as w:
+    if "annotate_header" in cmds_execute and not "_annotate_header" in flg_files:
+        annotate_header.run(sampledir_list,cfg,qcfg,is_qsub,is_multisample,param_dict,proj_dir,opt.config)
+        with open(proj_dir+"/_flg/_annotate_header",mode="wt") as w:
             w.write("")
 
     print("DONE!",flush=True)

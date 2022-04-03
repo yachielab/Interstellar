@@ -455,17 +455,17 @@ def config_extract_value_demulti(cfg_raw):
     return cfg_value_demulti
 
 
-def config_extract_value_tag(cfg_raw):
+def config_extract_value_annotate_header(cfg_raw):
     cfg=copy.deepcopy(cfg_raw)
     cfg_value_ext,dict_to_terminal=config_extract_value_ext(cfg)
-    cfg_value_tag=cfg["tag"]
+    cfg_value_annotate_header=cfg["annotate_header"]
        
     #available segments
-    cfg_value_tag["available_seg"]=[]
+    cfg_value_annotate_header["available_seg"]=[]
     for i in cfg_value_ext["value_segment"]:
-        cfg_value_tag["available_seg"].append(i)
+        cfg_value_annotate_header["available_seg"].append(i)
    
-    return cfg_value_tag
+    return cfg_value_annotate_header
 
 
 def getQscoreDict(func_dict):
