@@ -112,8 +112,6 @@ class BARISTA_CORRECT(object):
                 correctionDictionaries[correctedComponent]["reference"]=sorted(counter_dict.keys(),key=counter_dict.__getitem__,reverse=True)
                 correctionDictionaries[correctedComponent]["correctionDict"]=barcodeCorrecter.gen_custom_dict(df_corrected)
 
-                print("ACCCCCAGAGCA")
-                print(correctionDictionaries[correctedComponent]["correctionDict"]["ACCCCCAGAGCA"])
 
             elif "BARTENDER_CORRECTION" in correctOpt["func_ordered"]:
                 bartender_path=os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/to_bt/to_bt"+"_"+rawSegment+"_bartender"

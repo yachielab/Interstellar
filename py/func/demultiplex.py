@@ -40,8 +40,14 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             dest_segments=cfg[key].split("+")
             if cfg[key]:
                 for i in dest_segments:
-                    if not i in cfg["available_seg"]:
+                    if not i in cfg["available_seg"] and not re.search(r'^\"[^\"]+\"',i):
                         raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
+                    elif re.search(r'^\"[^\"]+\"',i):
+                        seq=re.sub('\"',"",i)
+                        for char in seq:
+                            if char not in "ATGCN":
+                                raise UnknownError("Only the nucleotides ATGCN can be used for constant sequences.")
+
 
     for segment in cfg["TARGET"].split(","):
         if not segment=="" and not segment in cfg_ext["value_segment"]:
@@ -119,7 +125,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             target_files=[t for t in demulti_filename_list if key in os.path.basename(t)]
             if cfg["FORMAT"]=="tsv":
                 key_gunzip=key.replace(".gz","")
-                cmd1=["zcat"]+[target_files[0]]+["| head -n1 >",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip]
+                cmd1=["gunzip -c"]+[target_files[0]]+["| head -n1 >",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip]
                 cmd1=" ".join(cmd1)
                 cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip]
                 cmd2=" ".join(cmd2)

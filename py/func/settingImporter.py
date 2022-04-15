@@ -21,11 +21,22 @@ def readconfig(input_cfg):
     return cfg
 
 
-def configClean(cfgDict):
-    new_cfgDict={}
-    for key in cfgDict:
-        new_cfgDict[key]=regex.sub("\\t|\\n| ","",cfgDict[key])
-    return new_cfgDict
+def configClean(cfgDict,qconf=True,query=""):
+    if qconf:
+        new_cfgDict={}
+        for key in cfgDict:
+            if key=="QOPTION":
+                opt_now=cfgDict[key]
+                opt_now=regex.sub("^[^\"]+\"|\"[^\"]+$","",opt_now)
+                new_cfgDict[key]=opt_now
+            else:
+                new_cfgDict[key]=regex.sub("\\t|\\n| ","",cfgDict[key])
+        return new_cfgDict
+    else:
+        new_cfgDict={}
+        for key in cfgDict:
+            new_cfgDict[key]=regex.sub("\\t|\\n| ","",cfgDict[key])
+        return new_cfgDict
 
 
 def genSampleDir(proj_dir,samplesheet):
@@ -35,6 +46,7 @@ def genSampleDir(proj_dir,samplesheet):
         sampledir_list=[proj_dir+"/sample1"]
     else:
         samplesheet=pd.read_csv(samplesheet,sep="\t",header=None)
+        samplesheet=samplesheet.dropna(how="all")
         samples_uniq=set(samplesheet[1])
         for i in samples_uniq:
             os.makedirs(proj_dir+"/"+i,exist_ok=True)
@@ -142,7 +154,7 @@ def config_extract_value_ext(cfg_raw):
     #value segment label extraction
     all_keys =set(cfg_value_ext.keys())
     keys_tmp =set([i for i in cfg_value_ext if "READ1_STRUCTURE" in i or "READ2_STRUCTURE" in i or "INDEX1_STRUCTURE" in i or "INDEX2_STRUCTURE" in i or "READ_FLASH" in i])
-    keys_tmp|=set(["READ1_DIR","READ2_DIR","INDEX1_DIR","INDEX2_DIR"])
+    keys_tmp|=set(["READ1_PATH","READ2_PATH","INDEX1_PATH","INDEX2_PATH"])
     keys_tmp|=set(["FLASH","FLASH_MIN_OVERLAP","FLASH_MAX_OVERLAP"])
     keys_tmp|=set(cfg_value_ext["segments"]+["segments","parent"]+list(cfg_value_ext["parent"].keys()))
 

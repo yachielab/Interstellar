@@ -51,8 +51,8 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 idx=0
                 for r in ['read1','read2','index1','index2']:
                     if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
-                        read_identifier=param_dict[os.path.basename(sampledir)]["read_iden_dict"][r]
-                        target_files=[i for i in all_files if re.search(fileprefix+read_identifier+r".*"+endfix_input,os.path.basename(i))]
+                        # read_identifier=param_dict[os.path.basename(sampledir)]["read_iden_dict"][r]
+                        target_files=[i for i in all_files if re.search(r+"_"+fileprefix+r".*"+endfix_input,os.path.basename(i))]
                         file_pool[idx]+=sorted(target_files)
                         idx+=1
             # input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
@@ -89,14 +89,13 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
                     file_pool.append([])
 
-            all_files=glob.glob(sampledir+"/filesplit/*/*")
             for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
                 idx=0
                 for r in ['read1','read2','index1','index2']:
                     if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
-                        read_identifier=param_dict[os.path.basename(sampledir)]["read_iden_dict"][r]
-
-                        target_files=[i for i in glob.glob(param_dict[os.path.basename(sampledir)]["read_valid"][r]+"/*") if re.search(fileprefix+read_identifier+r".*"+endfix_input,os.path.basename(i))]
+                        tartget_file_dict=param_dict[os.path.basename(sampledir)]["tartget_file_dict"]
+                        target_files=tartget_file_dict[r]
+                        # target_files=[i for i in glob.glob(param_dict[os.path.basename(sampledir)]["read_valid"][r]+"/*") if re.search(fileprefix+read_identifier+r".*"+endfix_input,os.path.basename(i))]
                         file_pool[idx]+=sorted(target_files)
                         idx+=1
 
@@ -306,7 +305,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for key in key_list:
             target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
             if len(target_files)>0:
-                cmd1=["cat"]+[target_files[0]]+[" | zcat | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
+                cmd1=["cat"]+[target_files[0]]+[" | gunzip -c | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
                 cmd1=" ".join(cmd1)
                 cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
                 cmd2=" ".join(cmd2)

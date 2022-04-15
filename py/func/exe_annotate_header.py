@@ -108,3 +108,4 @@ class BARISTA_annotate_header(object):
                 else:
                     export_pd.to_csv(self.settings.outFilePath_and_Prefix+"_"+read_iden+".fastq.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
             cnt_chunk+=1
+            

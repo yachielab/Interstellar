@@ -83,8 +83,14 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             dest_segments=cfg[key].split("+")
             if cfg[key]:
                 for i in dest_segments:
-                    if not i in cfg["available_seg"]:
-                        raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
+                    if re.search(r'^\"[^\"]+\"',i):
+                        seq=re.sub('\"',"",i)
+                        for nuc in seq:
+                            if nuc not in ["A","T","G","C","N"]:
+                                raise UnknownError("Only the nucleotides ATGCN can be used for constant sequences.")
+                    else:
+                        if not i in cfg["available_seg"]:
+                            raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
 
     cmd="buildTree"
     njobdict=dict()

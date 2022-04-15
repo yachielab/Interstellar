@@ -62,7 +62,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         if rank_threshold=="auto":
             knee=KneeLocator(seqCountSummary["rank"],seqCountSummary["count"],S=10,curve="convex",direction="decreasing",interp_method='interp1d')
             #knee=KneeLocator(seqCountSummary["logrank"],seqCountSummary["count"],S=1,curve="convex",direction="decreasing",interp_method='polynomial')
-            print("Finding knee for",srcComponent,"was done!",flush=True)
+            print("Knee point of",srcComponent,"was identified.",flush=True)
             kneepoint_idx=seqCountSummary["rank"].index(knee.knee)
             #kneepoint_idx=seqCountSummary["logrank"].index(knee.knee)
         # elif rank_threshold=="all":
@@ -93,13 +93,13 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
             symspelldb.create_dictionary(fname)
 
             t0=time.time()
-            print("Minority correction has been started...",flush=True)
+            print("Imputation-to-majority correction has been started...",flush=True)
             seq_minority_pd=pd.Series(seq_minority)
             seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["I2M_CORRECTION"]["levenshtein_distance"],symspelldb))
 
             correctionDict_maj={k:v for k,v in zip(list(seq_minority_pd),list(seq_minority_pd_corrected))}
             t1=time.time()
-            print("Minority correction done",round(t1-t0),"sec")
+            print("Done.")
             seq_success=seq_minority_pd[seq_minority_pd_corrected!="-"]
             seq_fail=seq_minority_pd[seq_minority_pd_corrected=="-"]
             os.remove(fname)
@@ -118,8 +118,8 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
                 correctionDict_maj[seq]=seq
             correctionDict=dict(correctionDict=correctionDict_maj,reference=seq_majority)
 
-        print("Whitelist correction has been started...",flush=True)
-        print("Reference building...",flush=True)
+        print("Map-to-allowlist correction has been started...",flush=True)
+        print("Building reference...",flush=True)
         with open(correctOpt["M2A_CORRECTION"]["path"],mode="rt",encoding="utf-8") as f:
             wl=[regex.sub("\n","",i) for i in f]
 
@@ -127,13 +127,10 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         print("Seed length: ",seedlen,flush=True)
         symspelldb=SymSpell(correctOpt["M2A_CORRECTION"]["levenshtein_distance"],seedlen)
         symspelldb.create_dictionary(correctOpt["M2A_CORRECTION"]["path"])
-        print("Reference build done.",flush=True)
         seq_majority_pd=pd.Series(seq_majority)
         print("Correct...",flush=True)
-        t0=time.time()
         seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["M2A_CORRECTION"]["levenshtein_distance"],symspelldb,wlset))
-        t1=time.time()
-        print("Whitelist correction done",t1-t0,"sec",flush=True)
+        print("Done.",flush=True)
         correctionDict_wl={k:v for k,v in zip(list(seq_majority_pd),list(seq_majority_pd_corrected))}
         # seq_success=seq_majority_pd[seq_majority_pd_corrected!="-"]
         # seq_fail=seq_majority_pd[seq_majority_pd_corrected=="-"]
@@ -145,7 +142,6 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
                 if not correctionDict_wl[corrected_with_majority]=="-":
                     correctionDict_wl[seq]=correctionDict_wl[corrected_with_majority]
         t2=time.time()
-        print("Correction dictionary building done",round(t2-t1),"sec",flush=True)
                 
         correctionDict["correctionDict"]=correctionDict_wl
         correctionDict["reference"]=wl

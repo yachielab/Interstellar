@@ -46,24 +46,24 @@ def setUpSampleDir(sampledir,cmds_execute):
 def judgeEndFix(input_files):
     for n,f in enumerate(input_files):
         if n==0:
-            if re.search(r"fastq$",f):
-                endfix="fastq"
-            elif re.search(r"fastq.gz$",f):
-                endfix="fastq.gz"
-            elif re.search(r"fq$",f):
-                endfix="fq"
-            elif re.search(r"fq.gz$",f):
-                endfix="fq.gz"
+            if re.search(r"\.fastq$",f):
+                endfix=".fastq"
+            elif re.search(r"\.fastq\.gz$",f):
+                endfix=".fastq.gz"
+            elif re.search(r"\.fq$",f):
+                endfix=".fq"
+            elif re.search(r"\.fq\.gz$",f):
+                endfix=".fq.gz"
             
         else:
-            if re.search(r"fastq$",f):
-                endfix_now="fastq"
-            elif re.search(r"fastq.gz$",f):
-                endfix_now="fastq.gz"
-            elif re.search(r"fq$",f):
-                endfix_now="fq"
-            elif re.search(r"fq.gz$",f):
-                endfix_now="fq.gz"
+            if re.search(r"\.fastq$",f):
+                endfix_now=".fastq"
+            elif re.search(r"\.fastq\.gz$",f):
+                endfix_now=".fastq.gz"
+            elif re.search(r"\.fq$",f):
+                endfix_now=".fq"
+            elif re.search(r"\.fq.\gz$",f):
+                endfix_now=".fq.gz"
             
             #All inputs should have the same format
             if not endfix_now==endfix:
@@ -71,18 +71,34 @@ def judgeEndFix(input_files):
     return endfix
 
 
-def fastqDirCheck(valid_dirs):
-    if valid_dirs =="":
-        raise EmptyError("At least 1 input fastq directory should be provided.")
+def fastqDirCheck(valid_paths):
+    if valid_paths =="":
+        raise EmptyError("At least 1 input directory or FASTQ file paths should be provided.")
     
-    #collect all input files
+    #collect all input files if the path is directory
     all_files=[]
-    for d in valid_dirs:
-        all_files+=glob.glob(d+"/*")
+    for p in valid_paths:
+        if os.path.isdir(p):
+            all_files+=glob.glob(p+"/*")
+        else:
+            all_files+=glob.glob(p)
     
     #judge suffix
     file_suffix=judgeEndFix(all_files)
     return file_suffix
+
+
+def getFiles(read_valid):
+    file_dict={}
+    for read_now in read_valid:
+        path_now=read_valid[read_now]
+        if os.path.isdir(path_now):
+            file_dict[read_now]=glob.glob(path_now+"/*")
+        else:
+            file_dict[read_now]=glob.glob(path_now)
+    
+    #judge suffix
+    return file_dict
 
 
 def generateShellTemplate(template,cmdline,shelloutdir,shelloutname):
@@ -154,57 +170,61 @@ class SETUP_SETTINGS(object):
 
             #FASTQ file name parsing
             config_val_ext=self.cfg["value_extraction"]
-            read1_dir=config_val_ext["READ1_DIR"]
-            read2_dir=config_val_ext["READ2_DIR"]
-            index1_dir=config_val_ext["INDEX1_DIR"]
-            index2_dir=config_val_ext["INDEX2_DIR"]
+            read1_path=config_val_ext["READ1_PATH"]
+            read2_path=config_val_ext["READ2_PATH"]
+            index1_path=config_val_ext["INDEX1_PATH"]
+            index2_path=config_val_ext["INDEX2_PATH"]
 
             tmp_order=["read1","read2","index1","index2"]
-            valid_dirs=[i for i in [read1_dir,read2_dir,index1_dir,index2_dir] if not i == ""]
+            valid_paths=[i for i in [read1_path,read2_path,index1_path,index2_path] if not i == ""]
             read_valid={k:"" for k in tmp_order}
-            for n,i in enumerate([read1_dir,read2_dir,index1_dir,index2_dir]):
+            for n,i in enumerate([read1_path,read2_path,index1_path,index2_path]):
                 if not i == "":
                     read_valid[tmp_order[n]]=i
 
-            file_suffix=fastqDirCheck(valid_dirs)
+            file_suffix=fastqDirCheck(valid_paths)
+            tartget_file_dict=getFiles(read_valid)
             
             if not self.cfg["general"]["SAMPLESHEET"]=="":
                 # multi-sample
                 samplelist=[]
-                with open(os.path.expanduser(self.cfg["general"]["SAMPLESHEET"]),mode="rt") as r:
+                with open(self.cfg["general"]["SAMPLESHEET"],mode="rt") as r:
                     for line in r:
                         line=line.replace("\n","")
-                        samplelist.append(line.split("\t"))
+                        if line!="":
+                            samplelist.append(line.split("\t"))
                 target_prefix_list=[l[0] for l in samplelist if l[1]==self.samplename]
+
                 # if not self.qcfg == "":
                 #     # qsub = True -> split files
                 #     for t in target_prefix_list:
                 #         shell_cmd="mkdir -p "+self.sampledir+"/filesplit/"+t
                 #         subprocess.run(shell_cmd,shell=True)
-            else:
+            # else:
                 # single-sample
-                all_inputs=[sorted(glob.glob(i+"/*")) for i in valid_dirs]
-                target_prefix_list=[]
-                for read_tup in zip(*all_inputs):
-                    read_list=list(read_tup)
-                    read_list=[os.path.basename(i) for i in read_list]
-                    prefix = []
-                    for x in zip(*read_list):
-                        if len(set(x)) == 1:
-                            prefix.append(x[0])
-                        else:
-                            break
-                    target_prefix_list.append("".join(prefix))
+                # all_inputs=[sorted(glob.glob(i+"/*")) for i in valid_paths]
+                # target_prefix_list=[]
+                # for read_tup in zip(*all_inputs):
+                #     read_list=list(read_tup)
+                #     read_list=[os.path.basename(i) for i in read_list]
+                #     prefix = []
+                #     for x in zip(*read_list):
+                #         if len(set(x)) == 1:
+                #             prefix.append(x[0])
+                #         else:
+                #             break
+                #     target_prefix_list.append("".join(prefix))
                 # if not self.qcfg == "":
                 #     # qsub = True -> split files
                 #     shell_cmd="mkdir -p "+self.sampledir+"/filesplit/"+"".join(prefix)
                 #     subprocess.run(shell_cmd,shell=True)
                         
             # Store values
-            self.valid_dirs=valid_dirs
+            self.valid_paths=valid_paths
             self.read_valid=read_valid
             self.file_suffix=file_suffix
             self.target_prefix_list=target_prefix_list
+            self.tartget_file_dict=tartget_file_dict
 
 class SETUP(object):
     def __init__(self,settings,is_qsub,is_multisample,cfgpath):
@@ -222,50 +242,72 @@ class SETUP(object):
         today_now=today_now.replace(".","")
         today_now=today_now.replace("-","")
         self.today_now=today_now
+        tartget_file_dict=self.settings.tartget_file_dict
 
         if self.is_qsub:
             #Generate shell scripts for file splitting by seqkit
             for prefix in self.settings.target_prefix_list:
                 input_read_files=[]
 
+                reads_available=[]
                 for r in ["read1","read2","index1","index2"]:
                     if r in self.settings.read_valid and not self.settings.read_valid[r]=="":
-                        input_read_files.append(glob.glob(self.settings.read_valid[r]+"/"+prefix+"*")[0])
-                
-                sh_cmd_list_template=["seqkit","split2","-s",str(self.settings.qcfg["NUM_READS"])]
-                nfile_divmod=divmod(len(input_read_files),2)
-                fileindex=0
-                for n in range(nfile_divmod[0]):
-                    files_now=["-1",input_read_files[2*n],"-2",input_read_files[2*n+1]]
-                    sh_cmd_list=sh_cmd_list_template+["-O",self.settings.sampledir+"/filesplit/"+prefix+"_"+str(fileindex)]+files_now
-                    sh_cmd_line=" ".join(sh_cmd_list)
-                    generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(fileindex))
-                    fileindex+=1
-                if len(input_read_files)<4:
-                    for n in range(2*nfile_divmod[0],2*nfile_divmod[0]+nfile_divmod[1]):
-                        sh_cmd_list=sh_cmd_list_template+["-O",self.settings.sampledir+"/filesplit/"+prefix+"_"+str(fileindex)]+[input_read_files[n]]
+                        input_file_pool=tartget_file_dict[r]
+                        target_files=[i for i in input_file_pool if re.search(prefix,i)]
+                        input_read_files.append(sorted(target_files)) # like [[a_R1-001.fq,a_R1-002.fq,b_R1-001.fq], [a_R2-001.fq,a_R2-002.fq,b_R2-001.fq]]
+                        reads_available.append(r)
+
+                for idx,fileset_tup in enumerate(zip(*input_read_files)):
+                    if idx==0:
+                        nreads=len(fileset_tup)
+                    else:
+                        if nreads != len(fileset_tup):
+                            raise UnknownError("Number of reads should be same across input files.")
+
+                    sh_cmd_list_template=["seqkit","split2","-s",str(self.settings.qcfg["NUM_READS"])]
+                    # nfile_divmod=divmod(nreads,2)
+                    fileindex=0
+                    for read_idx,f in enumerate(fileset_tup):
+                        read_now=reads_available[read_idx]
+                        sh_cmd_list=sh_cmd_list_template+["-O",self.settings.sampledir+"/filesplit/"+read_now+"_"+prefix+"_"+str(idx)]+["-1",f]
                         sh_cmd_line=" ".join(sh_cmd_list)
-                        generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(fileindex))
+                        generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(idx)+"_"+read_now)
+
+
+
+                    # for n in range(nfile_divmod[0]):
+                    #     files_now=["-1",fileset_tup[2*n],"-2",fileset_tup[2*n+1]]
+                    #     sh_cmd_list=sh_cmd_list_template+["-O",self.settings.sampledir+"/filesplit/"+prefix+"_"+str(idx)+"_"+str(fileindex)]+files_now
+                    #     sh_cmd_line=" ".join(sh_cmd_list)
+                    #     generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(idx)+"_"+str(fileindex))
+                    #     fileindex+=1
+                    # if len(fileset_tup)<4:
+                    #     for n in range(2*nfile_divmod[0],2*nfile_divmod[0]+nfile_divmod[1]):
+                    #         sh_cmd_list=sh_cmd_list_template+["-O",self.settings.sampledir+"/filesplit/"+prefix+"_"+str(idx)+"_"+str(fileindex)]+[fileset_tup[n]]
+                    #         sh_cmd_line=" ".join(sh_cmd_list)
+                    #         generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(idx)+"_"+str(fileindex))
                 
                 #get read identifier
                 # read_iden_dict[prefix]={}
-                for n,r in enumerate(["read1","read2","index1","index2"]):
-                    if r in self.settings.read_valid and not self.settings.read_valid[r]=="":
-                        read_iden_dict[r]=os.path.basename(input_read_files[n]).replace(self.settings.file_suffix,"").replace(prefix,"")
-        else:
-            #Generate shell scripts for file splitting by seqkit
-            for prefix in self.settings.target_prefix_list:
-                input_read_files=[]
-                for r in ["read1","read2","index1","index2"]:
-                    if not self.settings.read_valid[r]=="":
-                        input_read_files.append(glob.glob(self.settings.read_valid[r]+"/"+prefix+"*")[0])
+                # for n,r in enumerate(["read1","read2","index1","index2"]):
+                #     if r in self.settings.read_valid and not self.settings.read_valid[r]=="":
+                #         read_iden_dict[r]=os.path.basename(input_read_files[n]).replace(self.settings.file_suffix,"").replace(prefix,"")
+        # else:
+        #     #Generate shell scripts for file splitting by seqkit
+        #     for prefix in self.settings.target_prefix_list:
+        #         input_read_files=[]
+        #         for r in ["read1","read2","index1","index2"]:
+        #             if not self.settings.read_valid[r]=="":
+        #                 input_file_pool=glob.glob(r+"/*") if os.path.isdir(r) else glob.glob(r)
+        #                 target_files=[i for i in input_file_pool if re.search(prefix,i)]
+        #                 input_read_files.append(target_files[0]) #just grab a representative file name for the sample
                 
                 #get read identifier
-                read_iden_dict[prefix]={}
-                for n,r in enumerate(["read1","read2","index1","index2"]):
-                    if not self.settings.read_valid[r]=="":
-                        read_iden_dict[r]=os.path.basename(input_read_files[n]).replace(self.settings.file_suffix,"").replace(prefix,"")
-        self.read_iden_dict=read_iden_dict
+        #         read_iden_dict[prefix]={}
+        #         for n,r in enumerate(["read1","read2","index1","index2"]):
+        #             if not self.settings.read_valid[r]=="":
+        #                 read_iden_dict[r]=os.path.basename(input_read_files[n]).replace(self.settings.file_suffix,"").replace(prefix,"")
+        # self.read_iden_dict=read_iden_dict
  
         
         #Generate shell scripts for specified commands
@@ -287,18 +329,22 @@ class SETUP(object):
                     sh_cmd_list+=["-I2","$"+str(n+2)]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"import")
+
             # qc
             sh_cmd_list=["Interstellar-exec","qc","-conf",self.cfgpath,"-d",outdir+"/qc","-o","$1","-rs","$2","-rq","$3"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"qc")
+            
             # to_bt
             sh_cmd_list=["Interstellar-exec","to_bt","-conf",self.cfgpath,"-d",outdir+"/to_bt","-o","$1","-rs","$2"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"to_bt")
+            
             # correct
             sh_cmd_list=["Interstellar-exec","correct","-conf",self.cfgpath,"-d",outdir+"/correct","-o","$1","-ip","$2"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"correct")
+            
             # mk_sval
             sh_cmd_list=["Interstellar-exec","mk_sval","-conf",self.cfgpath,"-d",outdir+"/mk_sval","-o","$1","-rs","$2","-rq","$3","-crp","$4"]
             sh_cmd_line=" ".join(sh_cmd_list)
@@ -315,6 +361,7 @@ class SETUP(object):
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"buildTree")
+            
             #mergeTree
             sh_cmd_list=["Interstellar-exec","mergeTree","-conf",self.cfgpath,"-o","$1","-lp","$2"]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
@@ -324,6 +371,7 @@ class SETUP(object):
                 sh_cmd_list+=["-d",outdir+"/mergeTree"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"mergeTree")
+            
             #convert
             sh_cmd_list=["Interstellar-exec","convert","-conf",self.cfgpath,"-d",outdir+"/convert","-o","$1","-tree","$2","-sv","$3","-sq","$4"]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
@@ -335,6 +383,7 @@ class SETUP(object):
             # sh_cmd_list=["Interstellar-exec","bc_sort","-conf",self.cfgpath,"-d",outdir+"/bc_sort","-o","$1","-tree","$2","-sseq_to_svalue","$3","-tbl","$4"]
             # sh_cmd_line=" ".join(sh_cmd_list)
             # generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"bc_sort")
+            
             # export: normal
             sh_cmd_list=["Interstellar-exec","export","-conf",self.cfgpath,"-d",outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6","-export_bclist"]
             sh_cmd_line=" ".join(sh_cmd_list)

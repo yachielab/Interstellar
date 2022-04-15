@@ -1,5 +1,6 @@
 import glob
 import os
+import re
 
 class EmptyError(Exception):
     pass
@@ -32,13 +33,21 @@ def tryAndFill(cfg,section,key,defaultvalue,required=False,choice="",parse_home=
     if parse_home:
         cfg[section][key]=os.path.expanduser(cfg[section][key])
 
+    if section=="demultiplex":
+        if key=="FORMAT":
+            if cfg[section][key]=="FASTQ":
+                cfg[section][key]="fastq"
+            elif cfg[section][key]=="TSV":
+                cfg[section][key]="tsv"
+
     return cfg[section][key]
 
-def setMemory(maxmem,scale_factor,scale_factor2):
+def setMemory(maxmem,minmem,scale_factor):
     maxmem=float(maxmem)
+    minmem=float(minmem)
     scale_factor=float(scale_factor)
-    scale_factor2=float(scale_factor2)
-    mem_now=round(maxmem*scale_factor*scale_factor2)
+    mem_now=round(minmem*scale_factor)
+
     if mem_now > maxmem:
         return str(maxmem)
     else:
@@ -48,17 +57,17 @@ def setDefaultConfig(cfg):
     #Section=general
     cfg["general"]["PROJECT_NAME"]=tryAndFill(cfg,"general","PROJECT_NAME","Interstellar")
     cfg["general"]["PROJECT_DIR"] =tryAndFill(cfg,"general","PROJECT_DIR","",required=True,parse_home=True)
-    cfg["general"]["SAMPLESHEET"] =tryAndFill(cfg,"general","SAMPLESHEET","")
+    cfg["general"]["SAMPLESHEET"] =tryAndFill(cfg,"general","SAMPLESHEET","",required=True,parse_home=True)
     cfg["general"]["SET_SHELL_ENV"]=tryAndFill(cfg,"general","SET_SHELL_ENV","",required=True,parse_home=True)
-    cfg["general"]["CHUNKSIZE"]   =tryAndFill(cfg,"general","CHUNKSIZE","2000000")
+    # cfg["general"]["CHUNKSIZE"]   =tryAndFill(cfg,"general","CHUNKSIZE","2000000")
     
     #Section=value_extraction
     if "value_extraction" in cfg:
-        cfg["value_extraction"]["READ1_DIR"]=tryAndFill(cfg,"value_extraction","READ1_DIR","",parse_home=True)
-        cfg["value_extraction"]["READ2_DIR"]=tryAndFill(cfg,"value_extraction","READ2_DIR","",parse_home=True)
-        cfg["value_extraction"]["INDEX1_DIR"]=tryAndFill(cfg,"value_extraction","INDEX1_DIR","",parse_home=True)
-        cfg["value_extraction"]["INDEX2_DIR"]=tryAndFill(cfg,"value_extraction","INDEX2_DIR","",parse_home=True)
-        cfg["value_extraction"]["FLASH"]=tryAndFill(cfg,"value_extraction","FLASH","",choice="READ1-READ2,READ1-INDEX1,READ1-INDEX2,READ2-INDEX1,READ2-INDEX2,INDEX1-INDEX2")
+        cfg["value_extraction"]["READ1_PATH"]=tryAndFill(cfg,"value_extraction","READ1_PATH","",parse_home=True)
+        cfg["value_extraction"]["READ2_PATH"]=tryAndFill(cfg,"value_extraction","READ2_PATH","",parse_home=True)
+        cfg["value_extraction"]["INDEX1_PATH"]=tryAndFill(cfg,"value_extraction","INDEX1_PATH","",parse_home=True)
+        cfg["value_extraction"]["INDEX2_PATH"]=tryAndFill(cfg,"value_extraction","INDEX2_PATH","",parse_home=True)
+        cfg["value_extraction"]["FLASH"]=tryAndFill(cfg,"value_extraction","FLASH","",choice="READ1-READ2,READ2-READ1,READ1-INDEX1,INDEX1-READ1,READ1-INDEX2,INDEX2-READ1,READ2-INDEX1,INDEX1-READ2,READ2-INDEX2,INDEX2-READ2,INDEX1-INDEX2,INDEX2-INDEX1")
         cfg["value_extraction"]["FLASH_MIN_OVERLAP"]=tryAndFill(cfg,"value_extraction","FLASH_MIN_OVERLAP","20")
         cfg["value_extraction"]["FLASH_MAX_OVERLAP"]=tryAndFill(cfg,"value_extraction","FLASH_MAX_OVERLAP","30")
         cfg["value_extraction"]["READ1_STRUCTURE"]=tryAndFill(cfg,"value_extraction","READ1_STRUCTURE","")
@@ -76,19 +85,23 @@ def setDefaultConfig(cfg):
     #Section=demultiplex
     if "demultiplex" in cfg:
         cfg["demultiplex"]["KEY"]=tryAndFill(cfg,"demultiplex","KEY","")
-        cfg["demultiplex"]["FORMAT"]=tryAndFill(cfg,"demultiplex","FORMAT","",required=True,choice="fastq,tsv")
+        cfg["demultiplex"]["FORMAT"]=tryAndFill(cfg,"demultiplex","FORMAT","",required=True,choice="FASTQ,TSV")
         cfg["demultiplex"]["TARGET"]=tryAndFill(cfg,"demultiplex","TARGET","")
         cfg["demultiplex"]["READ1_STRUCTURE"] =tryAndFill(cfg,"demultiplex","READ1_STRUCTURE","")
         cfg["demultiplex"]["READ2_STRUCTURE"] =tryAndFill(cfg,"demultiplex","READ2_STRUCTURE","")
         cfg["demultiplex"]["INDEX1_STRUCTURE"]=tryAndFill(cfg,"demultiplex","INDEX1_STRUCTURE","")
         cfg["demultiplex"]["INDEX2_STRUCTURE"]=tryAndFill(cfg,"demultiplex","INDEX2_STRUCTURE","")
+        cfg["demultiplex"]["READ1_HEADER_ADDITION"]=tryAndFill(cfg,"demultiplex","READ1_HEADER_ADDITION","")
+        cfg["demultiplex"]["READ2_HEADER_ADDITION"]=tryAndFill(cfg,"demultiplex","READ2_HEADER_ADDITION","")
+        cfg["demultiplex"]["INDEX1_HEADER_ADDITION"]=tryAndFill(cfg,"demultiplex","INDEX1_HEADER_ADDITION","")
+        cfg["demultiplex"]["INDEX2_HEADER_ADDITION"]=tryAndFill(cfg,"demultiplex","INDEX2_HEADER_ADDITION","")
     
     #Section=annotate_header
     if "annotate_header" in cfg:
-        cfg["annotate_header"]["READ1_TAG"]=tryAndFill(cfg,"annotate_header","READ1_TAG","")
-        cfg["annotate_header"]["READ2_TAG"]=tryAndFill(cfg,"annotate_header","READ2_TAG","")
-        cfg["annotate_header"]["INDEX1_TAG"]=tryAndFill(cfg,"annotate_header","INDEX1_TAG","")
-        cfg["annotate_header"]["INDEX2_TAG"]=tryAndFill(cfg,"annotate_header","INDEX2_TAG","")
+        cfg["annotate_header"]["READ1_HEADER_ADDITION"]=tryAndFill(cfg,"annotate_header","READ1_HEADER_ADDITION","")
+        cfg["annotate_header"]["READ2_HEADER_ADDITION"]=tryAndFill(cfg,"annotate_header","READ2_HEADER_ADDITION","")
+        cfg["annotate_header"]["INDEX1_HEADER_ADDITION"]=tryAndFill(cfg,"annotate_header","INDEX1_HEADER_ADDITION","")
+        cfg["annotate_header"]["INDEX2_HEADER_ADDITION"]=tryAndFill(cfg,"annotate_header","INDEX2_HEADER_ADDITION","")
         cfg["annotate_header"]["READ1_STRUCTURE"] =tryAndFill(cfg,"annotate_header","READ1_STRUCTURE","")
         cfg["annotate_header"]["READ2_STRUCTURE"] =tryAndFill(cfg,"annotate_header","READ2_STRUCTURE","")
         cfg["annotate_header"]["INDEX1_STRUCTURE"]=tryAndFill(cfg,"annotate_header","INDEX1_STRUCTURE","")
@@ -99,22 +112,21 @@ def setDefaultConfig(cfg):
 
 def setDefaultQConfig(cfg):
     cfg["qsub"]["MEM_MAX"]=tryAndFill(cfg,"qsub","MEM_MAX","",required=True)
+    cfg["qsub"]["MEM_MIN"] =tryAndFill(cfg,"qsub","MEM_MIN","",required=True)
     cfg["qsub"]["NUM_READS"]=tryAndFill(cfg,"qsub","NUM_READS","2000000")
     cfg["qsub"]["QOPTION"]=tryAndFill(cfg,"qsub","QOPTION","",required=True)
-    # cfg["qsub"]["SET_SHELL_ENV"]=tryAndFill(cfg,"qsub","SET_SHELL_ENV","",required=True)
-    cfg["qsub"]["MEM_RATIO"] =tryAndFill(cfg,"qsub","MEM_RATIO","0.05")
-    cfg["qsub"]["mem_import"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
-    cfg["qsub"]["mem_qc"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
+    cfg["qsub"]["mem_import"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],1)
+    cfg["qsub"]["mem_qc"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],1)
     cfg["qsub"]["mem_to_bt"]=cfg["qsub"]["MEM_MAX"]
     cfg["qsub"]["mem_correct"]=cfg["qsub"]["MEM_MAX"]
-    cfg["qsub"]["mem_mk_sval"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
-    cfg["qsub"]["mem_buildTree"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
+    cfg["qsub"]["mem_mk_sval"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],2)
+    cfg["qsub"]["mem_buildTree"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],1)
     cfg["qsub"]["mem_mergeTree"]=cfg["qsub"]["MEM_MAX"]
-    cfg["qsub"]["mem_convert"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],3)
-    cfg["qsub"]["mem_bc_sort"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],1)
-    cfg["qsub"]["mem_export"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],3)
-    cfg["qsub"]["mem_demultiplex"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
-    cfg["qsub"]["mem_annotate_header"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_RATIO"],2)
+    cfg["qsub"]["mem_convert"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],3)
+    cfg["qsub"]["mem_bc_sort"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],1)
+    cfg["qsub"]["mem_export"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],3)
+    cfg["qsub"]["mem_demultiplex"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],2)
+    cfg["qsub"]["mem_annotate_header"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],2)
     return cfg["qsub"]
 
 

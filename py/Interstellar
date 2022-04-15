@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import os
@@ -86,7 +86,7 @@ if __name__=="__main__":
     else:
         is_qsub=True
         qcfg=settingImporter.readconfig(opt.qconfig)
-        qcfg={k:qcfg[k] for k in qcfg} #No qconfig cleanup
+        qcfg={k:settingImporter.configClean(qcfg[k],qconf=True) for k in qcfg}
         qcfg=settingRequirementCheck.setDefaultQConfig(qcfg)
 
 
@@ -99,13 +99,14 @@ if __name__=="__main__":
         setup_obj=interstellar_setup.SETUP(setting,is_qsub,is_multisample,opt.config)
         setup_obj.generateShellScripts()
 
-        param_dict[os.path.basename(sampledir)]["valid_dirs"]=setting.valid_dirs
+        param_dict[os.path.basename(sampledir)]["valid_paths"]=setting.valid_paths
         param_dict[os.path.basename(sampledir)]["read_valid"]=setting.read_valid
         param_dict[os.path.basename(sampledir)]["file_suffix"]=setting.file_suffix
         param_dict[os.path.basename(sampledir)]["target_prefix_list"]=setting.target_prefix_list
         param_dict[os.path.basename(sampledir)]["shelldir"]=setup_obj.shelldir
-        param_dict[os.path.basename(sampledir)]["read_iden_dict"]=setup_obj.read_iden_dict
+        # param_dict[os.path.basename(sampledir)]["read_iden_dict"]=setup_obj.read_iden_dict
         param_dict[os.path.basename(sampledir)]["today_now"]=setup_obj.today_now
+        param_dict[os.path.basename(sampledir)]["tartget_file_dict"]=setting.tartget_file_dict
 
         # fastq split
         flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]

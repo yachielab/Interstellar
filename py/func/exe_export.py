@@ -169,71 +169,82 @@ class BARISTA_EXPORT(object):
                 
                 readStructure_now=exportReadStructure[read_now]
                 for cnt_comp,component in enumerate(readStructure_now):
-                    t0=time.time()
-                    for k in funcdict_key_list:
-                        if component+"," in k or ","+component in k or component==k:
-                            funcdict_key=copy.copy(k)
-                    try:
-                        funcdict_key
-                    except:
-                        raise(component+" was not found in func_dict keys.")
-                    
-
-                    opt_now=copy.deepcopy(func_dict[funcdict_key])
-                    func_now=opt_now["func_ordered"][0]
-                    opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"])
-
-                    if func_now=="PASS":
-                        s_seq_component_clean=opt_now[func_now]["source"]
-                        func_tmp=self.settings.func_dict_ext[s_seq_component_clean]["func_ordered"][0]
-                        s_seq_component_raw=self.settings.func_dict_ext[s_seq_component_clean][func_tmp]["source"]
-                        s_seq_component=s_seq_component_raw+":"+s_seq_component_clean
-                        seq_export_tmp=s_seq_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="seq",add_nuc=opt_now.get("add_nucleotide"))
-                        qual_export_tmp=s_qual_chunk[s_seq_component_raw].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="qual",baseQuality=None)
-                    
-                    elif func_now=="SEQ2SEQ": #Fix this part next to apply a new dictionary format
-                        s_seq_component_clean=opt_now[func_now]["source"]
-                        s_seq_component_clean_list=sorted(s_seq_component_clean.split("+"))
-                        func_tmp_list=[self.settings.func_dict_ext[i]["func_ordered"][0] for i in s_seq_component_clean_list]
-                        s_seq_component_raw_list=[self.settings.func_dict_ext[i][func_tmp_list[idx]]["source"] for idx,i in enumerate(s_seq_component_clean_list)]
-                        s_seq_component_list=[i+":"+s_seq_component_clean_list[idx] for idx,i in enumerate(s_seq_component_raw_list)]
-                        seq_export_tmp=s_seq_chunk[s_seq_component_list]
-                        qual_export_tmp=s_qual_chunk[s_seq_component_raw_list]
-
-                        if len(seq_export_tmp.columns) > 1:
-                            seq_export_tmp=seq_export_tmp[seq_export_tmp.columns[0]].str.cat(seq_export_tmp[seq_export_tmp.columns[1:]],sep="_")
-                            qual_export_tmp=qual_export_tmp[qual_export_tmp.columns[0]].str.cat(qual_export_tmp[qual_export_tmp.columns[1:]])
-                        else:
-                            seq_export_tmp=seq_export_tmp[seq_export_tmp.columns[0]]
-                            qual_export_tmp=qual_export_tmp[qual_export_tmp.columns[0]]
-
-                        seq_export_tmp=seq_export_tmp.apply(barcodeConverter.SEQ2SEQ,dest_seg=component,dic=self.seq2seq_refs)
-                        qual_export_tmp=qual_export_tmp.apply(barcodeConverter.toQscore).astype(str)
-                        qual_export_tmp=seq_export_tmp.str.cat(qual_export_tmp,sep="_")
-                        qual_export_tmp=qual_export_tmp.map(barcodeConverter.getConvQual_ver2)
-
-                    
-                    elif func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
-                        d_val_component=opt_now[func_now]["source"]
-
-                        reference_now=referenceDict[component]
-                        d_val_chunk[funcdict_key]=d_val_chunk[funcdict_key].map(int)
-                        d_qual_chunk[funcdict_key]=d_qual_chunk[funcdict_key].map(int)
-                        seq_export_tmp=d_val_chunk[funcdict_key].apply(barcodeConverter.getConvSeq,reference=reference_now)
-                        df_tmp_cat=seq_export_tmp.str.cat(d_qual_chunk[funcdict_key].astype(str),sep="_")
-                        qual_export_tmp=df_tmp_cat.map(barcodeConverter.getConvQual_ver2)
-
-                        if self.settings.is_barcodelist:
-                            barcode_correspondence[component]=seq_export_tmp
-
-                    elif func_now=="CONSTANT":
-                        seq_export_tmp=[opt_now[func_now]["sequence"]]*d_val_chunk.shape[0]
-                        length_now=len(opt_now[func_now]["sequence"])
+                    if regex.search(r'^\"[^\"]+\"',component):
+                        # Implementation for constant sequences in the read structure configuration
+                        seq=regex.sub('\"',"",component)
+                        seq_export_tmp=[seq]*d_val_chunk.shape[0]
+                        length_now=len(seq)
                         baseQuality=40 #hard coded
                         const_quality=chr(baseQuality+33)*length_now
                         qual_export_tmp=[const_quality]*d_val_chunk.shape[0]
                         
-                    
+                    else:    
+                        for k in funcdict_key_list:
+                            if component+"," in k or ","+component in k or component==k:
+                                funcdict_key=copy.copy(k)
+                        try:
+                            funcdict_key
+                        except:
+                            raise(component+" was not found in func_dict keys.")
+                        
+
+                        opt_now=copy.deepcopy(func_dict[funcdict_key])
+                        func_now=opt_now["func_ordered"][0]
+                        opt_now[func_now]["source"]="+".join(opt_now[func_now]["source"])
+
+                        if func_now=="PASS":
+                            s_seq_component_clean=opt_now[func_now]["source"]
+                            func_tmp=self.settings.func_dict_ext[s_seq_component_clean]["func_ordered"][0]
+                            s_seq_component_raw=self.settings.func_dict_ext[s_seq_component_clean][func_tmp]["source"]
+                            s_seq_component=s_seq_component_raw+":"+s_seq_component_clean
+                            seq_export_tmp=s_seq_chunk[s_seq_component].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="seq",add_nuc=opt_now.get("add_nucleotide"))
+                            qual_export_tmp=s_qual_chunk[s_seq_component_raw].apply(barcodeConverter.genEqSeq,length=opt_now[func_now].get("length"),datatype="qual",baseQuality=None)
+                        
+                        elif func_now=="SEQ2SEQ": #Fix this part next to apply a new dictionary format
+                            s_seq_component_clean=opt_now[func_now]["source"]
+                            s_seq_component_clean_list=sorted(s_seq_component_clean.split("+"))
+                            func_tmp_list=[self.settings.func_dict_ext[i]["func_ordered"][0] for i in s_seq_component_clean_list]
+                            s_seq_component_raw_list=[self.settings.func_dict_ext[i][func_tmp_list[idx]]["source"] for idx,i in enumerate(s_seq_component_clean_list)]
+                            s_seq_component_list=[i+":"+s_seq_component_clean_list[idx] for idx,i in enumerate(s_seq_component_raw_list)]
+                            seq_export_tmp=s_seq_chunk[s_seq_component_list]
+                            qual_export_tmp=s_qual_chunk[s_seq_component_raw_list]
+
+                            if len(seq_export_tmp.columns) > 1:
+                                seq_export_tmp=seq_export_tmp[seq_export_tmp.columns[0]].str.cat(seq_export_tmp[seq_export_tmp.columns[1:]],sep="_")
+                                qual_export_tmp=qual_export_tmp[qual_export_tmp.columns[0]].str.cat(qual_export_tmp[qual_export_tmp.columns[1:]])
+                            else:
+                                seq_export_tmp=seq_export_tmp[seq_export_tmp.columns[0]]
+                                qual_export_tmp=qual_export_tmp[qual_export_tmp.columns[0]]
+
+                            seq_export_tmp=seq_export_tmp.apply(barcodeConverter.SEQ2SEQ,dest_seg=component,dic=self.seq2seq_refs)
+                            qual_export_tmp=qual_export_tmp.apply(barcodeConverter.toQscore).astype(str)
+                            qual_export_tmp=seq_export_tmp.str.cat(qual_export_tmp,sep="_")
+                            qual_export_tmp=qual_export_tmp.map(barcodeConverter.getConvQual_ver2)
+
+                        
+                        elif func_now=="WHITELIST_ASSIGNMENT" or func_now=="RANDSEQ_ASSIGNMENT":
+                            d_val_component=opt_now[func_now]["source"]
+
+                            reference_now=referenceDict[component]
+                            d_val_chunk[funcdict_key]=d_val_chunk[funcdict_key].map(int)
+                            d_qual_chunk[funcdict_key]=d_qual_chunk[funcdict_key].map(int)
+                            seq_export_tmp=d_val_chunk[funcdict_key].apply(barcodeConverter.getConvSeq,reference=reference_now)
+                            df_tmp_cat=seq_export_tmp.str.cat(d_qual_chunk[funcdict_key].astype(str),sep="_")
+                            qual_export_tmp=df_tmp_cat.map(barcodeConverter.getConvQual_ver2)
+
+                            if self.settings.is_barcodelist:
+                                barcode_correspondence[component]=seq_export_tmp
+
+                        elif func_now=="CONSTANT":
+                            seq_export_tmp=[opt_now[func_now]["sequence"]]*d_val_chunk.shape[0]
+                            length_now=len(opt_now[func_now]["sequence"])
+                            baseQuality=40 #hard coded
+                            const_quality=chr(baseQuality+33)*length_now
+                            qual_export_tmp=[const_quality]*d_val_chunk.shape[0]
+
+                    # print(component)        
+                    # print(seq_export_tmp.head())
+
                     if cnt_comp==0:
                         fastq_parse["seq"]=seq_export_tmp
                         fastq_parse["qual"]=qual_export_tmp
