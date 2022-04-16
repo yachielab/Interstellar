@@ -303,6 +303,12 @@ Variable names of identified sequence segments can be freely defined by the user
   READ1_STRUCTURE=^(?P<seg1>.{14})(?P<seg2>.{8})$
   READ2_STRUCTURE=^(?P<seg3>.*)$
   ```
+  
+  </br>
+
+  <img src="https://github.com/yachielab/Interstellar/blob/img/image/regex1.png" width="400 px"/>
+
+  </br>
 
   In this example, READ1 is 22-bp long in total and consists of a 14-bp "seg1"segment and an 8-bp "seg3"segment. The entire sequence of READ2 is obtained as a "seg3"segment. Here, seg1, seg2, and seg3 are a cell ID, UMI, and cDNA, respectively.
 
@@ -313,6 +319,12 @@ Variable names of identified sequence segments can be freely defined by the user
   ```
   READ1_STRUCTURE=^(?P<seg1>.{9,10})(?P<seg2>CAGAGC){s<=2}(?P<seg3>.{8})(?P<seg4>.{10})$
   ```
+  
+  </br>
+
+  <img src="https://github.com/yachielab/Interstellar/blob/img/image/regex2.png" width="500 px"/>
+
+  </br>
 
   Here we demonstrate how to express Read 1 of a sci-RNA-seq3 library. In a 34- or 33-bp sequence, a constant sequence of "CAGAGC"(seg2) is allowed to have up to two mismatches and sandwithced by 9- or 10-bp "seg1"on the left and 8-bp "seg3"and 10-bp "seg4"on the right. Here, seg1, seg2, seg3, and seg4 are a cell ID conferred by ligation, constant sequence, UMI, and another cell ID conferred by reverse transcription.
 
