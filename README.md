@@ -88,7 +88,7 @@ To run INTERSTELLAR with a distributed computing mode:
 Interstellar -conf process.conf -qconf distributed_computing.conf
 ```
 
-See here for the detail settings of the configuration file.
+See below for the detail settings of the configuration file.
 
 ### Outputs
 
@@ -170,7 +170,7 @@ SAMPLESHEET=/path/to/samplesheet.tsv
   Absolute path to a project directory. All processes will be performed under this directory. If INTERSTELLAR is executed without a directory in the designated path, a new directory will be created. When a directory exists in the designated path, INTERSTELLAR seeks for completed processes in the configuration file and resumes the remaining processes if any. For example, if a command error happens at value_translation, INTERSTELLAR skips the value_extraction step when it is re-executed with a modified value_translation configuration.
 
 - SET_SHELL_ENV (required)
-  Path to a shell script to activate your environment. Example file (link).
+  Path to a shell script to activate your environment. Example file (https://github.com/yachielab/Interstellar/blob/main/example-dataset/templates/set_shell_env).
 
 - SAMPLESHEET (required)
   A TSV file to specify the correspondence between the input FASTQ file prefixes and their sample names. The input FASTQ file names need to contain the prefix, like \<fileprefix>_R1_001.fastq (or fastq.gz). This allows INTERSTELLAR to interpret dinsinct samples independently. 
@@ -275,7 +275,7 @@ Variable names of identified sequence segments can be freely defined by the user
 
   Paired-end reads that sequenced overlapping regions can be merged into single reads. Only a single pair of two reads among READ1, READ2, INDEX1 and INDEX2 can be merged. The pair should be specified as "READ1-READ2”, "READ2-READ1”, "READ1-INDEX1”, "INDEX1-READ1”, "READ1-INDEX2”, "INDEX2-READ1”, "READ2-INDEX1”, "INDEX1-READ2”, "READ2-INDEX2”, "INDEX2-READ2”, "INDEX1-INDEX2"or "INDEX2-INDEX2”. Direction of the merged read will follow that of the first read to be merged.
 
-  Example configurations for FLASH are shown in Example 5(link).
+  Example configurations for FLASH are shown in Example 5(https://github.com/yachielab/Interstellar/blob/main/example-dataset/Example5/ex5.conf).
 
 - FLASH_MIN_OVERLAP
   Corresponding to the `-m` option of FLASH2 thatspecifies the minimum overlap length. Default=20.
