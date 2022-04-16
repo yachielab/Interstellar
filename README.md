@@ -20,8 +20,8 @@ The distributed computing process is designed to perform many small conversion t
 
 ### Software dependencies:
 
-- Python3 (version: 3.7.0 or later
-- )matplotlib <https://anaconda.org/conda-forge/matplotlib>
+- Python3 (version: 3.7.0 or later)
+- matplotlib <https://anaconda.org/conda-forge/matplotlib>
 - numpy <https://anaconda.org/conda-forge/numpy>
 - pandas <https://anaconda.org/conda-forge/pandas>
 - regex <https://pypi.org/project/regex/>
