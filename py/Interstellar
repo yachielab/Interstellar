@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+print("TEST")
+
 import os
 import glob
 from argparse import ArgumentParser
