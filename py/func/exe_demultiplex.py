@@ -127,8 +127,8 @@ class BARISTA_DEMULTIPLEX(object):
                 s_raw_qual_chunk=s_raw_qual_chunk.loc[s_seq_chunk.index]
 
                 s_avg_qual_chunk=s_avg_qual_chunk.astype("int8")
-                print(self.settings.key)
-                print(s_seq_chunk.head())
+                if s_seq_chunk.shape[0]==0:
+                    raise UnknownError("All rows were dropped out.")
                 key_series=s_seq_chunk[self.settings.key].apply("_".join,axis=1)
                 demulti_key|=set(key_series)
                 export_pd=pd.DataFrame()
