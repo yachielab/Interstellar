@@ -124,9 +124,6 @@ class BARISTA_DEMULTIPLEX(object):
                 s_seq_chunk=s_seq_chunk[use_segment_list]
                 
                 s_seq_chunk=s_seq_chunk[s_seq_chunk!="-"].dropna()
-                print(self.settings.key)
-                print(s_seq_chunk.shape)
-                print(s_seq_chunk.columns)
                 s_avg_qual_chunk=s_avg_qual_chunk.loc[s_seq_chunk.index]
                 s_raw_qual_chunk=s_raw_qual_chunk.loc[s_seq_chunk.index]
 
