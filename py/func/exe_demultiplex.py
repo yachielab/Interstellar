@@ -111,6 +111,7 @@ class BARISTA_DEMULTIPLEX(object):
                         use_segment_list |= set(self.settings.annotate_headers[exportReadNum])
                     if exportReadNum in self.settings.exportReadStructure:
                         use_segment_list |= set(self.settings.exportReadStructure[exportReadNum])
+                use_segment_list |= set(self.settings.key)
                 use_segment_list=list(use_segment_list)
 
                 #constant sequence
