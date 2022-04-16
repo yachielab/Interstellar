@@ -27,7 +27,7 @@ def configClean(cfgDict,qconf=True,query=""):
         for key in cfgDict:
             if key=="QOPTION":
                 opt_now=cfgDict[key]
-                opt_now=regex.sub("^[^\"]+\"|\"[^\"]+$","",opt_now)
+                opt_now=regex.sub(r"^\"|\"$","",opt_now)
                 new_cfgDict[key]=opt_now
             else:
                 new_cfgDict[key]=regex.sub("\\t|\\n| ","",cfgDict[key])
