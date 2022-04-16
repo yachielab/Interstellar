@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+print("INTERSTELLAR-EXEC DEV VERSION")
+
 import sys
 from func import arg
 from func import exe_import
