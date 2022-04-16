@@ -39,6 +39,10 @@ def tryAndFill(cfg,section,key,defaultvalue,required=False,choice="",parse_home=
                 cfg[section][key]="fastq"
             elif cfg[section][key]=="TSV":
                 cfg[section][key]="tsv"
+    
+    # if section=="qsub":
+    #     if key=="QOPTION":
+    #         cfg[section][key]=
 
     return cfg[section][key]
 
@@ -111,8 +115,8 @@ def setDefaultConfig(cfg):
 
 
 def setDefaultQConfig(cfg):
-    cfg["qsub"]["MEM_MAX"]=tryAndFill(cfg,"qsub","MEM_MAX","",required=True)
-    cfg["qsub"]["MEM_MIN"] =tryAndFill(cfg,"qsub","MEM_MIN","",required=True)
+    cfg["qsub"]["MEM_MAX"]=tryAndFill(cfg,"qsub","MEM_MAX","","128")
+    cfg["qsub"]["MEM_MIN"] =tryAndFill(cfg,"qsub","MEM_MIN","","6")
     cfg["qsub"]["NUM_READS"]=tryAndFill(cfg,"qsub","NUM_READS","2000000")
     cfg["qsub"]["QOPTION"]=tryAndFill(cfg,"qsub","QOPTION","",required=True)
     cfg["qsub"]["mem_import"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],1)
