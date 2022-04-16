@@ -4,7 +4,9 @@
 
 INTERSTELLAR (interpretation, scalable transformation, and emulation of large-scale sequencing reads) is a versatle software tool that extracts data values encoded from sequencing reads and translates them into sequencing reads of another structure according to a user-defied process configuration file.
 
-<center><img src="https://github.com/yachielab/Interstellar/blob/img/image/fig01.jpg" width="750 px"/></center>
+
+<img src="https://github.com/yachielab/Interstellar/blob/img/image/fig01.jpg" width="750 px"/>
+
 
 It first identifies sequence segments of reads in FASTQ files according to the user’s definition provided in a process configuration file (Step 1). The source read structure can be defined flexibly using regular expression and/or predefined allowlists. A combinatorial segment group can be defined to collectively denote a specific value. A parental segment (or combinatorial parental segment group) can be paired with an independent set of local segments (or combinatorial local segment groups), where sequence-to-value interpretations of local segments are independently defined for each parental segment. For example, cell IDs and UMIs of typical scRNA-seq reads can be defined as parental segments and their local segments, respectively, where the same UMI sequences associated to different cell IDs are interpreted as different objects. Multiple source read structures can also be defined for a single set of input sequencing reads that are produced by a one-shot sequencing of different libraries.
 
