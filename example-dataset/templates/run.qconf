@@ -1,4 +1,4 @@
 [qsub]
 MEM_MAX=128
-MEM_RATIO=0.1
-QOPTION=-l s_vmem=<mem>G,mem_req=<mem>G
+MEM_MIN=8
+QOPTION="-l s_vmem=<mem>G,mem_req=<mem>G"
