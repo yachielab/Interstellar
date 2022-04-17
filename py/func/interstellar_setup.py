@@ -426,6 +426,7 @@ class SETUP(object):
         for i in glob.glob(self.shelldir+"/seqkit*"):
             qcmd_now=qcmd_base+["-N","FASTQ_split"+self.today_now,i]
             qcmd_now=" ".join(qcmd_now)
+            print(qcmd_now)
             s=subprocess.run(qcmd_now,shell=True)
             used_commands.append(qcmd_now)
             if s.returncode != 0:
