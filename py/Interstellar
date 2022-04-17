@@ -30,6 +30,7 @@ from func import annotate_header
 
 def getOpt():
     argparser = ArgumentParser(usage='%(prog)s [options]')
+    argparser.add_argument('-v','--version', action='version', version='%(prog)s 1.0.1')
     argparser.add_argument('-conf', '--config', type=str,required=True,help="Configuratioon file")
     argparser.add_argument('-qconf', '--qconfig', type=str,default="",help="Configuration file for distributed computing. If you specify this option, qsub jobs are executed according to the settings. Default='' (no distributed computing)")
     return argparser.parse_args()
