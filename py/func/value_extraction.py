@@ -54,8 +54,8 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 for r in ['read1','read2','index1','index2']:
                     if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
                         # read_identifier=param_dict[os.path.basename(sampledir)]["read_iden_dict"][r]
-                        print(r+"_"+fileprefix+r".*"+endfix_input)
-                        target_files=[i for i in all_files if re.search(r+"_"+fileprefix+r".*"+endfix_input,os.path.basename(i))]
+                        print("/"+r+"_"+fileprefix+r"_[0-9]+/.*"+endfix_input)
+                        target_files=[i for i in all_files if re.search("/"+r+"_"+fileprefix+r"_[0-9]+/.*"+endfix_input,os.path.basename(i))]
                         print(target_files)
                         file_pool[idx]+=sorted(target_files)
                         idx+=1
