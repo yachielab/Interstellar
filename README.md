@@ -1,5 +1,10 @@
 # INTERSTELLAR
 
+## Version history
+
+- v1.0.1: Bugfix for the distributed computing mode (Apr 17, 2022)
+- v1.0.0: Initial release (Apr 16, 2022)
+
 ## Overview
 
 INTERSTELLAR (interpretation, scalable transformation, and emulation of large-scale sequencing reads) is a versatle software tool that extracts data values encoded from sequencing reads and translates them into sequencing reads of another structure according to a user-defied process configuration file.
