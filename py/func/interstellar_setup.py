@@ -111,6 +111,8 @@ def generateShellTemplate(template,cmdline,shelloutdir,shelloutname):
 
 
 def jobCheck(jid,outdir,n_jobs):
+    print("qacct -d 7 -j "+jid+" 2> /dev/null | grep -E 'failed|exit_status' > "+outdir+"/qlog.tmp")
+
     s=subprocess.run("qacct -d 7 -j "+jid+" 2> /dev/null | grep -E 'failed|exit_status' > "+outdir+"/qlog.tmp",shell=True)
     if os.path.getsize(outdir+"/qlog.tmp")==0:
         return False
@@ -417,9 +419,9 @@ class SETUP(object):
     def fastq_split(self):
         used_commands=[]
 
-        print("Runnning qsub jobs...: Split FASTQ files",flush=True)
+        print("\nRunnning qsub jobs...: Split FASTQ files for sample "+self.settings.samplename,flush=True)
         qoption=self.settings.qcfg["QOPTION"]
-        qoption=qoption.replace("<mem>",self.settings.qcfg["MEM_MAX"])
+        qoption=qoption.replace("<mem>",self.settings.qcfg["MEM_MIN"])
         qcmd_base=["qsub",qoption,"-e",self.settings.sampledir+"/qlog","-o",self.settings.sampledir+"/qlog","-cwd"]
         for i in glob.glob(self.shelldir+"/seqkit*"):
             qcmd_now=qcmd_base+["-N","FASTQ_split"+self.today_now,i]
