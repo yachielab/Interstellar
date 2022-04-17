@@ -48,15 +48,11 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                     file_pool.append([])
 
             all_files=glob.glob(sampledir+"/filesplit/*/*")
-            print(all_files)
             for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
                 idx=0
                 for r in ['read1','read2','index1','index2']:
                     if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
-                        # read_identifier=param_dict[os.path.basename(sampledir)]["read_iden_dict"][r]
-                        print("/"+r+"_"+fileprefix+r"_[0-9]+/.*"+endfix_input)
                         target_files=[i for i in all_files if re.search("/"+r+"_"+fileprefix+r"_[0-9]+/.*"+endfix_input,i)]
-                        print(target_files)
                         file_pool[idx]+=sorted(target_files)
                         idx+=1
             # input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
@@ -75,7 +71,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             #         prefix_pool=[re.sub(r"_[^_]+\."+endfix_input,"",os.path.basename(i)) for i in glob.glob(input_file_list[0]+"/*")]
             #         for f_name in input_file_list:
             #             file_pool.append([glob.glob(f_name+"/"+p+"*")[0] for p in prefix_pool])
-            print(file_pool)
             for infile in zip(*file_pool):
                 # infile_now=[infile[i] for i in range(len(param_dict[os.path.basename(sampledir)]["read_valid"]))]
                 outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
