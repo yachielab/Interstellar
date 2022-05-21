@@ -648,7 +648,7 @@ This section enables demultiplexing of input reads according to sequence segment
 
 ```
 [qsub]
-QOPTION=”-l s_vmem=<int>G,mem_req=<int>G”
+QOPTION=”-l s_vmem=<mem>G,mem_req=<mem>G”
 MEM_MAX=128
 MEM_MIN=6
 NUM_READS=2000000
@@ -660,7 +660,7 @@ The distributed computing mode can be configured in this section by defining the
 
 - QOPTION (required)
 
-  Options to be added to the qsub command. This is strongly recommended to be defined as some of the INTERSTELLAR operations require a large memory size. In each step of INTERSTELLAR operations, \<int> will be replaced by an empirically estimated sufficient memory size between MEM_MIN and MEM_MAX defined below. The example QOPTION above represents the one that can be used in a UGE environment.
+  Options to be added to the qsub command. This is strongly recommended to be defined as some of the INTERSTELLAR operations require a large memory size. In each step of INTERSTELLAR operations, \<mem> will be replaced by an empirically estimated sufficient memory size between MEM_MIN and MEM_MAX defined below. The example QOPTION above represents the one that can be used in a UGE environment.
 
 - MEM_MAX
 
