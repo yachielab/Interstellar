@@ -7,6 +7,7 @@ import time
 import os
 import pandas as pd
 
+
 def checkRequiredFile(key,flist):
     for f in flist:
         if re.search(key,f):
@@ -153,6 +154,10 @@ class UnknownError(Exception):
 class ArguementError(Exception):
     pass
 
+class InputError(Exception):
+    pass
+
+
 
 class SETUP_SETTINGS(object):
     def __init__(self,cfg,qcfg,cmds_execute,sampledir,samplename):
@@ -194,7 +199,7 @@ class SETUP_SETTINGS(object):
                         if line!="":
                             samplelist.append(line.split("\t"))
                 target_prefix_list=[l[0] for l in samplelist if l[1]==self.samplename]
-
+                    
                 # if not self.qcfg == "":
                 #     # qsub = True -> split files
                 #     for t in target_prefix_list:
@@ -256,6 +261,10 @@ class SETUP(object):
                         target_files=[i for i in input_file_pool if re.search(prefix,i)]
                         input_read_files.append(sorted(target_files)) # like [[a_R1-001.fq,a_R1-002.fq,b_R1-001.fq], [a_R2-001.fq,a_R2-002.fq,b_R2-001.fq]]
                         reads_available.append(r)
+
+                        if len(target_files)==0:
+                            errmsg = "No files are found with the prefix: "+prefix+" for the "+r+". Please check the samplesheet and your FASTQ file names."
+                            raise InputError(errmsg)
 
                 for idx,fileset_tup in enumerate(zip(*input_read_files)):
                     if idx==0:

@@ -1,6 +1,7 @@
 import configparser
 import json
 from argparse import ArgumentError, ArgumentParser
+from random import sample
 from types import FunctionType
 from pandas._config.config import option_context
 import regex
@@ -11,6 +12,10 @@ from distutils.util import strtobool
 import pandas as pd
 import re
 import copy
+
+class InputError(Exception):
+    pass
+
 
 
 def readconfig(input_cfg):
@@ -48,6 +53,31 @@ def genSampleDir(proj_dir,samplesheet):
         samplesheet=pd.read_csv(samplesheet,sep="\t",header=None)
         samplesheet=samplesheet.dropna(how="all")
         samples_uniq=set(samplesheet[1])
+        fileprefix_uniq=set(samplesheet[0])
+
+        # Rule 1: A same prefix can't be used for different samples
+        sample_to_fileprefix=collections.defaultdict(list)
+        for s,pfx in zip(samplesheet[1],samplesheet[0]):
+            sample_to_fileprefix[s].append(pfx)
+        for s1 in sample_to_fileprefix:
+            for s2 in sample_to_fileprefix:
+                if s1 != s2:
+                    p1 = set(sample_to_fileprefix[s1])
+                    p2 = set(sample_to_fileprefix[s2])
+                    if len(p1 & p2) > 0:
+                        errmsg = "A same prefix can't be used for different samples! Check the sample sheet."
+                        raise InputError(errmsg)
+
+        # Rule 2: File prefixes should be completely unique each other
+        for pfx1 in fileprefix_uniq:
+            for pfx2 in fileprefix_uniq:
+                if pfx1 != pfx2:
+                    m1 = re.search(pfx1,pfx2)
+                    m2 = re.search(pfx2,pfx1)
+                    if m1 or m2:
+                        errmsg = "File prefixes should be completely unique each other! Check the sample sheet."
+                        raise InputError(errmsg)
+
         for i in samples_uniq:
             os.makedirs(proj_dir+"/"+i,exist_ok=True)
         sampledir_list=[proj_dir+"/"+i for i in samples_uniq]
