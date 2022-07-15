@@ -7,7 +7,7 @@
 
 ## Overview
 
-INTERSTELLAR (interpretation, scalable transformation, and emulation of large-scale sequencing reads) is a versatle software tool that extracts data values encoded from sequencing reads and translates them into sequencing reads of another structure according to a user-defied process configuration file.
+INTERSTELLAR (interpretation, scalable transformation, and emulation of large-scale sequencing reads) is a versatile software tool that extracts data values from sequencing reads and translates them into sequencing reads of another structure according to a user-defined process configuration file.
 
 </br>
 
@@ -19,7 +19,7 @@ It first identifies sequence segments of reads in FASTQ files according to the u
 
 The segment identification process can be performed independently for fragmented FASTQ files using distributed computing, where each fragmented process yields segmented sequences and count-up information for each unique segment sequence. The sequence count-up information derived from different fragmented processes is then merged to compute an error-corrected sequence for each unique segment sequence (Step 2). INTERSTELLAR enables four error correction options: imputation-to-majority, mapping-to-allowlist, Bartender, and a user-developed plugin. Once an error-correction rule table is generated, it is used to error-correct segment sequences originated from each of the fragmented FASTQ files using distributed computing. The above-mentioned read interpretation process can be applied to theoretically any of the high-throughput sequencing read analysis and the generated error-corrected segment sequence files enable efficient development of their downstream data analysis pipelines.
 
-If defined in the process configuration file, the read translation into destination read structures are next processed for the source reads with all segment sequences required for the translation to have identified in the previous processes (Step 3). Destination read structures can flexibly be specified by using IUPAC codes and allowlists of destination segment sequences. First, using distributed computing, a segment value file and a value tree are extracted from each of the error-corrected segment sequence files, where each unique segment sequence is converted into a numerical value and parental-local segment allocations of unique values and unique combinatorial value groups are represented in a tree structure. The value tree files originated from the fragmented FASTQ files are then passed to a single computing node to generate a merged value tree. Next, the values in the merged value tree are replaced by new values to minimize the number of numerical value species for each variable in a way that they still uniquely maintain the same tree topology (Step 4). Obtaining the value conversion rule table that achieved the optimization of the merged value tree, segment value files are separately processed to derive optimized segment value files and then destination FASTQ files by distributed computing, where unique value-to-destination-sequence conversion rules are autonomously generated for the destination read structures (Steps 5 and 6).
+If defined in the process configuration file, the read translation into destination read structures are next processed for the source reads with all segment sequences required for the translation that have been identified in the previous processes (Step 3). Destination read structures can flexibly be specified by using IUPAC codes and allowlists of destination segment sequences. First, using distributed computing, a segment value file and a value tree are extracted from each of the error-corrected segment sequence files, where each unique segment sequence is converted into a numerical value and parental-local segment allocations of unique values and unique combinatorial value groups are represented in a tree structure. The value tree files originated from the fragmented FASTQ files are then passed to a single computing node to generate a merged value tree. Next, the values in the merged value tree are replaced by new values to minimize the number of numerical value species for each variable in a way that they still uniquely maintain the same tree topology (Step 4). Obtaining the value conversion rule table that achieved the optimization of the merged value tree, segment value files are separately processed to derive optimized segment value files and then destination FASTQ files by distributed computing, where unique value-to-destination-sequence conversion rules are autonomously generated for the destination read structures (Steps 5 and 6).
 
 Throughout the process, the average Q scores of source segment sequences are bequeathed from the fragmented FASTQ files through the intermediate segment sequence and value files and given to all letters of corresponding destination segments in the generating FASTQ files. New bases that are not associated to the values derived from the source reads are all given a Q score of 40 in the destination reads.
 
@@ -85,7 +85,7 @@ To enable distributed computing, `qsub` and `qacct` commands must be available t
 ## Execution
 ### General usages
 
-INTERSTELLAR accepts two different configuration files, one provided with -conf (required) to configure sequencing read interpretation and translation and the other provided with -qconf (optional) to configure distributed computing setting. When a distributed computing is configured, INTERSTELLAR splits input FASTQ files into small fragmented files and processes them separately.
+INTERSTELLAR accepts two different configuration files, one provided with -conf (required) to configure sequencing read interpretation and translation and the other provided with -qconf (optional) to configure distributed computing setting. When distributed computing is configured, INTERSTELLAR splits input FASTQ files into small fragmented files and processes them separately.
 
 To run INTERSTELLAR with a single computing node (no distributed computing)
 
@@ -135,9 +135,9 @@ A process configuration file consists of process setting sections, `general`, an
 - general (required)
   In this section, users configure basic information required for INTERSTELLAR, such as the project directory path.
 - value_extraction (required)
-  In this section, users configure how sequencing reads are interpreted. This section produces a identified sequence segment table in a TSV format. The process configure in this section is necessary for any of its downstream processes, value_translation, demultiplex, or annotate_header.
+  In this section, users configure how sequencing reads are interpreted. This section produces an identified sequence segment table in a TSV format. The process configuration in this section is necessary for any of its downstream processes, value_translation, demultiplex, or annotate_header.
 - value_translation (optional)
-  In this section, users configure value translation process and destination read structure. Source segment values extracted in value_extraction are optimized, considering the value combinations and parental-local segment allocations before the translation into destination segment sequences. The desination segment sequences are concatnated and exporterd into output FASTQ files.
+  In this section, users configure value translation process and destination read structure. Source segment values extracted in value_extraction are optimized, considering the value combinations and parental-local segment allocations before the translation into destination segment sequences. The destination segment sequences are concatenated and exported into output FASTQ files.
 - demultiplex (optional)
   In this section, instead of executing value_translation users configure a process to demultiplex the input reads according to the information extracted at value_extraction and annotate the headers of the demultiplexed reads. 
 
@@ -184,7 +184,7 @@ SAMPLESHEET=/path/to/samplesheet.tsv
   Path to a shell script to activate your environment. Example file (https://github.com/yachielab/Interstellar/blob/main/example-dataset/templates/set_shell_env).
 
 - SAMPLESHEET (required)
-  A TSV file to specify the correspondence between the input FASTQ file prefixes and their sample names. The input FASTQ file names need to contain the prefix, like \<fileprefix>_R1_001.fastq (or fastq.gz). This allows INTERSTELLAR to interpret dinsinct samples independently. 
+  A TSV file to specify the correspondence between the input FASTQ file prefixes and their sample names. The input FASTQ file names need to contain the prefix, like \<fileprefix>_R1_001.fastq (or fastq.gz). This allows INTERSTELLAR to interpret distinct samples independently. 
 
   Example samplesheet format:
 
@@ -234,7 +234,7 @@ READ2_STRUCTURE=(?P<segment5>.*)
 segment1,segment3=CHILD_OF(segment1,segment4)
 
 # Quality filtering and correction for each sequence segment
-cb_value1=QUALITY_FILTER(source:segment1,min_nucleotide_Q-score:5,min_avg_Q-score:20)  >> M2A_CORRECTION(levenshtein_distance:1,path:/path/to/Intersellar/example-dataset/sci-RNA-seq3_HP_purified_allowlist.txt) 
+cb_value1=QUALITY_FILTER(source:segment1,min_nucleotide_Q-score:5,min_avg_Q-score:20)  >> M2A_CORRECTION(levenshtein_distance:1,path:/path/to/Interstellar/example-dataset/sci-RNA-seq3_HP_purified_allowlist.txt) 
 >> SEQ2VALUE()
 
 cb_value2=QUALITY_FILTER(source:segment4, min_nucleotide_Q-score:5, min_avg_Q-score:20) >> I2M_CORRECTION(rank:auto, levenshtein_distance:1) >>  SEQ2VALUE()
@@ -254,8 +254,8 @@ bio_value5=QUALITY_FILTER(source:segment5, min_nucleotide_Q-score:5, min_avg_Q-s
 | READ2_PATH           | File directory path or file paths for Read 2 files           |
 | INDEX1_PATH          | File directory path or file paths for Index 1 files          |
 | INDEX2_PATH          | File directory path or file paths for Index 2 files          |
-| FLASH                | Read pairs to be merged by FLASH2. The value must be either "READ1-READ2”, "READ1-INDEX1”, "READ1-INDEX2”, "READ2-INDEX1”, "READ2-INDEX2”, or "INDEX1-INDEX2”. Currently, you can use FALSH only for a single pair of reads. |
-| FLASH_MIN_OVERLAP    | Minimum overlap length requied for the read merging by FLASH2. |
+| FLASH                | Read pairs to be merged by FLASH2. The value must be either "READ1-READ2”, "READ1-INDEX1”, "READ1-INDEX2”, "READ2-INDEX1”, "READ2-INDEX2”, or "INDEX1-INDEX2”. Currently, you can use FLASH only for a single pair of reads. |
+| FLASH_MIN_OVERLAP    | Minimum overlap length required for the read merging by FLASH2. |
 | FLASH_MAX_OVERLAP    | Maximum overlap length allowed for the read merging by FLASH2. |
 | READ1_STRUCTURE      | Read structure(s) of Read 1 reads defined by regular expression. Multiple structures can be given like "READ1_STRUCTURE_1=...”, "READ1_STRUCTURE_2=...”, … |
 | READ2_STRUCTURE      | Read structure(s) of Read 2 reads defined by regular expression. Multiple structures can be given like "READ2_STRUCTURE_1=...”, "READ2_STRUCTURE_2=...”, … |
@@ -289,7 +289,7 @@ Variable names of identified sequence segments can be freely defined by the user
   Example configurations for FLASH are shown in Example 5(https://github.com/yachielab/Interstellar/blob/main/example-dataset/Example5/ex5.conf).
 
 - FLASH_MIN_OVERLAP
-  Corresponding to the `-m` option of FLASH2 thatspecifies the minimum overlap length. Default=20.
+  Corresponding to the `-m` option of FLASH2 that specifies the minimum overlap length. Default=20.
 
 - FLASH_MAX_OVERLAP
   Corresponding to the `-M` option of FLASH2 that specifies the maximum overlap length. Default=30.
@@ -331,11 +331,11 @@ Variable names of identified sequence segments can be freely defined by the user
 
   </br>
 
-  Here we demonstrate how to express Read 1 of a sci-RNA-seq3 library. In a 34- or 33-bp sequence, a constant sequence of "CAGAGC"(seg2) is allowed to have up to two mismatches and sandwithced by 9- or 10-bp "seg1"on the left and 8-bp "seg3"and 10-bp "seg4"on the right. Here, seg1, seg2, seg3, and seg4 are a cell ID conferred by ligation, constant sequence, UMI, and another cell ID conferred by reverse transcription.
+  Here we demonstrate how to express Read 1 of a sci-RNA-seq3 library. In a 34- or 33-bp sequence, a constant sequence of "CAGAGC"(seg2) is allowed to have up to two mismatches and sandwiched by 9- or 10-bp "seg1"on the left and 8-bp "seg3"and 10-bp "seg4"on the right. Here, seg1, seg2, seg3, and seg4 are a cell ID conferred by ligation, constant sequence, UMI, and another cell ID conferred by reverse transcription.
 
 - Parental-local value allocations
 
-  Parental-loval value allocations of the segments can be defined by `CHILD_OF()`. 
+  Parental-local value allocations of the segments can be defined by `CHILD_OF()`. 
 
   Ex. 1)  seg1 is a local variable of seg2:
 
@@ -371,7 +371,7 @@ Variable names of identified sequence segments can be freely defined by the user
 
     - min_avg_Q-score
 
-      Minimum average Q score threshold.. Default=20.
+      Minimum average Q score threshold. Default=20.
 
   - I2M_CORRECTION()
 
@@ -379,11 +379,11 @@ Variable names of identified sequence segments can be freely defined by the user
 
     - source
 
-      Sequence segment varialble name. Not required If defined upstream and inherirted by ">>"(see below).
+      Sequence segment variable name. Not required If defined upstream and inherited by ">>"(see below).
 
     - rank
 
-      Rank threshold for the minority-majority boundary of the rank-count plot of unique segment sequences. If this set to "auto," the knee-point of the rank-count plot is adopted. Default=auto.
+      Rank threshold for the minority-majority boundary of the rank-count plot of unique segment sequences. If this is set to "auto," the knee-point of the rank-count plot is adopted. Default=auto.
 
     - levenshtein_distance
 
@@ -483,11 +483,11 @@ Variable names of identified sequence segments can be freely defined by the user
 
   - Pipe-like operator
 
-    “>>” can be used as like a pipe like operator, connecting multiple processes in one line.
+    “>>” can be used as a pipe-like operator, connecting multiple processes in one line.
 
     
 
-  Ex. 1) Quality filteration of “segment1” followed by the mapping-to-allowlist correction and the sequence-to-value conversion.:
+  Ex. 1) Quality filtration of “segment1” followed by the mapping-to-allowlist correction and the sequence-to-value conversion.:
 
   ```
   segment1.filtered.corrected.value=QUALITY_FILTER(source:segment1,min_nucleotide_Q-score:5,min_avg_Q-score:20) 
@@ -555,7 +555,7 @@ Variable names of destination sequence segments can be freely defined by the use
 
     - source (required)
 
-      Value names. Comma-separated values if multiple vlaules are translated into a sequence segment. Note that the source segment combinations used in 
+      Value names. Comma-separated values if multiple values are translated into a sequence segment. Note that the source segment combinations used in 
 
     - allowlist_path
 
@@ -563,14 +563,14 @@ Variable names of destination sequence segments can be freely defined by the use
 
     - randseq_pattern
 
-      Destination sequence segment structure defined by IUPAC codes. If multiple destination sequence segments are to be generated defined, provide their corresponding allowlists as comma-separated values in the same order of destination sequence segments. 
+      Destination sequence segment structure defined by IUPAC codes. If multiple destination sequence segments are to be defined, provide their corresponding allowlists as comma-separated values in the same order of destination sequence segments. 
 
   - SEQ2SEQ()
     Assigns destination segment sequences defined for their corresponding source segment sequences according to a user-defined sequence conversion table.
 
     - source (required):
 
-      Source sequence segment name. Comma-separated values if multiple source segments are converted into a destianation sequence(s).
+      Source sequence segment name. Comma-separated values if multiple source segments are converted into a destination sequence(s).
 
     - conversion_table
 
@@ -598,7 +598,7 @@ Variable names of destination sequence segments can be freely defined by the use
 
 - READ1_STRUCTURE, READ2_STRUCTURE, INDEX1_STRUCTURE, and INDEX2_STRUCTURE 
 
-  Destination read structures can be defined by concatnating destination sequence segments using “+”.
+  Destination read structures can be defined by concatenating destination sequence segments using “+”.
 
 
 
@@ -634,11 +634,11 @@ This section enables demultiplexing of input reads according to sequence segment
 
 - READ1_STRUCTURE, READ2_STRUCTURE, INDEX1_STRUCTURE, and INDEX2_STRUCTURE
 
-  Destination read structures can be defined by concatnating destination sequence segments using “+”. This option is available if FORMAT=FASTQ.
+  Destination read structures can be defined by concatenating destination sequence segments using “+”. This option is available if FORMAT=FASTQ.
 
 - READ1_HEADER_ADDITION, READ2_HEADER_ADDITION, INDEX1_HEADER_ADDITION, and INDEX2_HEADER_ADDITION
 
-  The provided sequence segment(s) will be tagged to the read headers. Multiple sequence segments can be provided by comma separated values. The original header followed by the provided sequence segments are concatnated using “_”. This option is available if FORMAT=FASTQ.
+  The provided sequence segment(s) will be tagged to the read headers. Multiple sequence segments can be provided by comma separated values. The original headers followed by the provided sequence segments are concatenated using “_”. This option is available if FORMAT=FASTQ.
 
 
 
@@ -648,7 +648,7 @@ This section enables demultiplexing of input reads according to sequence segment
 
 ```
 [qsub]
-QOPTION=”-l s_vmem=<int>G,mem_req=<int>G”
+QOPTION=”-l s_vmem=<mem>G,mem_req=<mem>G”
 MEM_MAX=128
 MEM_MIN=6
 NUM_READS=2000000
@@ -656,11 +656,11 @@ NUM_READS=2000000
 
 **Description**
 
-The distributed computing mode can be configured in this section by defining the following parameteres.
+The distributed computing mode can be configured in this section by defining the following parameters.
 
 - QOPTION (required)
 
-  Options to be added to the qsub command. This is strongly recommended to be defined as some of the INTERSTELLAR operations require large memory size. In each step of INTERSTELLAR operations, \<int> will be replaced by an empirically estimated sufficient memory size between MEM_MIN and MEM_MAX defined below. The example QOPTION above represents the one can be used in a UGE environment.
+  Options to be added to the qsub command. This is strongly recommended to be defined as some of the INTERSTELLAR operations require a large memory size. In each step of INTERSTELLAR operations, \<mem> will be replaced by an empirically estimated sufficient memory size between MEM_MIN and MEM_MAX defined below. The example QOPTION above represents the one that can be used in a UGE environment.
 
 - MEM_MAX
 
