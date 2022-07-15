@@ -180,6 +180,8 @@ class BARISTA_IMPORT(object):
         parsedSeqDict=collections.defaultdict(list)
         parsedQualDict=collections.defaultdict(list)
         counterDict={}
+        numSeqDict={}
+        readKeys = []
         tmpdir=self.settings.tmpdir
         headerSplitRegex=regex.compile(r"[ |\t]+")
 
@@ -189,6 +191,7 @@ class BARISTA_IMPORT(object):
             print("Extracting segments: "+readKey,flush=True)
             segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
             segment_parsed_set=set(segment_parsed)
+            readKeys.append(readKey)
             
             if self.settings.flash:
                 merge_components=segmentImporter.parseSegmentFromRegex(self.settings.regexDict["merge_src"])
@@ -240,6 +243,13 @@ class BARISTA_IMPORT(object):
                     parsedSeqDict=collections.defaultdict(list)
                     parsedQualDict=collections.defaultdict(list)
                     print(str(int((nrow+1)/4))+" reads were processed for "+readKey,flush=True)
+                
+                numSeqDict[readKey] = nrow
+            
+            # Sequence number check
+            if nrow != numSeqDict[readKeys[0]]:
+                errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
+                raise InputError(errmsg)
 
             try:
                 n_chunk

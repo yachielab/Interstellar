@@ -424,11 +424,11 @@ class SETUP(object):
         for i in glob.glob(self.shelldir+"/seqkit*"):
             qcmd_now=qcmd_base+["-N","FASTQ_split"+self.today_now,i]
             qcmd_now=" ".join(qcmd_now)
-            print(qcmd_now)
+            print("FASTQ split command:",qcmd_now)
             s=subprocess.run(qcmd_now,shell=True)
             used_commands.append(qcmd_now)
             if s.returncode != 0:
-                print("streamline: qsub for seqkit split failed.', file=sys.stderr")
+                print("qsub for seqkit split failed.', file=sys.stderr")
                 sys.exit(1)
         time.sleep(15)
         self.today_now=self.today_now

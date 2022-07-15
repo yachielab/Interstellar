@@ -35,7 +35,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
     cmd="import"
     njobdict=dict()
     for sampledir in sampledir_list:
-        print(sampledir)
         endfix_input=param_dict[os.path.basename(sampledir)]["file_suffix"] 
         if is_qsub:
             mem_key="mem_import"
@@ -76,7 +75,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
                 qcmd_now=qcmd_base+[sampledir+"/sh/import.sh",outname_now]+list(infile)
                 qcmd_now=" ".join(qcmd_now)
-                print(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
                 if s.returncode != 0:
@@ -104,7 +102,6 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
                 cmd_now=[sampledir+"/sh/import.sh",outname_now]+list(infile)
                 cmd_now=" ".join(cmd_now)
-                print(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 used_commands.append(cmd_now)
                 if s.returncode != 0:

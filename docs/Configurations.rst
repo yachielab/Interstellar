@@ -7,15 +7,15 @@ Data processing configuration file
 The data processing configuration file consists of five setting sections, “general”, “value_extraction”, “value_translation”, 
 “demultiplex” and “tag”. 
 
-* :doc:`general </general>`: General settings to carry out Interstellar commands.
+* :doc: `general </general>``: General settings to carry out Interstellar commands.
 
-* :doc:`value_extraction </value_extraction>`: Read emulation of sci-RNA3-seq reads for 10X Chromium
+* :doc: `value_extraction </value_extraction>`: Read emulation of sci-RNA3-seq reads for 10X Chromium
 
-* :doc:`value_translation </value_translation>`: Read emulation of Quartz-seq reads for SPLiT-seq 
+* :doc: `value_translation </value_translation>`: Read emulation of Quartz-seq reads for SPLiT-seq 
 
-* :doc:`demultiplex </demultiplex>`: Read emulation of Slide-seq reads for 10X Visium
+* :doc: `demultiplex </demultiplex>`: Read emulation of Slide-seq reads for 10X Visium
 
-* :doc:`tag </tag>`: Read segmentation and demultiplex of RCP-PCR reads
+* :doc: `tag </tag>`: Read segmentation and demultiplex of RCP-PCR reads
 
 -------------------------------------
 

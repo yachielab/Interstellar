@@ -34,7 +34,7 @@ Also, the following command-line tools are required. Add the paths to $PATH.
 - `bartender <https://github.com/LaoZZZZZ/bartender-1.1>`_
 
 Interstellar setup
-************
+*******************
 
 
 Clone the repository::
@@ -53,7 +53,7 @@ Then, confirm if all the libraries are successfully imported::
 
 
 Distributed computing
-************
+**********************
 
 To enable distributed computing, qsub and qacct commands must be available in the environment to submit and monitor the Interstellar jobs.
 This mode was tested with UGE 8.6.12 and SGE 6.2u6.
