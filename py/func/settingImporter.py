@@ -65,7 +65,7 @@ def genSampleDir(proj_dir,samplesheet):
                     p1 = set(sample_to_fileprefix[s1])
                     p2 = set(sample_to_fileprefix[s2])
                     if len(p1 & p2) > 0:
-                        errmsg = "A same prefix can't be used for different samples! Check the sample sheet."
+                        errmsg = "A same prefix can't be used for different samples! This error was caused by the samples "+s1+" and "+s2+".  Check the sample sheet."
                         raise InputError(errmsg)
 
         # Rule 2: File prefixes should be completely unique each other
@@ -75,7 +75,7 @@ def genSampleDir(proj_dir,samplesheet):
                     m1 = re.search(pfx1,pfx2)
                     m2 = re.search(pfx2,pfx1)
                     if m1 or m2:
-                        errmsg = "File prefixes should be completely unique each other! Check the sample sheet."
+                        errmsg = "File prefixes should be completely unique each other! This error was caused by the file prefixes "+pfx1+" and "+pfx2+" Check the sample sheet."
                         raise InputError(errmsg)
 
         for i in samples_uniq:

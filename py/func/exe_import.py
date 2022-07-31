@@ -248,8 +248,9 @@ class BARISTA_IMPORT(object):
             
             # Sequence number check
             if nrow != numSeqDict[readKeys[0]]:
-                errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
-                raise InputError(errmsg)
+                if not self.settings.flash:
+                    errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
+                    raise InputError(errmsg)
 
             try:
                 n_chunk
