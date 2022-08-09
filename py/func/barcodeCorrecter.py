@@ -43,10 +43,10 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         seqCountSummary["rank"].append(idx+1)
         seqCountSummary["logrank"].append(math.log10(idx+1))
 
-    analyzedPosition=len(seqCountSummary["count"])-1
-    kneepoint_idx=len(seqCountSummary["count"])-1
-    if kneepoint_idx ==0:
-        kneepoint_idx = 1
+    analyzedPosition=len(seqCountSummary["count"])
+    kneepoint_idx=len(seqCountSummary["count"])
+    # if kneepoint_idx ==0:
+    #     kneepoint_idx = 1
     seqlen_min=min([len(i) for i in seqCountSummary["seq"]])
     seedlen=math.floor(seqlen_min/2)
 
@@ -58,17 +58,14 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
     else:
         rank_threshold=len(seqCountSummary["count"])
 
+    # Imputation-to-majority
     if "I2M_CORRECTION" in correctOpt["func_ordered"]:
-         # seed_min=correctOpt.get("seed_min")
 
         if rank_threshold=="auto":
             knee=KneeLocator(seqCountSummary["rank"],seqCountSummary["count"],S=10,curve="convex",direction="decreasing",interp_method='interp1d')
-            #knee=KneeLocator(seqCountSummary["logrank"],seqCountSummary["count"],S=1,curve="convex",direction="decreasing",interp_method='polynomial')
             print("Knee point of",srcComponent,"was identified.",flush=True)
             kneepoint_idx=seqCountSummary["rank"].index(knee.knee)
-            #kneepoint_idx=seqCountSummary["logrank"].index(knee.knee)
-        # elif rank_threshold=="all":
-        #     kneepoint_idx=analyzedPosition
+
         else:
             kneepoint_idx=int(rank_threshold)
         seq_majority=seqCountSummary["seq"][:kneepoint_idx]
@@ -80,8 +77,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         correctionDict_maj={}
         seqlen_min=min([len(i) for i in seq_majority if not i == "-"])
         seedlen=math.floor(seqlen_min/2)
-        # if seed_min and seedlen<seed_min:
-        #     seedlen=seed_min
+        
         today_now=str(datetime.datetime.today())
         today_now=regex.sub(r"\.|:| ","-",today_now)
         random_string=''.join(random.choices(string.ascii_letters + string.digits, k=15))
@@ -113,6 +109,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         correctionDict=dict(correctionDict=correctionDict_maj,reference=seq_majority)
 
 
+    # Mapping-to-allowlist
     if "M2A_CORRECTION" in correctOpt["func_ordered"]:
         if not "I2M_CORRECTION" in correctOpt["func_ordered"]:
             seq_majority=seqCountSummary["seq"][:kneepoint_idx]
