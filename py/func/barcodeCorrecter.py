@@ -110,6 +110,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
             correctionDict_maj[seq]="-"
         correctionDict=dict(correctionDict=correctionDict_maj,reference=seq_majority)
 
+
     if "M2A_CORRECTION" in correctOpt["func_ordered"]:
         if not "I2M_CORRECTION" in correctOpt["func_ordered"]:
             seq_majority=seqCountSummary["seq"][:kneepoint_idx]
