@@ -23,7 +23,7 @@ def findMostFeasibleCandidate(seq,suggestion_verbosity,dist_thresh,symspelldb,wl
     else:
         return "-"
 
-    
+
 def getRawIndex(seq,rawReference):
     return rawReference.index(seq)+1
 
@@ -32,7 +32,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
     func_tmp=correctOpt["func_ordered"][0]
     srcComponent=correctOpt[func_tmp]["source"]
     srcCounter=counterDict[srcComponent]
-    
+
     seqCount_sort=sorted(srcCounter.items(),key=lambda x:x[1],reverse=True)
     seqCountSummary=dict(seq=list(),rank=list(),logrank=list(),count=list())
     for idx,countSet in enumerate(seqCount_sort):
@@ -45,6 +45,8 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
 
     analyzedPosition=len(seqCountSummary["count"])-1
     kneepoint_idx=len(seqCountSummary["count"])-1
+    if kneepoint_idx ==0:
+        kneepoint_idx = 1
     seqlen_min=min([len(i) for i in seqCountSummary["seq"]])
     seedlen=math.floor(seqlen_min/2)
 
@@ -55,10 +57,10 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
         rank_threshold=correctOpt["I2M_CORRECTION"]["rank"]
     else:
         rank_threshold=len(seqCountSummary["count"])
-    
+
     if "I2M_CORRECTION" in correctOpt["func_ordered"]:
          # seed_min=correctOpt.get("seed_min")
-            
+
         if rank_threshold=="auto":
             knee=KneeLocator(seqCountSummary["rank"],seqCountSummary["count"],S=10,curve="convex",direction="decreasing",interp_method='interp1d')
             #knee=KneeLocator(seqCountSummary["logrank"],seqCountSummary["count"],S=1,curve="convex",direction="decreasing",interp_method='polynomial')
@@ -103,7 +105,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
             seq_success=seq_minority_pd[seq_minority_pd_corrected!="-"]
             seq_fail=seq_minority_pd[seq_minority_pd_corrected=="-"]
             os.remove(fname)
-            
+
         for seq in seq_majority:
             correctionDict_maj[seq]=seq
         for seq in seq_discarded:
@@ -143,7 +145,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
                 if not correctionDict_wl[corrected_with_majority]=="-":
                     correctionDict_wl[seq]=correctionDict_wl[corrected_with_majority]
         t2=time.time()
-                
+
         correctionDict["correctionDict"]=correctionDict_wl
         correctionDict["reference"]=wl
 
@@ -173,11 +175,11 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname):
     if yaxis_scale=="log":
         plt.yscale("log")
 
-    plt.savefig(outname+"_barcodeSummary_"+srcComponent+".png")  
+    plt.savefig(outname+"_barcodeSummary_"+srcComponent+".png")
 
     if not "-" in correctionDict["correctionDict"]:
         correctionDict["correctionDict"]["-"]="-"
-    
+
     if not "-" in correctionDict["reference"]:
         correctionDict["reference"].append("-")
 
