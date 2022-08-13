@@ -109,6 +109,7 @@ def concat_extended_process(cfg_value_ext,untreated_segment_pool):
     # ancestors=parents-set(untreated_segment_pool)
     ancestors=cfg_value_ext["segments"]
     dict_to_terminal={}
+    # print(ancestors)
     for seg_anc in ancestors:
         function_list=[]
         target_anc=copy.copy(seg_anc)
@@ -154,6 +155,7 @@ def concat_extended_process(cfg_value_ext,untreated_segment_pool):
                     break
         for i in segment_lineage:
             dict_to_terminal[i]=target_anc
+    # print(additional_value_dict)
     
     return additional_value_dict,dict_to_terminal
 

@@ -470,7 +470,7 @@ def getLocalIndex(row,constraint,localComponent,tree):
         #print(tree)
         return tree["constraintTree"][constraint][localComponent][convMotherIdx][srcLocalIdx]
 
-def genEqSeq(query,length,datatype,add_nuc=None,baseQuality=None):
+def genEqSeq(query,datatype,length=None,add_nuc=None,baseQuality=None):
     if not length or length==0:
         length=len(query)
     if not add_nuc:
