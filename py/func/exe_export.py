@@ -180,7 +180,7 @@ class BARISTA_EXPORT(object):
                         
                     else:    
                         for k in funcdict_key_list:
-                            if component+"," in k or ","+component in k or component==k:
+                            if (component+"," in k) or (","+component in k) or (component==k):
                                 funcdict_key=copy.copy(k)
                         try:
                             funcdict_key

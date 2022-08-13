@@ -437,6 +437,10 @@ def config_extract_value_trans(cfg_raw):
     for L in cfg_value_trans["dest_segment"]:
         L=L.split(",")
         cfg_value_trans["available_seg"]+=L
+
+    cfg_value_trans["available_seg"] += cfg_value_ext["value_segment"]
+    cfg_value_trans["available_seg"] += cfg_value_ext["segments"]
+   
    
     return cfg_value_trans
 
@@ -493,7 +497,8 @@ def config_extract_value_demulti(cfg_raw):
     cfg_value_demulti["available_seg"]=[]
     for i in cfg_value_ext["value_segment"]:
         cfg_value_demulti["available_seg"].append(i)
-   
+    cfg_value_demulti["available_seg"] += cfg_value_ext["segments"]
+    
     return cfg_value_demulti
 
 
@@ -506,6 +511,7 @@ def config_extract_value_annotate_header(cfg_raw):
     cfg_value_annotate_header["available_seg"]=[]
     for i in cfg_value_ext["value_segment"]:
         cfg_value_annotate_header["available_seg"].append(i)
+    cfg_value_annotate_header["available_seg"] += cfg_value_ext["segments"]
    
     return cfg_value_annotate_header
 

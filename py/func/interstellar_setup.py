@@ -73,9 +73,9 @@ def judgeEndFix(input_files):
 
 
 def fastqDirCheck(valid_paths):
-    if valid_paths =="":
-        msg="At least 1 input directory or FASTQ file paths should be provided."
-        raise EmptyError(msg)
+    # if valid_paths =="" or valid_paths==[]:
+    #     msg="At least 1 input directory or FASTQ file paths should be provided."
+    #     raise EmptyError(msg)
     
     #collect all input files if the path is directory
     all_files=[]
@@ -86,8 +86,7 @@ def fastqDirCheck(valid_paths):
             all_files+=glob.glob(p)
 
     if len(all_files)==0:
-        print("Searched FASTQ paths:",valid_paths)
-        msg="No input files matching the provided paths above."
+        msg="Searched FASTQ paths: "+str(valid_paths)+"\nNo input files matching the provided paths above."
         raise EmptyError(msg)
     
     #judge suffix
