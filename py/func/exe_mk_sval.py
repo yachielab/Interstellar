@@ -84,6 +84,9 @@ class BARISTA_MAKE_S(object):
         parsedQual_raw_chunk=pd.read_csv(self.settings.rawFastqPath["qual"], sep='\t',chunksize=1000000)
         components_raw=self.components_raw
 
+        print(self.settings.outFilePath_and_Prefix+"_correct_result.tsv.gz")
+        print(self.settings.rawFastqPath["qual"])
+
         ref_dic={}
         for component_corrected_now in correctionDictionaries:
             ref_tup=tuple(correctionDictionaries[component_corrected_now]["reference"])
