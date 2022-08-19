@@ -1,7 +1,7 @@
 from . import settingImporter
 from . import barcodeCorrecter
 from . import settingRequirementCheck
-import regex
+import csv
 import pandas as pd
 import gzip
 import pickle
@@ -81,11 +81,8 @@ class BARISTA_MAKE_S(object):
             correctionDictionaries=pickle.load(p)
 
         parsedSeq_raw_chunk=pd.read_csv(self.settings.outFilePath_and_Prefix+"_correct_result.tsv.gz", sep='\t',chunksize=1000000)
-        parsedQual_raw_chunk=pd.read_csv(self.settings.rawFastqPath["qual"], sep='\t',chunksize=1000000)
+        parsedQual_raw_chunk=pd.read_csv(self.settings.rawFastqPath["qual"], sep='\t',chunksize=1000000,quoting=csv.QUOTE_NONE)
         components_raw=self.components_raw
-
-        print(self.settings.outFilePath_and_Prefix+"_correct_result.tsv.gz")
-        print(self.settings.rawFastqPath["qual"])
 
         ref_dic={}
         for component_corrected_now in correctionDictionaries:

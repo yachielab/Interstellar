@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import gzip
 import pickle
-import time
+import csv
 import os
 import collections
 import itertools as it
@@ -156,7 +156,7 @@ class BARISTA_EXPORT(object):
         d_val=pd.read_csv(self.settings.destValue,sep='\t',dtype=str,chunksize=500000)
         d_qual=pd.read_csv(self.settings.destQual,sep='\t',dtype=str,chunksize=500000)
         s_seq=pd.read_csv(self.settings.rawSeq,sep='\t',dtype=str,chunksize=500000)
-        s_qual=pd.read_csv(self.settings.rawQual,sep='\t',dtype=str,chunksize=500000)
+        s_qual=pd.read_csv(self.settings.rawQual,sep='\t',dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
 
         chunkCount=0
         for d_val_chunk,d_qual_chunk,s_seq_chunk,s_qual_chunk in zip(d_val,d_qual,s_seq,s_qual):

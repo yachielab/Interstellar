@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import gzip
 import pickle
-import time
+import csv
 import os
 import datetime
 
@@ -76,7 +76,7 @@ class BARISTA_DEMULTIPLEX(object):
     def demultiplex(self):
         s_seq=pd.read_csv(self.settings.path_to_seq,sep='\t',dtype=str,chunksize=500000)
         s_avg_qual=pd.read_csv(self.settings.path_to_avg_qval,sep='\t',dtype=str,chunksize=500000)
-        s_raw_qual=pd.read_csv(self.settings.path_to_rawQual,sep="\t",dtype=str,chunksize=500000)
+        s_raw_qual=pd.read_csv(self.settings.path_to_rawQual,sep="\t",dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
         demulti_key=set()
         cnt_chunk=0
         key_iden_list=[]

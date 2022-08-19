@@ -9,6 +9,7 @@ import pickle
 import time
 import os
 import datetime
+import csv
 
 class settings_annotate_header(object):
     def __init__(self,opt):
@@ -45,7 +46,7 @@ class BARISTA_annotate_header(object):
     def annotate_header(self):
         s_seq=pd.read_csv(self.settings.path_to_seq,sep='\t',dtype=str,chunksize=500000)
         s_avg_qual=pd.read_csv(self.settings.path_to_avg_qval,sep='\t',dtype=str,chunksize=500000)
-        s_raw_qual=pd.read_csv(self.settings.path_to_rawQual,sep="\t",dtype=str,chunksize=500000)
+        s_raw_qual=pd.read_csv(self.settings.path_to_rawQual,sep="\t",dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
 
         cnt_chunk=0
         for s_seq_chunk,s_avg_qual_chunk,s_raw_qual_chunk in zip(s_seq,s_avg_qual,s_raw_qual):

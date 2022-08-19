@@ -1,7 +1,7 @@
 from . import settingImporter
 from . import segmentImporter
 from . import settingRequirementCheck
-import regex
+import csv
 import pandas as pd
 import collections
 import gzip
@@ -33,7 +33,7 @@ class BARISTA_QC(object):
         self.settings=settings
     def qualityCheck(self):
         seq_raw=pd.read_csv(self.settings.seq, sep='\t',chunksize=1000000)
-        seq_qual=pd.read_csv(self.settings.qual, sep="\t",chunksize=1000000)
+        seq_qual=pd.read_csv(self.settings.qual, sep="\t",chunksize=1000000,quoting=csv.QUOTE_NONE)
         counterDict={}
         for n_chunk,seq_qual_zip in enumerate(zip(seq_raw,seq_qual)):
             seq_chunk=seq_qual_zip[0]
