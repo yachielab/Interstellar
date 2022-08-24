@@ -293,7 +293,7 @@ class BARISTA_IMPORT(object):
                     f.write(dict_merged_val)
                     f.close()
                 
-        shutil.rmtree(self.tmpdir)
+        # shutil.rmtree(self.tmpdir)
         print("Exporting count dictionary...",flush=True)
         with gzip.open(self.settings.outFilePath_and_Prefix+"_srcCount.pkl.gz",mode="wb") as p:
             pickle.dump(self.counterDict,p)
