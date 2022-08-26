@@ -80,7 +80,7 @@ class settings_import(object):
         readPathDict={k:v for k,v in zip(srcReadKeys,srcReadPaths) if v!=""}
         self.flash_gzipped_reads=[]
 
-        self.flash_gzipped_reads,self.src_readPathDict=segmentImporter.merge_reads_flash2(readPathDict,self.flash,self.input_fastq_gzipped,tmpdir,cfg_value_ext)
+        self.flash_gzipped_reads,self.src_readPathDict=segmentImporter.merge_reads_flash2(readPathDict,self.flash,self.input_fastq_gzipped,tmpdir,cfg_value_ext,cfg["general"]["NUM_CORES"])
         
         regexDictCompiled={}
         for readKey in regexDict:

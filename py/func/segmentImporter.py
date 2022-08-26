@@ -11,7 +11,7 @@ from itertools import zip_longest
 
 
 
-def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
+def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config,n_core):
     if not flash:
         return [],readPathDict
     else:
@@ -32,7 +32,7 @@ def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config):
         flash_min=str(config["FLASH_MIN_OVERLAP"])
         flash_max=str(config["FLASH_MAX_OVERLAP"])
         print("Merging reads using Flash2...",flush=True)
-        cmdlist_flash=["flash2","-z","-m",flash_min,"-M",flash_max,"-d",tmpdir,"-o","merge",decompressed_fastq[0],decompressed_fastq[1]]
+        cmdlist_flash=["flash2","-z","-t",str(n_core),"-m",flash_min,"-M",flash_max,"-d",tmpdir,"-o","merge",decompressed_fastq[0],decompressed_fastq[1]]
         cmd=" ".join(cmdlist_flash)
         subprocess.run(cmd,shell=True)
         print("Merging done!",flush=True)
