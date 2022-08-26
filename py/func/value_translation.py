@@ -19,10 +19,11 @@ class UnknownError(Exception):
     pass
 
 
-def genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key):
+def genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,n_core):
     today_now=param_dict[os.path.basename(sampledir)]["today_now"]
     qoption=qcfg["QOPTION"]
     qoption=qoption.replace("<mem>",qcfg[mem_key])
+    qoption=qoption.replace("<num_cores>",str(n_core))
     jid_now=cmd+today_now
     qcmd_base=["qsub","-e",sampledir+"/qlog","-o",sampledir+"/qlog","-cwd","-N",jid_now,qoption]
     return qcmd_base
@@ -100,7 +101,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         if is_qsub:
             mem_key="mem_buildTree"
             # print("Running qsub jobs...: buildTree",flush=True)
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
                 
             for f in file_pool:
                 outname_now=re.sub(file_endfix,"",os.path.basename(f))
@@ -133,6 +134,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         # print("Running qsub jobs...: Merging trees",flush=True)
         qoption=qcfg["QOPTION"]
         qoption=qoption.replace("<mem>",qcfg[mem_key])
+        qoption=qoption.replace("<num_cores>",str(cfg_raw["general"]["NUM_CORES"]))
         qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"],qoption]
             
         outname_now="merge"
@@ -181,7 +183,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         if is_qsub:
             mem_key="mem_convert"
             # print("Running qsub jobs...: Value optimization",flush=True)
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
                 
             for f in file_pool:
                 outname_now=re.sub(file_endfix,"",os.path.basename(f))
@@ -281,7 +283,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 sizedict=sampledir+"/value_translation/_work/mergeTree/merge_size_info.pkl.gz"
             
             if is_qsub:
-                qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
+                qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
                 if cfg["bc_sort"]:
                     qcmd_now=qcmd_base+[sampledir+"/sh/export_bc_sort.sh",outname_now,dval,dqual,sseq,squal,sizedict]
                 else:

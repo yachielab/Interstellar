@@ -13,6 +13,8 @@ import pandas as pd
 import re
 import copy
 
+from . import settingRequirementCheck
+
 class InputError(Exception):
     pass
 
@@ -33,6 +35,7 @@ def configClean(cfgDict,qconf=True,query=""):
             if key=="QOPTION":
                 opt_now=cfgDict[key]
                 opt_now=regex.sub(r"^\"|\"$","",opt_now)
+                settingRequirementCheck.check_qoption(opt_now)
                 new_cfgDict[key]=opt_now
             else:
                 new_cfgDict[key]=regex.sub("\\t|\\n| ","",cfgDict[key])

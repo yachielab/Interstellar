@@ -15,10 +15,11 @@ class UnknownError(Exception):
     pass
 
 
-def genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key):
+def genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,n_core):
     today_now=param_dict[os.path.basename(sampledir)]["today_now"]
     qoption=qcfg["QOPTION"]
     qoption=qoption.replace("<mem>",qcfg[mem_key])
+    qoption=qoption.replace("<num_cores>",str(n_core))
     jid_now=cmd+today_now
     qcmd_base=["qsub","-e",sampledir+"/qlog","-o",sampledir+"/qlog","-cwd","-N",jid_now,qoption]
     return qcmd_base
@@ -68,7 +69,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         if is_qsub:
             mem_key="mem_"+cmd
             print("Running qsub jobs...: Demultiplex",flush=True)
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
                 
             for f in file_pool:
                 if is_qc:
@@ -123,7 +124,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         njobdict[sampledir]=len(key_set)
         if is_qsub:
             # Qsub for each key
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,"demulti_filemerge",mem_key)
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,"demulti_filemerge",mem_key,cfg_raw["general"]["NUM_CORES"])
             for key in key_set:
                 target_files=[t for t in demulti_filename_list if key in os.path.basename(t)]
                 if cfg["FORMAT"]=="tsv":

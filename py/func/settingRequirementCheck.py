@@ -13,6 +13,15 @@ def pathExistCheck(check_list):
         except IndexError:
             raise EmptyError(path+" is not found.")
 
+
+# QOPTION should include <mem> and <num_cores> to specify the resource information when submitting jobs
+def check_qoption(qoption):
+    if (not "<mem>" in qoption) or (not "<num_cores>" in qoption):
+        err_msg = "'<mem>' and '<num_cores>' are both required to specify the resource information."
+        raise ValueError(err_msg) 
+
+
+# Filling default values
 def tryAndFill(cfg,section,key,defaultvalue,required=False,choice="",parse_home=False):
     try:
         cfg[section][key]
