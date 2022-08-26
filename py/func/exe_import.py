@@ -8,12 +8,8 @@ import os
 import gzip
 import collections
 import pickle
-import subprocess
-import pandas as pd
 import glob
 import shutil
-from joblib import Parallel, delayed
-import multiprocessing
 
 class InputError(Exception):
     pass
@@ -92,11 +88,10 @@ class settings_import(object):
         self.regexDictCompiled=regexDictCompiled
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.barcodes=func_dict["barcode_list"]
+        self.ncore = int(cfg["general"]["NUM_CORES"])
 
         
 class BARISTA_IMPORT(object):
-    parsedSeqDict=None
-    parsedQualDict=None
     def __init__(self,settings):
         self.settings=settings
 
@@ -109,9 +104,9 @@ class BARISTA_IMPORT(object):
             # else:
             #     fastqDict[readKey]=segmentImporter.sequenceGenerator(fq_path,self.settings)
             if readKey in self.settings.flash_gzipped_reads:
-                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=4000000,from_flash=True)
+                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=1000000,from_flash=True)
             else:
-                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=4000000)
+                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=1000000)
         self.fastqDict=fastqDict
 
 
@@ -135,115 +130,95 @@ class BARISTA_IMPORT(object):
                 merge_components=segmentImporter.parseSegmentFromRegex(self.settings.regexDict["merge_src"])
                 merge_components_set=set(merge_components)
 
-                # Go through chunks of FASTQ
-                # Chunks are again split by 4 lines to handle one record with a single job
-                for n_chunk,fastq_chunk in enumerate(self.fastqDict[readKey]):
-                    print("Processing file chunk",n_chunk)
-                    parsedSeqDict,parsedQualDict = segmentImporter.segmentation_parallel_wrapper(
-                        fastq_chunk,self.settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set,ncore=4)
+            # Go through chunks of FASTQ
+            # Chunks are again split by 4 lines to handle one record with a single job
+            for n_chunk,fastq_chunk in enumerate(self.fastqDict[readKey]):
+                print("Processing file chunk",n_chunk)
+                parsedSeqDict,parsedQualDict = segmentImporter.segmentation_parallel_wrapper(
+                    fastq_chunk= fastq_chunk,
+                    settings= self.settings,
+                    headerSplitRegex= headerSplitRegex,
+                    readKey= readKey,
+                    segment_parsed= segment_parsed,
+                    segment_parsed_set= segment_parsed_set,
+                    ncore = self.settings.ncore)
             
-            # for nrow,line in enumerate(self.fastqDict[readKey]):
-            #     if (nrow+1)%4==1:
-            #         header=headerSplitRegex.split(line)[0]
-            #         parsedSeqDict["Header"].append(header)
-            #         parsedQualDict["Header"].append(header)
-                    
-            #     if (nrow+1)%4==2:
-            #         m=segmentImporter.patMatching(line,self.settings.regexDictCompiled[readKey])
-            #         if m:
-            #             mdict=m.groupdict()
-            #             for seg in mdict:
-            #                 parsedSeqDict[seg].append(mdict[seg])
-            #             component_diff=segment_parsed_set-set(mdict.keys())
-            #             for seg in component_diff:
-            #                 parsedSeqDict[seg].append("-")
-            #                 parsedQualDict[seg].append("-")
-            #         else:
-            #             for seg in segment_parsed:
-            #                 parsedSeqDict[seg].append("-")
-            #                 parsedQualDict[seg].append("-")
-
-            #     if (nrow+1)%4==0:
-            #         if m:
-            #             for component in mdict:
-            #                 extractedQual=line[m.span(component)[0]:m.span(component)[1]]
-            #                 parsedQualDict[component].append(extractedQual)
-
-                    with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),mode="wb") as p:
-                        pickle.dump(parsedSeqDict,p)
-                    with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcQual.pkl"]),mode="wb") as p:
-                        pickle.dump(parsedQualDict,p)
-                    
-                    for i in self.settings.barcodes:
-                        if parsedSeqDict.get(i):
-                            if i in counterDict:
-                                counterDict_tmp=collections.Counter(parsedSeqDict[i])
-                                counterDict[i].update(counterDict_tmp)
-                            else:
-                                counterDict[i]=collections.Counter(parsedSeqDict[i])
-                    
-                    print(4000000*(n_chunk)+len(parsedSeqDict["Header"]),"reads were processed for",readKey,flush=True)
-
-                    # if (nrow+1)%4000000==0:
-                    #     n_chunk=int((nrow+1)/4000000) #n_chunk>0
-                    #     with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),mode="wb") as p:
-                    #         pickle.dump(parsedSeqDict,p)
-                    #     with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcQual.pkl"]),mode="wb") as p:
-                    #         pickle.dump(parsedQualDict,p)
-
-
-                    #     for i in self.settings.barcodes:
-                    #         if parsedSeqDict.get(i):
-                    #             if i in counterDict:
-                    #                 counterDict_tmp=collections.Counter(parsedSeqDict[i])
-                    #                 counterDict[i].update(counterDict_tmp)
-                    #             else:
-                    #                 counterDict[i]=collections.Counter(parsedSeqDict[i])
-
-                    #     parsedSeqDict=collections.defaultdict(list)
-                    #     parsedQualDict=collections.defaultdict(list)
-                    #     print(str(int((nrow+1)/4))+" reads were processed for "+readKey,flush=True)
-                    
-                    numSeqDict[readKey] = len(parsedSeqDict["Header"])
+            
+                with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),mode="wb") as p:
+                    pickle.dump(parsedSeqDict,p)
+                with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcQual.pkl"]),mode="wb") as p:
+                    pickle.dump(parsedQualDict,p)
                 
-                # Sequence number check
-                if len(parsedSeqDict["Header"]) != numSeqDict[readKeys[0]]:
-                    if not self.settings.flash:
-                        errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
-                        raise InputError(errmsg)
-
-                # try:
-                #     n_chunk
-                #     n_chunk+=1
-                # except NameError:
-                #     n_chunk=0
-
-                # try:
-                #     nrow
-                # except NameError:
-                #     nrow=0
+                for i in self.settings.barcodes:
+                    if parsedSeqDict.get(i):
+                        if i in counterDict:
+                            counterDict_tmp=collections.Counter(parsedSeqDict[i])
+                            counterDict[i].update(counterDict_tmp)
+                        else:
+                            counterDict[i]=collections.Counter(parsedSeqDict[i])
                 
-                # if not (nrow+1)%4000000==0 and nrow != 0:
-                #     for i in self.settings.barcodes:
-                #         if parsedSeqDict.get(i):
-                #             counterDict_tmp=collections.Counter(parsedSeqDict[i])
-                #             if n_chunk==0:
-                #                 counterDict[i]=counterDict_tmp
-                #             else:
-                #                 counterDict[i].update(counterDict_tmp)
-                    
+                print(1000000*(n_chunk)+len(parsedSeqDict["Header"]),"reads were processed for",readKey,flush=True)
+
+                # if (nrow+1)%4000000==0:
+                #     n_chunk=int((nrow+1)/4000000) #n_chunk>0
                 #     with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),mode="wb") as p:
                 #         pickle.dump(parsedSeqDict,p)
                 #     with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcQual.pkl"]),mode="wb") as p:
                 #         pickle.dump(parsedQualDict,p)
+
+
+                #     for i in self.settings.barcodes:
+                #         if parsedSeqDict.get(i):
+                #             if i in counterDict:
+                #                 counterDict_tmp=collections.Counter(parsedSeqDict[i])
+                #                 counterDict[i].update(counterDict_tmp)
+                #             else:
+                #                 counterDict[i]=collections.Counter(parsedSeqDict[i])
+
+                #     parsedSeqDict=collections.defaultdict(list)
+                #     parsedQualDict=collections.defaultdict(list)
                 #     print(str(int((nrow+1)/4))+" reads were processed for "+readKey,flush=True)
                 
-                # # # print(parsedSeqDict["Header"][:5])
-                # # print("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),"\n\n")
-                # parsedSeqDict=collections.defaultdict(list)
-                # parsedQualDict=collections.defaultdict(list)
-                self.n_chunk=n_chunk
-                # del n_chunk
+            numSeqDict[readKey] = len(parsedSeqDict["Header"])
+            
+            # Sequence number check - Interstellar requires the paired end reads and index reads are all sorted and correspond each other.
+            if len(parsedSeqDict["Header"]) != numSeqDict[readKeys[0]]:
+                if not self.settings.flash:
+                    errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
+                    raise InputError(errmsg)
+
+            # try:
+            #     n_chunk
+            #     n_chunk+=1
+            # except NameError:
+            #     n_chunk=0
+
+            # try:
+            #     nrow
+            # except NameError:
+            #     nrow=0
+            
+            # if not (nrow+1)%4000000==0 and nrow != 0:
+            #     for i in self.settings.barcodes:
+            #         if parsedSeqDict.get(i):
+            #             counterDict_tmp=collections.Counter(parsedSeqDict[i])
+            #             if n_chunk==0:
+            #                 counterDict[i]=counterDict_tmp
+            #             else:
+            #                 counterDict[i].update(counterDict_tmp)
+                
+            #     with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),mode="wb") as p:
+            #         pickle.dump(parsedSeqDict,p)
+            #     with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcQual.pkl"]),mode="wb") as p:
+            #         pickle.dump(parsedQualDict,p)
+            #     print(str(int((nrow+1)/4))+" reads were processed for "+readKey,flush=True)
+            
+            # # # print(parsedSeqDict["Header"][:5])
+            # # print("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),"\n\n")
+            # parsedSeqDict=collections.defaultdict(list)
+            # parsedQualDict=collections.defaultdict(list)
+            self.n_chunk=n_chunk
+            # del n_chunk
 
         self.counterDict=counterDict
         # self.today_now=today_now

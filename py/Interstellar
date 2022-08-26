@@ -64,7 +64,6 @@ if __name__=="__main__":
     cfg=settingRequirementCheck.setDefaultConfig(cfg)
 
 
-
     # Multi-sample?
     if cfg["general"]["SAMPLESHEET"]=="":
         is_multisample=False

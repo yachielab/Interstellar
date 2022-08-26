@@ -4,9 +4,9 @@ import random
 import string
 import subprocess
 import collections
-import pickle
 from joblib import Parallel, delayed
-import multiprocessing
+import numpy as np
+import pandas as pd
 from itertools import zip_longest
 
 
@@ -111,39 +111,21 @@ def qualityFiltering(qualNow,min_base_quality,min_avg_quality):
         return False
 
 
-# def helper_map(df,conv_dict,seg):
-#     time.sleep(.5)
-#     out = df[seg].map(lambda x: test_conversion(x,conv_dict))
-#     return out
+def qualityFilteringForDataFrame(df_set,qc_targets,qscore_dict):
+    seq_chunk = df_set[0]
+    qual_chunk = df_set[1]
 
-# def applyParallel(df, func, ncore, conv_dict, seg):
-#     retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(func)(df_chunk,conv_dict,seg) for df_chunk in df)
-#     return pd.concat(retLst)
-
-# for ncore in range(1,11):
-#     df_split = pd.read_csv("/Users/yusukekijima/work/yachie/droParser/tool_test/Interteslaar/test220812_debug_segname/process_ex1/E10.5_10x/value_extraction/_work/import/E105_10X_R1.fastq.gz_srcSeq.tsv.gz",
-#                     sep="\t",
-#                     header=0,
-#                     chunksize=10000)
-#     start = time.time()
-#     result = applyParallel(df_split, helper_map, ncore=ncore, conv_dict=conversion_dict, seg="src_segment1")
-#     end = time.time()
-#     print("Ncores =",ncore,"Elapsed time:",end - start,"secs")
-
+    for seg in qc_targets:
+        bool_filtered=qual_chunk[seg].map(lambda x: qualityFiltering(x,min_base_quality=qscore_dict[seg]["min_base"],min_avg_quality=qscore_dict[seg]["min_avg"]))
+        seq_chunk[seg][bool_filtered]="-"
+    
+    return seq_chunk
+    
 
 def split_fastq_per_lines(lines, n=4):
     for idx in range(0, len(lines), n):
         yield lines[idx:idx + n]
     
-
-def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set,ncore):
-    parsedSeqDict=collections.defaultdict(list)
-    parsedQualDict=collections.defaultdict(list)
-    Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(
-        delayed(fastq_segmentation)(parsedSeqDict,parsedQualDict,subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set) 
-            for subchunk in split_fastq_per_lines(fastq_chunk,n=40000))
-    return parsedSeqDict,parsedQualDict
-
 
 def fastq_segmentation(parsedSeqDict,parsedQualDict,subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set):
     for lines in split_fastq_per_lines(subchunk):
@@ -179,24 +161,21 @@ def fastq_segmentation(parsedSeqDict,parsedQualDict,subchunk,settings,headerSpli
                 parsedQualDict[component].append(extractedQual)
 
 
-    # if (nrow+1)%4000000==0:
-    #     n_chunk=int((nrow+1)/4000000) #n_chunk>0
-    #     with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),mode="wb") as p:
-    #         pickle.dump(parsedSeqDict,p)
-    #     with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcQual.pkl"]),mode="wb") as p:
-    #         pickle.dump(parsedQualDict,p)
+# Multithreading implementation for read segmentation
+def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set,ncore):
+    parsedSeqDict=collections.defaultdict(list)
+    parsedQualDict=collections.defaultdict(list)
+    Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(
+        delayed(fastq_segmentation)(parsedSeqDict,parsedQualDict,subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set) 
+            for subchunk in split_fastq_per_lines(fastq_chunk,n=40000)) # Each CPU processes 40000 FASTQ records
+    return parsedSeqDict,parsedQualDict
 
 
-    #     for i in settings.barcodes:
-    #         if parsedSeqDict.get(i):
-    #             if i in counterDict:
-    #                 counterDict_tmp=collections.Counter(parsedSeqDict[i])
-    #                 counterDict[i].update(counterDict_tmp)
-    #             else:
-    #                 counterDict[i]=collections.Counter(parsedSeqDict[i])
+# Multithreading implementation for quality filtering
+def qfilter_parallel_wrapper(seq_chunk, qual_chunk, qc_targets, qscore_dict, ncore):
+    # Further split the data chunks into subchunks by the number of CPUs
+    seq_subchunks = np.array_split(seq_chunk,ncore)
+    qual_subchunks = np.array_split(qual_chunk,ncore)
 
-    #     parsedSeqDict=collections.defaultdict(list)
-    #     parsedQualDict=collections.defaultdict(list)
-    #     print(str(int((nrow+1)/4))+" reads were processed for "+readKey,flush=True)
-    
-    # numSeqDict[readKey] = nrow
+    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(qualityFilteringForDataFrame)(df_set, qc_targets, qscore_dict) for df_set in zip(seq_subchunks,qual_subchunks))
+    return pd.concat(retLst)

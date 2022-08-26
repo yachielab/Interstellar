@@ -3,6 +3,7 @@ from random import sample
 from pandas.core import base
 from . import interstellar_setup
 from . import settingImporter
+from . import barcodeConverter
 import subprocess
 import os
 import re
@@ -34,6 +35,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     shell_template=cfg_raw["general"]["SET_SHELL_ENV"]
     cfg=settingImporter.config_extract_value_demulti(cfg_raw)
     cfg_ext,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
+    ncore = int(cfg_raw["general"]["NUM_CORES"])
     
     for key in cfg:
         if "READ1_STRUCTURE" in key or "READ2_STRUCTURE" in key or "INDEX1_STRUCTURE" in key or "INDEX2_STRUCTURE" in key:
@@ -120,69 +122,51 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
 
         njobdict[sampledir]=len(key_set)
         if is_qsub:
+            # Qsub for each key
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,"demulti_filemerge",mem_key)
-        for key in key_set:
-            target_files=[t for t in demulti_filename_list if key in os.path.basename(t)]
-            if cfg["FORMAT"]=="tsv":
-                key_gunzip=key.replace(".gz","")
-                cmd1=["gunzip -c"]+[target_files[0]]+["| head -n1 >",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip]
-                cmd1=" ".join(cmd1)
-                cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip]
-                cmd2=" ".join(cmd2)
-                cmd3=["cat",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip,sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip+" | gzip -c > ",sampledir+"/demultiplex/out/demultiplex"+key]
-                cmd3=" ".join(cmd3)
-                cmd4=["rm",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip,sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip]
-                cmd4=" ".join(cmd4)
-                if not is_qsub:
-                    for cmd in [cmd1,cmd2,cmd3,cmd4]:
-                        s=subprocess.run(cmd,shell=True)
-                        if s.returncode != 0:
-                            print("Job failed: Demultiuplexed file merge', file=sys.stderr")
-                            sys.exit(1)
+            for key in key_set:
+                target_files=[t for t in demulti_filename_list if key in os.path.basename(t)]
+                if cfg["FORMAT"]=="tsv":
+                    # key_gunzip=key.replace(".gz","")
+                    # cmd1=["gunzip -c"]+[target_files[0]]+["| head -n1 >",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip]
+                    # cmd1=" ".join(cmd1)
+                    # cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip]
+                    # cmd2=" ".join(cmd2)
+                    # cmd3=["cat",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip,sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip+" | gzip -c > ",sampledir+"/demultiplex/out/demultiplex"+key]
+                    # cmd3=" ".join(cmd3)
+                    # cmd4=["rm",sampledir+"/demultiplex/out/demultiplex.header"+key_gunzip,sampledir+"/demultiplex/out/demultiplex.content"+key_gunzip]
+                    # cmd4=" ".join(cmd4)
+                    cmd1,cmd2,cmd3,cmd4 = barcodeConverter.gen_cmd_tsv_concat(key,sampledir,target_files)
+                    cmd_list = [cmd1,cmd2,cmd3,cmd4]
                 else:
-                    shell_lines=[]
-                    with open(shell_template,mode="rt") as r:
-                        for line in r:
-                            line=line.replace("\n","")
-                            shell_lines.append(line)
-                    shell_lines+=[cmd1,cmd2,cmd3,cmd4]
-                    shell_lines="\n".join(shell_lines)+"\n"
-                    with open(sampledir+"/sh/demulti_filemerge.sh",mode="wt") as w:
-                        w.write(shell_lines)
+                    cmd=["echo"]+target_files+["| xargs cat >",sampledir+"/demultiplex/out/demultiplex"+key]
+                    cmd=" ".join(cmd)
+                    cmd_list = [cmd]
 
-                    qcmd_now=qcmd_base+[sampledir+"/sh/demulti_filemerge.sh"]
-                    qcmd_now=" ".join(qcmd_now)
-                    s=subprocess.run(qcmd_now,shell=True)
-                    if s.returncode != 0:
-                        print("qsub failed: Demultiuplexed file merge', file=sys.stderr")
-                        sys.exit(1)
-                
-            else:
-                cmd=["echo"]+target_files+["| xargs cat >",sampledir+"/demultiplex/out/demultiplex"+key]
-                cmd=" ".join(cmd)
-                
-                if not is_qsub:
-                    s=subprocess.run(cmd,shell=True)
-                    if s.returncode != 0:
-                        print("Job failed: Demultiuplexed file merge', file=sys.stderr")
-                        sys.exit(1)
-                else:
-                    shell_lines=[]
-                    with open(shell_template,mode="rt") as r:
-                        for line in r:
-                            line=line.replace("\n","")
-                            shell_lines.append(line)
-                    shell_lines+=[cmd]
-                    shell_lines="\n".join(shell_lines)+"\n"
-                    with open(sampledir+"/sh/demulti_filemerge.sh",mode="wt") as w:
-                        w.write(shell_lines)
+                # Format a qsub command shell script
+                shell_lines=[]
+                with open(shell_template,mode="rt") as r:
+                    for line in r:
+                        line=line.replace("\n","")
+                        shell_lines.append(line)
 
-                    qcmd_now=qcmd_base+[sampledir+"/sh/demulti_filemerge.sh"]
-                    qcmd_now=" ".join(qcmd_now)
-                    s=subprocess.run(qcmd_now,shell=True)
-                    if s.returncode != 0:
-                        print("qsub failed: Demultiuplexed file merge', file=sys.stderr")
-                        sys.exit(1)
+                # Add the merging shell commands
+                shell_lines+=cmd_list
+                shell_lines="\n".join(shell_lines)+"\n"
+                with open(sampledir+"/sh/demulti_filemerge.sh",mode="wt") as w:
+                    w.write(shell_lines)
+
+                # Prep a qsub command and run
+                qcmd_now=qcmd_base+[sampledir+"/sh/demulti_filemerge.sh"]
+                qcmd_now=" ".join(qcmd_now)
+                s=subprocess.run(qcmd_now,shell=True)
+                if s.returncode != 0:
+                    print("qsub failed: Demultiuplexed file merge', file=sys.stderr")
+                    sys.exit(1)
+
+        if not is_qsub:
+            barcodeConverter.concat_demultiplex_files_parallel_wrapper(key_set,sampledir,demulti_filename_list,ncore,cfg["FORMAT"])
+        
                 
     if is_qsub:
         for sampledir in sampledir_list:

@@ -63,7 +63,7 @@ def setDefaultConfig(cfg):
     cfg["general"]["PROJECT_DIR"] =tryAndFill(cfg,"general","PROJECT_DIR","",required=True,parse_home=True)
     cfg["general"]["SAMPLESHEET"] =tryAndFill(cfg,"general","SAMPLESHEET","",required=True,parse_home=True)
     cfg["general"]["SET_SHELL_ENV"]=tryAndFill(cfg,"general","SET_SHELL_ENV","",required=True,parse_home=True)
-    # cfg["general"]["CHUNKSIZE"]   =tryAndFill(cfg,"general","CHUNKSIZE","2000000")
+    cfg["general"]["NUM_CORES"]   =tryAndFill(cfg,"general","NUM_CORES","1")
     
     #Section=value_extraction
     if "value_extraction" in cfg:

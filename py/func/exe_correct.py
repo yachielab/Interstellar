@@ -45,6 +45,7 @@ class settings_correct(object):
         outdir=self.opt.outdir
         self.outdir=outdir
         self.outFilePath_and_Prefix=outdir+"/"+outname
+        self.ncore = int(cfg["general"]["NUM_CORES"])
         # self.mk_s_value_components=cfg_correct["make_s_value"].split(",")
 
         
@@ -53,6 +54,7 @@ class BARISTA_CORRECT(object):
         self.settings=settings
 
 
+    # Pile up the count information
     def importExtractedComponents(self):
         counterDict_pileup=collections.defaultdict(lambda: collections.Counter())
         for i in self.settings.importPkl:
@@ -66,27 +68,34 @@ class BARISTA_CORRECT(object):
         self.counterDict=counterDict
 
 
+    # Sequence error correction
     def correct_component(self):
-        correspondicgDict={}
+
+        # Get correspondence between source segment name and corrected source segment name
+        correspondingDict={}
         for k in self.settings.corrected_components:
             func_tmp=self.settings.correctOptDict[k]["func_ordered"][0]
-            correspondicgDict[k]=self.settings.correctOptDict[k][func_tmp]["source"]
-        corresponding_key=list(correspondicgDict.keys())
-        corresponding_val=list(correspondicgDict.values())
+            correspondingDict[k]=self.settings.correctOptDict[k][func_tmp]["source"]
+        corresponding_key=list(correspondingDict.keys()) # corrected source segment name
+        corresponding_val=list(correspondingDict.values()) # raw source segment name
         correctionDictionaries={}
 
-        #Setup custom corection
+        # Setup custom corection
         is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/qc/*"))
         custom_correction_segments=list()
         for rawSegment in self.counterDict:
             if rawSegment not in corresponding_val:
                 continue
+
             correctedComponent=corresponding_key[corresponding_val.index(rawSegment)]
             correctOpt=self.settings.correctOptDict[correctedComponent]
-            #component_raw_corresponding=correctOpt["src_raw_components"]
             if "CUSTOM_CORRECTION" in correctOpt["func_ordered"]:
                 custom_correction_segments.append(rawSegment)
-        src_seq_paths=glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/qc/*_srcSeq.QC.tsv.gz")
+        
+        if is_qc:
+            src_seq_paths=glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/qc/*_srcSeq.QC.tsv.gz")
+        else:
+            src_seq_paths=glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/import/*_srcSeq.tsv.gz")
         barcodeCorrecter.custom_correction_setup(custom_correction_segments,self.settings.outdir,src_seq_paths)
 
         #Correction        
@@ -95,8 +104,8 @@ class BARISTA_CORRECT(object):
                 continue
             correctedComponent=corresponding_key[corresponding_val.index(rawSegment)]
             correctOpt=self.settings.correctOptDict[correctedComponent]
-            if "CUSTOM_CORRECTION" in correctOpt["func_ordered"]:
-                
+
+            if "CUSTOM_CORRECTION" in correctOpt["func_ordered"]:         
                 input_filename=self.settings.outdir+"/custom"+"_"+rawSegment+".input.csv"
                 output_filename=self.settings.outdir+"/custom"+"_"+rawSegment+".output.csv"
                 cmd=["bash",correctOpt["CUSTOM_CORRECTION"]["shell_script"],input_filename,output_filename]
@@ -112,7 +121,6 @@ class BARISTA_CORRECT(object):
                 correctionDictionaries[correctedComponent]["reference"]=sorted(counter_dict.keys(),key=counter_dict.__getitem__,reverse=True)
                 correctionDictionaries[correctedComponent]["correctionDict"]=barcodeCorrecter.gen_custom_dict(df_corrected)
 
-
             elif "BARTENDER_CORRECTION" in correctOpt["func_ordered"]:
                 bartender_path=os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/to_bt/to_bt"+"_"+rawSegment+"_bartender"
                 correctionDictionaries[correctedComponent]={}
@@ -123,7 +131,7 @@ class BARISTA_CORRECT(object):
                 correctionDictionaries[correctedComponent]["correctionDict"]=barcodeCorrecter.gen_bt_dict(bc_file,clstr_file)
 
             elif "I2M_CORRECTION" in correctOpt["func_ordered"] or "M2A_CORRECTION" in correctOpt["func_ordered"]:
-                correctedTables=barcodeCorrecter.bcCorrect(correctOpt,self.counterDict,self.settings.yaxis_scale,self.settings.show_summary,self.settings.outFilePath_and_Prefix)
+                correctedTables=barcodeCorrecter.bcCorrect(correctOpt,self.counterDict,self.settings.yaxis_scale,self.settings.show_summary,self.settings.outFilePath_and_Prefix,self.settings.ncore)
                 correctionDictionaries[correctedComponent]=correctedTables
             
             else:

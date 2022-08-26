@@ -26,10 +26,12 @@ class settings_to_bt(object):
         outname=self.opt.outname
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)
+        self.ncore = int(cfg["general"]["NUM_CORES"])
 
 class BARISTA_TO_BT(object):
     def __init__(self,settings):
         self.settings=settings
+
     def to_bt(self):
         dic_rowcount={k:0 for k in self.settings.bt_targets}
         for processCount,input_filepath in enumerate(self.settings.seq):
@@ -54,6 +56,7 @@ class BARISTA_TO_BT(object):
                             if not entry=="-":
                                 dic_rowcount[bc]+=1
                                 w.write(entry+","+str(dic_rowcount[bc])+"\n")
+
     def bartender(self):
         func_dict_bartender=dict()
         for bc in self.settings.bt_targets:
@@ -62,10 +65,10 @@ class BARISTA_TO_BT(object):
                     if self.settings.func_dict[val]["BARTENDER_CORRECTION"]["source"]==bc:
                         func_dict_bartender[bc]=self.settings.func_dict[val]["BARTENDER_CORRECTION"]
         
-
+        # Run Bartender
         for bc in self.settings.bt_targets:
             input_filename=self.settings.outFilePath_and_Prefix+"_"+bc+".csv"
-            cmd=["bartender_single_com","-f",input_filename,"-o",self.settings.outFilePath_and_Prefix+"_"+bc+"_bartender"]
+            cmd=["bartender_single_com","-t",self.settings.ncore,"-f",input_filename,"-o",self.settings.outFilePath_and_Prefix+"_"+bc+"_bartender"]
             for key in func_dict_bartender[bc]:
                 if not key=="source":
                     cmd+=[key,func_dict_bartender[bc][key]]

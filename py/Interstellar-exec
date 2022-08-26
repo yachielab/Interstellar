@@ -50,7 +50,7 @@ if __name__=="__main__":
     opt=arg.getargs(cmd)
 
     if cmd == "import":
-        print("\nInterstellar import",flush=True)
+        print("\nInterstellar: Read segmentation",flush=True)
         s=exe_import.settings_import(opt)
         s.settingGetter()
         baristaImport=exe_import.BARISTA_IMPORT(s)
@@ -63,14 +63,14 @@ if __name__=="__main__":
         baristaImport.exportExtractedComponents()
 
     elif cmd=="qc":
-        print("\nInterstellar qc",flush=True)
+        print("\nInterstellar: Quality filtering",flush=True)
         s=exe_qc.settings_qc(opt)
         s.settingGetter()
         obj_qc=exe_qc.BARISTA_QC(s)
         obj_qc.qualityCheck()
 
     elif cmd=="to_bt":
-        print("\nInterstellar to_bt",flush=True)
+        print("\nInterstellar: Data reshaping for Bartender",flush=True)
         s=exe_to_bt.settings_to_bt(opt)
         s.settingGetter()
         obj_to_bt=exe_to_bt.BARISTA_TO_BT(s)
@@ -78,7 +78,7 @@ if __name__=="__main__":
         obj_to_bt.bartender()
 
     elif cmd=="correct":
-        print("\nInterstellar correct",flush=True)
+        print("\nInterstellar: Error correction",flush=True)
         s=exe_correct.settings_correct(opt)
         s.settingGetter()
         obj_correct=exe_correct.BARISTA_CORRECT(s)
@@ -86,7 +86,7 @@ if __name__=="__main__":
         obj_correct.correct_component()
 
     elif cmd=="mk_sval":
-        print("\nInterstellar mk_sval",flush=True)
+        print("\nInterstellar: Sequence-to-value conversion",flush=True)
         s=exe_mk_sval.settings_make_s(opt)
         s.settingGetter()
         obj_s=exe_mk_sval.BARISTA_MAKE_S(s)
@@ -96,21 +96,21 @@ if __name__=="__main__":
             obj_s.make_s_value()
             
     elif cmd=="buildTree":
-        print("\nInterstellar buildTree",flush=True)
+        print("\nInterstellar: Value tree construction",flush=True)
         s=exe_buildTree.settings_buildTree(opt)
         s.settingGetter()
         baristaTree=exe_buildTree.BARISTA_BUILDTREE(s)
         baristaTree.buildTree()        
 
     elif cmd=="mergeTree":
-        print("\nInterstellar mergeTree",flush=True)
+        print("\nInterstellar: Merging value trees",flush=True)
         s=exe_mergeTree.settings_mergetree(opt)
         s.settingGetter()
         baristaMergetree=exe_mergeTree.BARISTA_MERGETREE(s)
         baristaMergetree.mergeTree_v2()
 
     elif cmd=="convert":
-        print("\nInterstellar convert",flush=True)
+        print("\nInterstellar: Optimized value assignment",flush=True)
         s=exe_convert.settings_convert(opt)
         s.settingGetter()
         baristaConvert=exe_convert.BARISTA_CONVERT(s)

@@ -35,6 +35,8 @@ class settings_mergetree(object):
             if "SEQ2VALUE" in func_dict_ext[i]["func_ordered"]:
                 value_variables.append(i)
         self.value_variables=value_variables
+        self.ncore = int(cfg["general"]["NUM_CORES"])
+
 
 class BARISTA_MERGETREE(object):
     def __init__(self,settings):
@@ -54,27 +56,28 @@ class BARISTA_MERGETREE(object):
         
 
         #Pile up counttree
-        mergedCountTree={}
-        for cnt,p in enumerate(pkl):
-            print("Piling up count trees...",cnt+1,flush=True)
-            #load counttree
-            with gzip.open(p,mode="rb") as rp:
-                count_tree=pickle.load(rp)
+        print("Piling up count trees...",flush=True)
+        mergedCountTree = barcodeConverter.merge_count_tree_parallel_wrapper(pkl,self.settings.ncore)
+        # for cnt,p in enumerate(pkl):
+        #     print("Piling up count trees...",cnt+1,flush=True)
+        #     #load counttree
+        #     with gzip.open(p,mode="rb") as rp:
+        #         count_tree=pickle.load(rp)
 
-            #go through the component in the counttree
-            for component in count_tree:
-                if not component in mergedCountTree: #1st counttree
-                    mergedCountTree[component]=count_tree[component]
-                else: #2nd~
-                    if type(count_tree[component])==collections.Counter: #For global value
-                        mergedCountTree[component].update(count_tree[component])
-                    else: #For local value
-                        for parent in count_tree[component]:
-                            child_freq_now=count_tree[component][parent]
-                            if parent in mergedCountTree[component]:
-                                mergedCountTree[component][parent].update(child_freq_now)
-                            else:
-                                mergedCountTree[component][parent]=child_freq_now
+        #     #go through the component in the counttree
+        #     for component in count_tree:
+        #         if not component in mergedCountTree: #1st counttree
+        #             mergedCountTree[component]=count_tree[component]
+        #         else: #2nd~
+        #             if type(count_tree[component])==collections.Counter: #For global value
+        #                 mergedCountTree[component].update(count_tree[component])
+        #             else: #For local value
+        #                 for parent in count_tree[component]:
+        #                     child_freq_now=count_tree[component][parent]
+        #                     if parent in mergedCountTree[component]:
+        #                         mergedCountTree[component][parent].update(child_freq_now)
+        #                     else:
+        #                         mergedCountTree[component][parent]=child_freq_now
         
         # barcodeConverter.printDictTest(mergedCountTree)
         #Sort piled up tree by count, and add indices

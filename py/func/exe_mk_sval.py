@@ -33,6 +33,7 @@ class settings_make_s(object):
         outname=self.opt.outname
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=outdir+"/"+outname
+        self.ncore = int(cfg["general"]["NUM_CORES"])
         # self.mk_s_value_components=cfg_correct["make_s_value"].split(",")
 
 
@@ -49,26 +50,28 @@ class BARISTA_MAKE_S(object):
             func_tmp=self.settings.correctOptDict[k]["func_ordered"][0]
             components_raw.append(self.settings.correctOptDict[k][func_tmp]["source"])
         self.components_raw=components_raw
+
         for cnt,parsedSeq_raw_df in enumerate(parsedSeq_raw_chunk):
             print("Making a sequence table for chunk",cnt,"...",flush=True)
-            cols_ordered=["Header"]+[i for i in sorted(parsedSeq_raw_df.columns) if not i=="Header"]
-            cols_ordered_final=[]
-            for ncol,component_raw_now in enumerate(cols_ordered):
-                if ncol>0:
-                    if not component_raw_now in components_raw:
-                        parsedSeq_raw_df=parsedSeq_raw_df.drop(component_raw_now,axis=1)
-                        continue
-                    col_index=components_raw.index(component_raw_now)
-                    component_corrected_now=self.settings.corrected_components[col_index]
-                    opt_now=self.settings.correctOptDict[component_corrected_now]
+            parsedSeq_raw_df = barcodeCorrecter.seqCleanUp_parallel_wrapper(parsedSeq_raw_df,components_raw,correctionDictionaries,self.settings,self.settings.ncore)
+            # cols_ordered=["Header"]+[i for i in sorted(parsedSeq_raw_df.columns) if not i=="Header"]
+            # cols_ordered_final=[]
+            # for ncol,component_raw_now in enumerate(cols_ordered):
+            #     if ncol>0:
+            #         if not component_raw_now in components_raw:
+            #             parsedSeq_raw_df=parsedSeq_raw_df.drop(component_raw_now,axis=1)
+            #             continue
+            #         col_index=components_raw.index(component_raw_now)
+            #         component_corrected_now=self.settings.corrected_components[col_index]
+            #         opt_now=self.settings.correctOptDict[component_corrected_now]
                     
-                    if (component_corrected_now in correctionDictionaries) and ("I2M_CORRECTION" in opt_now["func_ordered"] or "M2A_CORRECTION" in opt_now["func_ordered"] or "BARTENDER_CORRECTION" in opt_now["func_ordered"] or "CUSTOM_CORRECTION" in opt_now["func_ordered"]):
-                        parsedSeq_raw_df[component_raw_now]=parsedSeq_raw_df[component_raw_now].map(lambda x: barcodeCorrecter.seq_correct_and_write(x,reference=correctionDictionaries[component_corrected_now]["correctionDict"]))
-                    parsedSeq_raw_df.rename(columns={component_raw_now:component_raw_now+":"+component_corrected_now},inplace=True)
-                    cols_ordered_final.append(component_raw_now+":"+component_corrected_now)
-                else:
-                    cols_ordered_final.append("Header")
-            parsedSeq_raw_df = parsedSeq_raw_df[cols_ordered_final]
+            #         if (component_corrected_now in correctionDictionaries) and ("I2M_CORRECTION" in opt_now["func_ordered"] or "M2A_CORRECTION" in opt_now["func_ordered"] or "BARTENDER_CORRECTION" in opt_now["func_ordered"] or "CUSTOM_CORRECTION" in opt_now["func_ordered"]):
+            #             parsedSeq_raw_df[component_raw_now]=parsedSeq_raw_df[component_raw_now].map(lambda x: barcodeCorrecter.seq_correct_and_write(x,reference=correctionDictionaries[component_corrected_now]["correctionDict"]))
+            #         parsedSeq_raw_df.rename(columns={component_raw_now:component_raw_now+":"+component_corrected_now},inplace=True)
+            #         cols_ordered_final.append(component_raw_now+":"+component_corrected_now)
+            #     else:
+            #         cols_ordered_final.append("Header")
+            # parsedSeq_raw_df = parsedSeq_raw_df[cols_ordered_final]
             if cnt==0:
                 parsedSeq_raw_df.to_csv(self.settings.outFilePath_and_Prefix+"_correct_result.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
             else:
@@ -76,7 +79,6 @@ class BARISTA_MAKE_S(object):
         
     
     def make_s_value(self):
-        t0=time.time()
         with gzip.open(self.settings.correctionDictPkl) as p:
             correctionDictionaries=pickle.load(p)
 
@@ -98,35 +100,36 @@ class BARISTA_MAKE_S(object):
                 df_chunk=parsedQual_raw_chunk
 
             for cnt,parsedSeq_df in enumerate(df_chunk):
-                print(cat,"Making a value table for chunk",cnt)
-                res=pd.DataFrame()
-                for ncol,component in enumerate(parsedSeq_df.columns):                    
-                    if ncol==0:
-                        res["Header"]=parsedSeq_df[component]
-                    if ncol>0: 
-                        if cat=="seq":
-                            component_raw_now=component.split(":")[0]
-                            component_corrected_now=component.split(":")[1]
-                        else:
-                            component_raw_now=component
-                            if not component_raw_now in components_raw:
-                                continue
-                            col_index=components_raw.index(component_raw_now)
-                            component_corrected_now=self.settings.corrected_components[col_index]
+                print("Category:",cat,"| Making a value table for chunk",cnt)
+                res = barcodeCorrecter.gen_value_table_parallel_wrapper(parsedSeq_df,cat,components_raw,self.settings,correctionDictionaries,ref_dic,self.settings.ncore)
+                # res=pd.DataFrame()
+                # for ncol,component in enumerate(parsedSeq_df.columns):                    
+                #     if ncol==0:
+                #         res["Header"]=parsedSeq_df[component]
+                #     if ncol>0: 
+                #         if cat=="seq":
+                #             component_raw_now=component.split(":")[0]
+                #             component_corrected_now=component.split(":")[1]
+                #         else:
+                #             component_raw_now=component
+                #             if not component_raw_now in components_raw:
+                #                 continue
+                #             col_index=components_raw.index(component_raw_now)
+                #             component_corrected_now=self.settings.corrected_components[col_index]
 
-                        if component_corrected_now in correctionDictionaries:
-                            # print(component_corrected_now,flush=True)
-                            if cat=="seq":
-                                res[component_corrected_now]=parsedSeq_df[component].map(lambda x: barcodeCorrecter.seq_to_val_ver2(x,dic=ref_dic[component_corrected_now]))
-                            else:
-                                res[component_corrected_now]=parsedSeq_df[component_raw_now].map(barcodeCorrecter.qualityProcessing)
+                #         if component_corrected_now in correctionDictionaries:
+                #             # print(component_corrected_now,flush=True)
+                #             if cat=="seq":
+                #                 res[component_corrected_now]=parsedSeq_df[component].map(lambda x: barcodeCorrecter.seq_to_val_ver2(x,dic=ref_dic[component_corrected_now]))
+                #             else:
+                #                 res[component_corrected_now]=parsedSeq_df[component_raw_now].map(barcodeCorrecter.qualityProcessing)
 
-                if cnt==0:
+                if cnt == 0:
                     if cat=="seq":
                         res.to_csv(self.settings.outFilePath_and_Prefix+"_correct_srcValue.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
                     else:
                         res.to_csv(self.settings.outFilePath_and_Prefix+"_correct_srcQual.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
-                else:
+                elif cnt > 0:
                     if cat=="seq":
                         res.to_csv(self.settings.outFilePath_and_Prefix+"_correct_srcValue.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
                     else:

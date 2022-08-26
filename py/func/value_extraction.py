@@ -94,7 +94,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                     if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
                         tartget_file_dict=param_dict[os.path.basename(sampledir)]["tartget_file_dict"]
                         target_files=tartget_file_dict[r]
-                        # target_files=[i for i in glob.glob(param_dict[os.path.basename(sampledir)]["read_valid"][r]+"/*") if re.search(fileprefix+read_identifier+r".*"+endfix_input,os.path.basename(i))]
+                        target_files=[i for i in target_files if re.search(fileprefix+r".*"+endfix_input,os.path.basename(i))]
                         file_pool[idx]+=sorted(target_files)
                         idx+=1
 

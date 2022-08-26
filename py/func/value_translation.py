@@ -208,45 +208,45 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
 
 
 
-    if cfg["bc_sort"]:
-        cmd="bc_sort"
-        # print("Runnning qsub jobs...: bc_sort",flush=True)
-        mergetree=sampledir_list[0]+"/value_translation/_work/mergeTree/merge_mergeTree.pkl.gz"
-        s2v=glob.glob(sampledir_list[0]+"/value_extraction/_work/mk_sval/*_sseq_to_svalue.pkl.gz")[0]
-        njobs=0
-        outnamedict=dict()
+    # if cfg["bc_sort"]:
+    #     cmd="bc_sort"
+    #     # print("Runnning qsub jobs...: bc_sort",flush=True)
+    #     mergetree=sampledir_list[0]+"/value_translation/_work/mergeTree/merge_mergeTree.pkl.gz"
+    #     s2v=glob.glob(sampledir_list[0]+"/value_extraction/_work/mk_sval/*_sseq_to_svalue.pkl.gz")[0]
+    #     njobs=0
+    #     outnamedict=dict()
         
-        for n,dest_seg in enumerate(cfg["val2table"]):
-            tbl_now=cfg["val2table"][dest_seg]
-            outname_now="bcsort_"+str(n)+"th"
-            outnamedict[dest_seg]=outname_now
-            if is_qsub:
-                njobs+=1
-                mem_key="mem_bc_sort"
-                print("Running qsub jobs...: Barcode correspondence",flush=True)
-                qoption=qcfg["QOPTION"]
-                qoption=qoption.replace("<mem>",qcfg[mem_key])
-                qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"],qoption]
+    #     for n,dest_seg in enumerate(cfg["val2table"]):
+    #         tbl_now=cfg["val2table"][dest_seg]
+    #         outname_now="bcsort_"+str(n)+"th"
+    #         outnamedict[dest_seg]=outname_now
+    #         if is_qsub:
+    #             njobs+=1
+    #             mem_key="mem_bc_sort"
+    #             print("Running qsub jobs...: Barcode correspondence",flush=True)
+    #             qoption=qcfg["QOPTION"]
+    #             qoption=qoption.replace("<mem>",qcfg[mem_key])
+    #             qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"],qoption]
                     
-                qcmd_now=qcmd_base+[sampledir_list[0]+"/sh/bc_sort.sh",outname_now,mergetree,s2v,tbl_now]
-                qcmd_now=" ".join(qcmd_now)
-                s=subprocess.run(qcmd_now,shell=True)
-                if s.returncode != 0:
-                    print("qsub failed: Barcode correspondence", file=sys.stderr)
-                    sys.exit(1)
-            else:
-                cmd_now=[sampledir_list[0]+"/sh/bc_sort.sh",outname_now,mergetree,s2v,tbl_now]
-                cmd_now=" ".join(cmd_now)
-                s=subprocess.run(cmd_now,shell=True)
-                if s.returncode != 0:
-                    print("Job failed: Barcode correspondence", file=sys.stderr)
-                    sys.exit(1)
-        if is_qsub:
-            for sampledir in sampledir_list:
-                jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
-                interstellar_setup.job_wait("Barcode correspondence",jid_now,sampledir+"/qlog",njob)
+    #             qcmd_now=qcmd_base+[sampledir_list[0]+"/sh/bc_sort.sh",outname_now,mergetree,s2v,tbl_now]
+    #             qcmd_now=" ".join(qcmd_now)
+    #             s=subprocess.run(qcmd_now,shell=True)
+    #             if s.returncode != 0:
+    #                 print("qsub failed: Barcode correspondence", file=sys.stderr)
+    #                 sys.exit(1)
+    #         else:
+    #             cmd_now=[sampledir_list[0]+"/sh/bc_sort.sh",outname_now,mergetree,s2v,tbl_now]
+    #             cmd_now=" ".join(cmd_now)
+    #             s=subprocess.run(cmd_now,shell=True)
+    #             if s.returncode != 0:
+    #                 print("Job failed: Barcode correspondence", file=sys.stderr)
+    #                 sys.exit(1)
+    #     if is_qsub:
+    #         for sampledir in sampledir_list:
+    #             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
+    #             interstellar_setup.job_wait("Barcode correspondence",jid_now,sampledir+"/qlog",njob)
 
-        configRewrite(cfgpath,sampledir_list[0]+"/value_translation/_work/bc_sort",outnamedict)
+    #     configRewrite(cfgpath,sampledir_list[0]+"/value_translation/_work/bc_sort",outnamedict)
 
 
 
