@@ -127,7 +127,9 @@ def split_fastq_per_lines(lines, n=4):
         yield lines[idx:idx + n]
     
 
-def fastq_segmentation(parsedSeqDict,parsedQualDict,subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set):
+def fastq_segmentation(subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set):
+    parsedSeqDict_tmp=collections.defaultdict(list)
+    parsedQualDict_tmp=collections.defaultdict(list)
     for lines in split_fastq_per_lines(subchunk):
         line_header = lines[0]
         line_sequence = lines[1]
@@ -135,39 +137,47 @@ def fastq_segmentation(parsedSeqDict,parsedQualDict,subchunk,settings,headerSpli
         
         # Header treatment
         header=headerSplitRegex.split(line_header)[0]
-        parsedSeqDict["Header"].append(header)
-        parsedQualDict["Header"].append(header)
+        parsedSeqDict_tmp["Header"].append(header)
+        parsedQualDict_tmp["Header"].append(header)
         
         # Sequence segmentation
         m=patMatching(line_sequence,settings.regexDictCompiled[readKey])
         if m:
             mdict=m.groupdict()
             for seg in mdict:
-                parsedSeqDict[seg].append(mdict[seg])
+                parsedSeqDict_tmp[seg].append(mdict[seg])
 
             component_diff=segment_parsed_set-set(mdict.keys())
             for seg in component_diff:
-                parsedSeqDict[seg].append("-")
-                parsedQualDict[seg].append("-")
+                parsedSeqDict_tmp[seg].append("-")
+                parsedQualDict_tmp[seg].append("-")
         else: # If the regex doesn't match, quality segments should also be all missing
             for seg in segment_parsed:
-                parsedSeqDict[seg].append("-")
-                parsedQualDict[seg].append("-")
+                parsedSeqDict_tmp[seg].append("-")
+                parsedQualDict_tmp[seg].append("-")
 
         # Quality segmentation
         if m:
             for component in mdict:
                 extractedQual=line_quality[m.span(component)[0]:m.span(component)[1]]
-                parsedQualDict[component].append(extractedQual)
+                parsedQualDict_tmp[component].append(extractedQual)
+    
+    return parsedSeqDict_tmp,parsedQualDict_tmp
 
 
 # Multithreading implementation for read segmentation
 def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set,ncore):
-    parsedSeqDict=collections.defaultdict(list)
-    parsedQualDict=collections.defaultdict(list)
-    Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(
-        delayed(fastq_segmentation)(parsedSeqDict,parsedQualDict,subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set) 
-            for subchunk in split_fastq_per_lines(fastq_chunk,n=40000)) # Each CPU processes 40000 FASTQ records
+    out = Parallel(n_jobs=ncore,verbose=3)(
+        delayed(fastq_segmentation)(subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set) 
+            for subchunk in split_fastq_per_lines(fastq_chunk,n=160000)) # Each CPU processes 40000 FASTQ records
+    for n,dict_tuple in enumerate(out):
+        if n == 0:
+            parsedSeqDict = dict_tuple[0]
+            parsedQualDict = dict_tuple[1]
+        else:
+            for seg in parsedSeqDict:
+                parsedSeqDict[seg] += dict_tuple[0][seg]
+                parsedQualDict[seg] += dict_tuple[1][seg]
     return parsedSeqDict,parsedQualDict
 
 
@@ -177,5 +187,5 @@ def qfilter_parallel_wrapper(seq_chunk, qual_chunk, qc_targets, qscore_dict, nco
     seq_subchunks = np.array_split(seq_chunk,ncore)
     qual_subchunks = np.array_split(qual_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(qualityFilteringForDataFrame)(df_set, qc_targets, qscore_dict) for df_set in zip(seq_subchunks,qual_subchunks))
+    retLst = Parallel(n_jobs=ncore,verbose=3)(delayed(qualityFilteringForDataFrame)(df_set, qc_targets, qscore_dict) for df_set in zip(seq_subchunks,qual_subchunks))
     return pd.concat(retLst)

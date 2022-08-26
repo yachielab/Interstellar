@@ -104,9 +104,9 @@ class BARISTA_IMPORT(object):
             # else:
             #     fastqDict[readKey]=segmentImporter.sequenceGenerator(fq_path,self.settings)
             if readKey in self.settings.flash_gzipped_reads:
-                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=1000000,from_flash=True)
+                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=4000000,from_flash=True)
             else:
-                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=1000000)
+                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=4000000)
         self.fastqDict=fastqDict
 
 

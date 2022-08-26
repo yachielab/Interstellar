@@ -41,7 +41,7 @@ def correct_parallel_wrapper(seq_series,suggestion_verbosity,correctOpt,correcti
     # Split the sequence series into chunks by the number of CPUs
     seq_chunks = np.array_split(seq_series,ncore)
     
-    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset) for seq_chunk in seq_chunks)
+    retLst = Parallel(n_jobs=ncore,verbose=3)(delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset) for seq_chunk in seq_chunks)
     return pd.concat(retLst)
 
 
@@ -304,7 +304,7 @@ def seqCleanUp_parallel_wrapper(df_chunk,segments_raw,correctionDictionaries,set
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(gen_clean_segment_seq)(df_subchunk,segments_raw,correctionDictionaries,settings) for df_subchunk in df_subchunks)
+    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=3)(delayed(gen_clean_segment_seq)(df_subchunk,segments_raw,correctionDictionaries,settings) for df_subchunk in df_subchunks)
     return pd.concat(retLst)
 
 
@@ -338,5 +338,5 @@ def gen_value_table_parallel_wrapper(df_chunk,cat,segments_raw,settings,correcti
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(seq_to_value_table)(df_subchunk,cat,segments_raw,settings,correctionDictionaries,ref_dic) for df_subchunk in df_subchunks)
+    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=3)(delayed(seq_to_value_table)(df_subchunk,cat,segments_raw,settings,correctionDictionaries,ref_dic) for df_subchunk in df_subchunks)
     return pd.concat(retLst)
