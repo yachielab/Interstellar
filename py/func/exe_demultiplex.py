@@ -96,7 +96,7 @@ class BARISTA_DEMULTIPLEX(object):
                 key_series=s_seq_chunk[self.settings.key].apply("_".join,axis=1)
                 demulti_key|=set(key_series)
                 s_seq_chunk=s_seq_chunk[["Header"]+self.settings.target]
-                key_iden_list_now = barcodeConverter.demultiplex_tsv_parallel_wrapper(s_seq_chunk,demulti_key,key_series,self.settings,self.settings.ncore)
+                key_iden_list_now = barcodeConverter.demultiplex_tsv_parallel_wrapper(s_seq_chunk,key_series,self.settings,self.settings.ncore)
                 # for eachkey in demulti_key:
                 #     if not "-" in eachkey:
                 #         export_pd_tmp=s_seq_chunk[key_series==eachkey]
@@ -191,7 +191,7 @@ class BARISTA_DEMULTIPLEX(object):
                     #FASTQ exportation
                     if self.settings.run_demulti:
                         #demultiplex
-                        key_iden_list_now = barcodeConverter.demultiplex_fastq_parallel_wrapper(export_pd,demulti_key,key_series,self.settings,readIden,self.settings.ncore)
+                        key_iden_list_now = barcodeConverter.demultiplex_fastq_parallel_wrapper(export_pd,key_series,self.settings,readIden,self.settings.ncore)
                         # for eachkey in demulti_key:
                         #     export_pd_tmp=export_pd[key_series==eachkey]
                         #     outfilename="_".join([self.settings.outFilePath_and_Prefix,eachkey,readIden])+".fastq.gz"

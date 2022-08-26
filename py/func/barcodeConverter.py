@@ -723,23 +723,31 @@ def gen_dest_seq_parallel_wrapper(df_zip,exportReadStructure,read_now,settings,f
 
 
 # Demultiplex to tsv file, process
-def demultiplex_tsv_process(s_seq_chunk,eachkey,key_series,settings):
-    if not "-" in eachkey:
-        export_pd_tmp=s_seq_chunk[key_series==eachkey]
-        outfilename="_".join([settings.outFilePath_and_Prefix,eachkey])+".tsv.gz"
-        if not os.path.isfile(outfilename):
-            export_pd_tmp.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=True)
-        else:
-            export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
+# def demultiplex_tsv_process(s_seq_chunk,eachkey,key_series,settings):
+    # if not "-" in eachkey:
+    #     export_pd_tmp=s_seq_chunk[key_series==eachkey]
+    #     outfilename="_".join([settings.outFilePath_and_Prefix,eachkey])+".tsv.gz"
+    #     if not os.path.isfile(outfilename):
+    #         export_pd_tmp.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=True)
+    #     else:
+    #         export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
 
-        return "_"+eachkey+".tsv.gz"
+    #     return "_"+eachkey+".tsv.gz"
+    # else:
+    #     return ""
+def demultiplex_tsv_process(sub_df,eachkey,settings):
+    outfilename="_".join([settings.outFilePath_and_Prefix,eachkey])+".tsv.gz"
+    if not os.path.isfile(outfilename):
+        sub_df.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=True)
     else:
-        return ""
+        sub_df.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
+
+    return "_"+eachkey+".tsv.gz"
 
 
 # Demultiplex to FASTQ file, process
-def demultiplex_fastq_process(export_pd,eachkey,key_series,settings,readIden):
-    export_pd_tmp=export_pd[key_series==eachkey]
+def demultiplex_fastq_process(export_pd,eachkey,settings,readIden):
+    export_pd_tmp=export_pd[["Header","seq","3rd","qual"]]
     outfilename="_".join([settings.outFilePath_and_Prefix,eachkey,readIden])+".fastq.gz"
     export_pd_tmp=export_pd_tmp.stack()
     export_pd_tmp=export_pd_tmp.reset_index()
@@ -752,20 +760,30 @@ def demultiplex_fastq_process(export_pd,eachkey,key_series,settings,readIden):
 
 
 # Multithreading implementation for demultiplexing tsv file
-def demultiplex_tsv_parallel_wrapper(s_seq_chunk,demulti_key,key_series,settings,ncore):
-    # Parallelize the df subsetting and exporting process
+def demultiplex_tsv_parallel_wrapper(s_seq_chunk,key_series,settings,ncore):
+    s_seq_chunk = s_seq_chunk.copy()
+    s_seq_chunk["demulti_keys"] = key_series
+    
+    # Group by demultiplex keys
+    s_seq_chunk = s_seq_chunk.groupby("demulti_keys")
     key_iden_list_now = Parallel(n_jobs=ncore,require=None,verbose=3)(
-        delayed(demultiplex_tsv_process)(s_seq_chunk,eachkey,key_series,settings) for eachkey in demulti_key)
+        delayed(demultiplex_tsv_process)(sub_df,eachkey,settings) for eachkey,sub_df in s_seq_chunk if not "-" in eachkey)
     
     key_iden_list_now = [i for i in key_iden_list_now if not i == ""]
     return key_iden_list_now
     
 
 # Multithreading implementation for demultiplexing tsv file
-def demultiplex_fastq_parallel_wrapper(export_pd,demulti_key,key_series,settings,readIden,ncore):
+def demultiplex_fastq_parallel_wrapper(export_pd,key_series,settings,readIden,ncore):
+    export_pd = export_pd.copy()
+    export_pd["demulti_keys"] = key_series
+
+    # Group by demultiplex keys
+    export_pd = export_pd.groupby("demulti_keys")
+
     # Parallelize the df subsetting and exporting process
     key_iden_list_now = Parallel(n_jobs=ncore,require=None,verbose=3)(
-        delayed(demultiplex_fastq_process)(export_pd,eachkey,key_series,settings,readIden) for eachkey in demulti_key)
+        delayed(demultiplex_fastq_process)(sub_df,eachkey,settings,readIden) for eachkey,sub_df in export_pd)
     
     key_iden_list_now = [i for i in key_iden_list_now if not i == ""]
     return key_iden_list_now

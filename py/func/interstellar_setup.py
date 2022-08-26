@@ -235,6 +235,7 @@ class SETUP_SETTINGS(object):
             self.file_suffix=file_suffix
             self.target_prefix_list=target_prefix_list
             self.tartget_file_dict=tartget_file_dict
+            self.ncore = self.cfg["general"]["NUM_CORES"]
 
 class SETUP(object):
     def __init__(self,settings,is_qsub,is_multisample,cfgpath):
@@ -278,7 +279,7 @@ class SETUP(object):
                         if nreads != len(fileset_tup):
                             raise UnknownError("Number of reads should be same across input files.")
 
-                    sh_cmd_list_template=["seqkit","split2","-s",str(self.settings.qcfg["NUM_READS"])]
+                    sh_cmd_list_template=["seqkit","split2","-s",str(self.settings.qcfg["NUM_READS"]),"-j",str(self.settings.ncore)]
                     # nfile_divmod=divmod(nreads,2)
                     fileindex=0
                     for read_idx,f in enumerate(fileset_tup):
