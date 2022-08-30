@@ -134,14 +134,15 @@ def split_fastq_per_lines(lines, n=4):
     return L
     
 
-def fastq_segmentation(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now):
+def fastq_segmentation(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,start_time):
     # parsedSeqDict_tmp=collections.defaultdict(list)
     # parsedQualDict_tmp=collections.defaultdict(list)
     t0 = time.time()
+    print("Job submission time",t0 - start_time)
     parsedSeqDict_tmp={k:["-"]*int(len(subchunk)/4) for k in (["Header"]+segment_parsed)}
     parsedQualDict_tmp={k:["-"]*int(len(subchunk)/4)for k in (["Header"]+segment_parsed)}
     
-    print("Formatting",time.time()-t0,"sec", flush=True)
+    # print("Formatting",time.time()-t0,"sec", flush=True)
 
     t_getheader=0
     t_regex = 0
@@ -188,10 +189,10 @@ def fastq_segmentation(subchunk,headerSplitRegex,segment_parsed,regex_pattern_no
         #         extractedQual=lines[3][m.span(component)[0]:m.span(component)[1]]
         #         parsedQualDict_tmp[component].append(extractedQual)
     
-    print("Get header",t_getheader,"sec", flush=True)
-    print("Regex search",t_regex,"sec", flush=True)
-    print("Packing dict",t_packdic,"sec", flush=True)
-    print("Total",time.time()-t0,"sec",flush=True)
+    # print("Get header",t_getheader,"sec", flush=True)
+    # print("Regex search",t_regex,"sec", flush=True)
+    # print("Packing dict",t_packdic,"sec", flush=True)
+    print("Job time",time.time()-t0,"sec",flush=True)
     return parsedSeqDict_tmp,parsedQualDict_tmp
 
 
@@ -230,8 +231,10 @@ def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,
     # print("Num records:",n_records)
     regex_pattern_now = settings.regexDictCompiled[readKey]
 
+    start_time = time.time()
+
     out = Parallel(n_jobs=ncore,verbose=10)(
-        delayed(fastq_segmentation)(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now) 
+        delayed(fastq_segmentation)(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,start_time) 
             for subchunk in split_fastq_per_lines(fastq_chunk,n = n_lines_per_CPU)) 
 
     # out = Parallel(n_jobs=ncore,verbose=10,backend="threading")(
