@@ -96,7 +96,7 @@ def parseSegmentFromRegex(regexList):
 
 def patMatching(readNow,patternList):
     for patNow in patternList:
-        mtch=patNow.search(readNow,concurrent=True)
+        mtch=patNow.search(readNow)
         if mtch:
             return mtch
     return None
@@ -134,14 +134,18 @@ def split_fastq_per_lines(lines, n=4):
     return L
     
 
-def fastq_segmentation(subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set):
+def fastq_segmentation(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now):
     # parsedSeqDict_tmp=collections.defaultdict(list)
     # parsedQualDict_tmp=collections.defaultdict(list)
+    t0 = time.time()
     parsedSeqDict_tmp={k:["-"]*int(len(subchunk)/4) for k in (["Header"]+segment_parsed)}
     parsedQualDict_tmp={k:["-"]*int(len(subchunk)/4)for k in (["Header"]+segment_parsed)}
-    regex_pattern_now = settings.regexDictCompiled[readKey]
+    
+    print("Formatting",time.time()-t0,"sec", flush=True)
 
-    print("Subchunk size per CPU:",len(subchunk)/4,flush=True)
+    t_getheader=0
+    t_regex = 0
+    t_packdic = 0
 
     for idx,lines in enumerate(split_fastq_per_lines(subchunk,n=4)):
         # line_header = lines[0]
@@ -149,18 +153,25 @@ def fastq_segmentation(subchunk,settings,headerSplitRegex,readKey,segment_parsed
         # line_quality = lines[3]
         
         # Header treatment
+        T=time.time()
         header=headerSplitRegex.split(lines[0])[0]
         parsedSeqDict_tmp["Header"][idx] = header
         parsedQualDict_tmp["Header"][idx] = header
+        t_getheader += time.time() - T
         
         # Sequence segmentation
+        T = time.time()
         m=patMatching(lines[1],regex_pattern_now)
+        t_regex += time.time() - T
+
+        T = time.time()
         if m:
             mdict=m.groupdict()
             for seg in mdict:
                 parsedSeqDict_tmp[seg][idx] = mdict[seg]
                 # extractedQual=lines[3][m.span(component)[0]:m.span(component)[1]]
                 parsedQualDict_tmp[seg][idx] = lines[3][m.span(seg)[0] : m.span(seg)[1]]
+        t_packdic += time.time() - T
 
             # component_diff=segment_parsed_set-set(mdict.keys())
             # for seg in component_diff:
@@ -177,10 +188,13 @@ def fastq_segmentation(subchunk,settings,headerSplitRegex,readKey,segment_parsed
         #         extractedQual=lines[3][m.span(component)[0]:m.span(component)[1]]
         #         parsedQualDict_tmp[component].append(extractedQual)
     
+    print("Get header",t_getheader,"sec", flush=True)
+    print("Regex search",t_regex,"sec", flush=True)
+    print("Packing dict",t_packdic,"sec", flush=True)
     return parsedSeqDict_tmp,parsedQualDict_tmp
 
 
-def fastq_segmentation2(record,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set):
+def fastq_segmentation2(record,settings,headerSplitRegex,readKey,segment_parsed):
     # parsedSeqDict_tmp=collections.defaultdict(list)
     # parsedQualDict_tmp=collections.defaultdict(list)
     
@@ -213,9 +227,10 @@ def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,
     n_records_per_CPU = math.ceil(n_records / ncore)
     n_lines_per_CPU = 4 * n_records_per_CPU
     # print("Num records:",n_records)
+    regex_pattern_now = settings.regexDictCompiled[readKey]
 
     out = Parallel(n_jobs=ncore,verbose=10)(
-        delayed(fastq_segmentation)(subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set) 
+        delayed(fastq_segmentation)(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now) 
             for subchunk in split_fastq_per_lines(fastq_chunk,n = n_lines_per_CPU)) 
 
     # out = Parallel(n_jobs=ncore,verbose=10,backend="threading")(
