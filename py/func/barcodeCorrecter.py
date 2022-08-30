@@ -41,7 +41,7 @@ def correct_parallel_wrapper(seq_series,suggestion_verbosity,correctOpt,correcti
     # Split the sequence series into chunks by the number of CPUs
     seq_chunks = np.array_split(seq_series,ncore)
     
-    retLst = Parallel(n_jobs=ncore,verbose=3)(delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset) for seq_chunk in seq_chunks)
+    retLst = Parallel(n_jobs=ncore,verbose=10,backend="threading")(delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset) for seq_chunk in seq_chunks)
     return pd.concat(retLst)
 
 
@@ -114,7 +114,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore):
             # seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["I2M_CORRECTION"]["levenshtein_distance"],symspelldb))
 
             correctionDict_maj={k:v for k,v in zip(list(seq_minority_pd),list(seq_minority_pd_corrected))}
-            print("Done.")
+            print("Done.",time.time()-t0,flush=True)
             os.remove(fname)
 
         for seq in seq_majority:
@@ -143,9 +143,10 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore):
         symspelldb.create_dictionary(correctOpt["M2A_CORRECTION"]["path"])
         seq_majority_pd=pd.Series(seq_majority)
         print("Correct...",flush=True)
+        t0=time.time()
         seq_majority_pd_corrected = correct_parallel_wrapper(seq_majority_pd,suggestion_verbosity,correctOpt,"M2A_CORRECTION",symspelldb,ncore,wlset)
         # seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["M2A_CORRECTION"]["levenshtein_distance"],symspelldb,wlset))
-        print("Done.",flush=True)
+        print("Done.",time.time()-t0,flush=True)
         correctionDict_wl={k:v for k,v in zip(list(seq_majority_pd),list(seq_majority_pd_corrected))}
         # seq_success=seq_majority_pd[seq_majority_pd_corrected!="-"]
         # seq_fail=seq_majority_pd[seq_majority_pd_corrected=="-"]
@@ -156,7 +157,6 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore):
                 corrected_with_majority=correctionDict_maj[seq]
                 if not correctionDict_wl[corrected_with_majority]=="-":
                     correctionDict_wl[seq]=correctionDict_wl[corrected_with_majority]
-        t2=time.time()
 
         correctionDict["correctionDict"]=correctionDict_wl
         correctionDict["reference"]=wl
@@ -304,7 +304,7 @@ def seqCleanUp_parallel_wrapper(df_chunk,segments_raw,correctionDictionaries,set
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=3)(delayed(gen_clean_segment_seq)(df_subchunk,segments_raw,correctionDictionaries,settings) for df_subchunk in df_subchunks)
+    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(gen_clean_segment_seq)(df_subchunk,segments_raw,correctionDictionaries,settings) for df_subchunk in df_subchunks)
     return pd.concat(retLst)
 
 
@@ -338,5 +338,5 @@ def gen_value_table_parallel_wrapper(df_chunk,cat,segments_raw,settings,correcti
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=3)(delayed(seq_to_value_table)(df_subchunk,cat,segments_raw,settings,correctionDictionaries,ref_dic) for df_subchunk in df_subchunks)
+    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(seq_to_value_table)(df_subchunk,cat,segments_raw,settings,correctionDictionaries,ref_dic) for df_subchunk in df_subchunks)
     return pd.concat(retLst)

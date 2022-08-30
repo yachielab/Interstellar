@@ -241,7 +241,7 @@ class BARISTA_IMPORT(object):
                 filepaths_qual.sort()
                 filepaths=[filepaths_seq,filepaths_qual]
                 merge_filename="_".join([self.tmpdir,"merge"])
-                print("merging file for chunk",str(iter_num),flush=True)
+                print("Merging file chunk",str(iter_num),flush=True)
                 for n_read,path in enumerate(filepaths):
                     dict_merged=collections.defaultdict(list)
                     

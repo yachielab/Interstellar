@@ -4,10 +4,12 @@ import random
 import string
 import subprocess
 import collections
+import math
 from joblib import Parallel, delayed
 import numpy as np
 import pandas as pd
 from itertools import zip_longest
+import time
 
 
 
@@ -94,7 +96,7 @@ def parseSegmentFromRegex(regexList):
 
 def patMatching(readNow,patternList):
     for patNow in patternList:
-        mtch=patNow.search(readNow)
+        mtch=patNow.search(readNow,concurrent=True)
         if mtch:
             return mtch
     return None
@@ -122,54 +124,117 @@ def qualityFilteringForDataFrame(df_set,qc_targets,qscore_dict):
     return seq_chunk
     
 
+# def split_yield_fastq_per_lines(lines, n=4):
+#     for idx in range(0, len(lines), n):
+#         yield lines[idx:idx + n]
+
+
 def split_fastq_per_lines(lines, n=4):
-    for idx in range(0, len(lines), n):
-        yield lines[idx:idx + n]
+    L = [lines[idx:idx + n] for idx in range(0, len(lines), n)]
+    return L
     
 
 def fastq_segmentation(subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set):
-    parsedSeqDict_tmp=collections.defaultdict(list)
-    parsedQualDict_tmp=collections.defaultdict(list)
-    for lines in split_fastq_per_lines(subchunk):
-        line_header = lines[0]
-        line_sequence = lines[1]
-        line_quality = lines[3]
+    # parsedSeqDict_tmp=collections.defaultdict(list)
+    # parsedQualDict_tmp=collections.defaultdict(list)
+    parsedSeqDict_tmp={k:["-"]*int(len(subchunk)/4) for k in (["Header"]+segment_parsed)}
+    parsedQualDict_tmp={k:["-"]*int(len(subchunk)/4)for k in (["Header"]+segment_parsed)}
+    regex_pattern_now = settings.regexDictCompiled[readKey]
+
+    print("Subchunk size per CPU:",len(subchunk)/4,flush=True)
+
+    for idx,lines in enumerate(split_fastq_per_lines(subchunk,n=4)):
+        # line_header = lines[0]
+        # line_sequence = lines[1]
+        # line_quality = lines[3]
         
         # Header treatment
-        header=headerSplitRegex.split(line_header)[0]
-        parsedSeqDict_tmp["Header"].append(header)
-        parsedQualDict_tmp["Header"].append(header)
+        header=headerSplitRegex.split(lines[0])[0]
+        parsedSeqDict_tmp["Header"][idx] = header
+        parsedQualDict_tmp["Header"][idx] = header
         
         # Sequence segmentation
-        m=patMatching(line_sequence,settings.regexDictCompiled[readKey])
+        m=patMatching(lines[1],regex_pattern_now)
         if m:
             mdict=m.groupdict()
             for seg in mdict:
-                parsedSeqDict_tmp[seg].append(mdict[seg])
+                parsedSeqDict_tmp[seg][idx] = mdict[seg]
+                # extractedQual=lines[3][m.span(component)[0]:m.span(component)[1]]
+                parsedQualDict_tmp[seg][idx] = lines[3][m.span(seg)[0] : m.span(seg)[1]]
 
-            component_diff=segment_parsed_set-set(mdict.keys())
-            for seg in component_diff:
-                parsedSeqDict_tmp[seg].append("-")
-                parsedQualDict_tmp[seg].append("-")
-        else: # If the regex doesn't match, quality segments should also be all missing
-            for seg in segment_parsed:
-                parsedSeqDict_tmp[seg].append("-")
-                parsedQualDict_tmp[seg].append("-")
+            # component_diff=segment_parsed_set-set(mdict.keys())
+            # for seg in component_diff:
+            #     parsedSeqDict_tmp[seg].append("-")
+            #     parsedQualDict_tmp[seg].append("-")
+        # else: # If the regex doesn't match, quality segments should also be all missing
+        #     for seg in segment_parsed:
+        #         parsedSeqDict_tmp[seg].append("-")
+        #         parsedQualDict_tmp[seg].append("-")
 
         # Quality segmentation
-        if m:
-            for component in mdict:
-                extractedQual=line_quality[m.span(component)[0]:m.span(component)[1]]
-                parsedQualDict_tmp[component].append(extractedQual)
+        # if m:
+        #     for component in mdict:
+        #         extractedQual=lines[3][m.span(component)[0]:m.span(component)[1]]
+        #         parsedQualDict_tmp[component].append(extractedQual)
     
     return parsedSeqDict_tmp,parsedQualDict_tmp
 
 
+def fastq_segmentation2(record,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set):
+    # parsedSeqDict_tmp=collections.defaultdict(list)
+    # parsedQualDict_tmp=collections.defaultdict(list)
+    
+    # Header treatment
+    out_seq = [headerSplitRegex.split(record[0])[0]]
+    out_qual = [headerSplitRegex.split(record[0])[0]]
+    
+    # Sequence segmentation
+    m=patMatching(record[1],settings.regexDictCompiled[readKey])
+    if m:
+        mdict=m.groupdict()
+        for seg in segment_parsed:
+            if seg in mdict:
+                out_seq.append(mdict[seg])
+                out_qual.append(record[3][m.span(seg)[0] : m.span(seg)[1]])
+            else:
+                out_seq.append("-")
+                out_qual.append("-")
+    else:
+        out_seq += ["-"] * len(segment_parsed)
+        out_qual += ["-"] * len(segment_parsed)
+
+    return out_seq,out_qual
+
+
 # Multithreading implementation for read segmentation
 def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set,ncore):
-    out = Parallel(n_jobs=ncore,verbose=3)(
+    n_lines = len(fastq_chunk)
+    n_records = n_lines / 4
+    n_records_per_CPU = math.ceil(n_records / ncore)
+    n_lines_per_CPU = 4 * n_records_per_CPU
+    # print("Num records:",n_records)
+
+    out = Parallel(n_jobs=ncore,verbose=10)(
         delayed(fastq_segmentation)(subchunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set) 
-            for subchunk in split_fastq_per_lines(fastq_chunk,n=160000)) # Each CPU processes 40000 FASTQ records
+            for subchunk in split_fastq_per_lines(fastq_chunk,n = n_lines_per_CPU)) 
+
+    # out = Parallel(n_jobs=ncore,verbose=10,backend="threading")(
+    #     delayed(fastq_segmentation2)(record,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set) 
+    #         for record in split_fastq_per_lines(fastq_chunk,n = 4)) 
+    
+    # parsedSeqDict = collections.defaultdict(list)
+    # parsedQualDict = collections.defaultdict(list)
+
+    # for seq_qual_tupple in out:
+    #     seq_list = seq_qual_tupple[0]
+    #     qual_list = seq_qual_tupple[1]
+    #     parsedSeqDict["Header"].append(seq_list[0])
+    #     parsedQualDict["Header"].append(qual_list[0])
+    #     for n,seg in enumerate(segment_parsed):
+    #         parsedSeqDict[seg].append(seq_list[n + 1])
+    #         parsedQualDict[seg].append(qual_list[n + 1])
+
+
     for n,dict_tuple in enumerate(out):
         if n == 0:
             parsedSeqDict = dict_tuple[0]
@@ -187,5 +252,26 @@ def qfilter_parallel_wrapper(seq_chunk, qual_chunk, qc_targets, qscore_dict, nco
     seq_subchunks = np.array_split(seq_chunk,ncore)
     qual_subchunks = np.array_split(qual_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,verbose=3)(delayed(qualityFilteringForDataFrame)(df_set, qc_targets, qscore_dict) for df_set in zip(seq_subchunks,qual_subchunks))
+    retLst = Parallel(n_jobs=ncore,verbose=10)(delayed(qualityFilteringForDataFrame)(df_set, qc_targets, qscore_dict) for df_set in zip(seq_subchunks,qual_subchunks))
     return pd.concat(retLst)
+
+
+# Multithreading implementation for merging segment files
+# def merge_count_tree_parallel_wrapper(pkl_path_list,ncore):
+#     # group the path list by pairs
+#     pkl_path_pairs = [pkl_path_list[idx:idx + 2] for idx in range(0, len(pkl_path_list), 2)]
+
+#     # First round, input = path
+#     count_tree_list = Parallel(n_jobs=ncore,require='sharedmem',verbose=8)(
+#         delayed(merge_count_tree)(pkl_path_pair,path=True) for pkl_path_pair in pkl_path_pairs)
+
+#     # 2nd~ round, iterate the pair merging processes until everything is merged
+#     while True:
+#         if len(count_tree_list) == 1:
+#             # Exit condition: everything is merged
+#             return count_tree_list[0]
+#         else:
+#             # Group count tree list by pairs if there are more than one trees in the list
+#             count_tree_list = [count_tree_list[idx:idx + 2] for idx in range(0, len(count_tree_list), 2)]
+#             count_tree_list = Parallel(n_jobs=ncore,require='sharedmem',verbose=8)(
+#                 delayed(merge_count_tree)(tree_pair, path=False) for tree_pair in count_tree_list)
