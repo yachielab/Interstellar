@@ -191,6 +191,7 @@ def fastq_segmentation(subchunk,headerSplitRegex,segment_parsed,regex_pattern_no
     print("Get header",t_getheader,"sec", flush=True)
     print("Regex search",t_regex,"sec", flush=True)
     print("Packing dict",t_packdic,"sec", flush=True)
+    print("Total",time.time()-t0,"sec",flush=True)
     return parsedSeqDict_tmp,parsedQualDict_tmp
 
 
