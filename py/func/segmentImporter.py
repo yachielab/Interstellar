@@ -124,14 +124,14 @@ def qualityFilteringForDataFrame(df_set,qc_targets,qscore_dict):
     return seq_chunk
     
 
-# def split_yield_fastq_per_lines(lines, n=4):
-#     for idx in range(0, len(lines), n):
-#         yield lines[idx:idx + n]
+def split_yield_fastq_per_lines(lines, n=4):
+    for idx in range(0, len(lines), n):
+        yield lines[idx:idx + n]
 
 
-def split_fastq_per_lines(lines, n=4):
-    L = [lines[idx:idx + n] for idx in range(0, len(lines), n)]
-    return L
+# def split_fastq_per_lines(lines, n=4):
+#     L = [lines[idx:idx + n] for idx in range(0, len(lines), n)]
+#     return L
     
 
 def fastq_segmentation(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,start_time):
@@ -148,7 +148,7 @@ def fastq_segmentation(subchunk,headerSplitRegex,segment_parsed,regex_pattern_no
     t_regex = 0
     t_packdic = 0
 
-    for idx,lines in enumerate(split_fastq_per_lines(subchunk,n=4)):
+    for idx,lines in enumerate(split_yield_fastq_per_lines(subchunk,n=4)):
         # line_header = lines[0]
         # line_sequence = lines[1]
         # line_quality = lines[3]
@@ -233,9 +233,9 @@ def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,
 
     start_time = time.time()
 
-    out = Parallel(n_jobs=ncore,verbose=10)(
+    out = Parallel(n_jobs=ncore,verbose=10,backend="multiprocessing")(
         delayed(fastq_segmentation)(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,start_time) 
-            for subchunk in split_fastq_per_lines(fastq_chunk,n = n_lines_per_CPU)) 
+            for subchunk in split_yield_fastq_per_lines(fastq_chunk,n = n_lines_per_CPU)) 
 
     # out = Parallel(n_jobs=ncore,verbose=10,backend="threading")(
     #     delayed(fastq_segmentation2)(record,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set) 
