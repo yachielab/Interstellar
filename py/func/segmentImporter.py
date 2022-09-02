@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 from itertools import zip_longest
 import time
+import pickle
+import glob
 
 
 
@@ -134,11 +136,8 @@ def split_yield_fastq_per_lines(lines, n=4):
 #     return L
     
 
-def fastq_segmentation(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,start_time):
-    # parsedSeqDict_tmp=collections.defaultdict(list)
-    # parsedQualDict_tmp=collections.defaultdict(list)
+def fastq_segmentation(cpu_idx,subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,outdir,readKey,barcodes):
     t0 = time.time()
-    print("Job submission time",t0 - start_time)
     parsedSeqDict_tmp={k:["-"]*int(len(subchunk)/4) for k in (["Header"]+segment_parsed)}
     parsedQualDict_tmp={k:["-"]*int(len(subchunk)/4)for k in (["Header"]+segment_parsed)}
     
@@ -189,80 +188,159 @@ def fastq_segmentation(subchunk,headerSplitRegex,segment_parsed,regex_pattern_no
         #         extractedQual=lines[3][m.span(component)[0]:m.span(component)[1]]
         #         parsedQualDict_tmp[component].append(extractedQual)
     
+    with open("_".join([outdir+"/CPU"+str(cpu_idx),readKey,"srcSeq.pkl"]),mode="wb") as p:
+        pickle.dump(parsedSeqDict_tmp,p)
+    with open("_".join([outdir+"/CPU"+str(cpu_idx),readKey,"srcQual.pkl"]),mode="wb") as p:
+        pickle.dump(parsedQualDict_tmp,p)
+    
+    counterDict_tmp = {}
+    for bc in barcodes:
+        if bc in parsedSeqDict_tmp:
+            counterDict_tmp[bc] = collections.Counter(parsedSeqDict_tmp[bc])
+
     # print("Get header",t_getheader,"sec", flush=True)
     # print("Regex search",t_regex,"sec", flush=True)
     # print("Packing dict",t_packdic,"sec", flush=True)
     print("Job time",time.time()-t0,"sec",flush=True)
-    return parsedSeqDict_tmp,parsedQualDict_tmp
+    return counterDict_tmp
 
 
-def fastq_segmentation2(record,settings,headerSplitRegex,readKey,segment_parsed):
-    # parsedSeqDict_tmp=collections.defaultdict(list)
-    # parsedQualDict_tmp=collections.defaultdict(list)
+# def fastq_segmentation2(record,settings,headerSplitRegex,readKey,segment_parsed):
+#     # parsedSeqDict_tmp=collections.defaultdict(list)
+#     # parsedQualDict_tmp=collections.defaultdict(list)
     
-    # Header treatment
-    out_seq = [headerSplitRegex.split(record[0])[0]]
-    out_qual = [headerSplitRegex.split(record[0])[0]]
+#     # Header treatment
+#     out_seq = [headerSplitRegex.split(record[0])[0]]
+#     out_qual = [headerSplitRegex.split(record[0])[0]]
     
-    # Sequence segmentation
-    m=patMatching(record[1],settings.regexDictCompiled[readKey])
-    if m:
-        mdict=m.groupdict()
-        for seg in segment_parsed:
-            if seg in mdict:
-                out_seq.append(mdict[seg])
-                out_qual.append(record[3][m.span(seg)[0] : m.span(seg)[1]])
-            else:
-                out_seq.append("-")
-                out_qual.append("-")
-    else:
-        out_seq += ["-"] * len(segment_parsed)
-        out_qual += ["-"] * len(segment_parsed)
+#     # Sequence segmentation
+#     m=patMatching(record[1],settings.regexDictCompiled[readKey])
+#     if m:
+#         mdict=m.groupdict()
+#         for seg in segment_parsed:
+#             if seg in mdict:
+#                 out_seq.append(mdict[seg])
+#                 out_qual.append(record[3][m.span(seg)[0] : m.span(seg)[1]])
+#             else:
+#                 out_seq.append("-")
+#                 out_qual.append("-")
+#     else:
+#         out_seq += ["-"] * len(segment_parsed)
+#         out_qual += ["-"] * len(segment_parsed)
 
-    return out_seq,out_qual
+#     return out_seq,out_qual
 
 
 # Multithreading implementation for read segmentation
-def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set,ncore):
+def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,segment_parsed,outdir,ncore):
     n_lines = len(fastq_chunk)
     n_records = n_lines / 4
     n_records_per_CPU = math.ceil(n_records / ncore)
     n_lines_per_CPU = 4 * n_records_per_CPU
-    # print("Num records:",n_records)
     regex_pattern_now = settings.regexDictCompiled[readKey]
 
-    start_time = time.time()
-
     out = Parallel(n_jobs=ncore,verbose=10,backend="multiprocessing")(
-        delayed(fastq_segmentation)(subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,start_time) 
-            for subchunk in split_yield_fastq_per_lines(fastq_chunk,n = n_lines_per_CPU)) 
+        delayed(fastq_segmentation)(cpu_idx,subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,outdir,readKey,settings.barcodes) 
+            for cpu_idx,subchunk in enumerate(split_yield_fastq_per_lines(fastq_chunk,n = n_lines_per_CPU))) 
 
-    # out = Parallel(n_jobs=ncore,verbose=10,backend="threading")(
-    #     delayed(fastq_segmentation2)(record,settings,headerSplitRegex,readKey,segment_parsed,segment_parsed_set) 
-    #         for record in split_fastq_per_lines(fastq_chunk,n = 4)) 
-    
-    # parsedSeqDict = collections.defaultdict(list)
-    # parsedQualDict = collections.defaultdict(list)
-
-    # for seq_qual_tupple in out:
-    #     seq_list = seq_qual_tupple[0]
-    #     qual_list = seq_qual_tupple[1]
-    #     parsedSeqDict["Header"].append(seq_list[0])
-    #     parsedQualDict["Header"].append(qual_list[0])
-    #     for n,seg in enumerate(segment_parsed):
-    #         parsedSeqDict[seg].append(seq_list[n + 1])
-    #         parsedQualDict[seg].append(qual_list[n + 1])
-
-
-    for n,dict_tuple in enumerate(out):
+    # Pile up the count dictionaries from all CPUs
+    counterDict = {}
+    for n,counterDict_tmp in enumerate(out):
         if n == 0:
-            parsedSeqDict = dict_tuple[0]
-            parsedQualDict = dict_tuple[1]
+            for seg in counterDict_tmp:
+                counterDict[seg] = counterDict_tmp[seg]
         else:
-            for seg in parsedSeqDict:
-                parsedSeqDict[seg] += dict_tuple[0][seg]
-                parsedQualDict[seg] += dict_tuple[1][seg]
-    return parsedSeqDict,parsedQualDict
+            for seg in counterDict_tmp:
+                counterDict[seg].update(counterDict_tmp[seg])
+
+    return n_records,counterDict
+
+
+# Merging parsed seq dicts
+def merge_parsed_data_process(input_dir,cpu_idx,settings):
+    
+    filepaths_seq = glob.glob("_".join([input_dir+"/CPU"+str(cpu_idx),"*","srcSeq.pkl"]))
+    filepaths_qual = glob.glob("_".join([input_dir+"/CPU"+str(cpu_idx),"*","srcQual.pkl"]))
+
+    # if filepaths_seq:
+    #     iter_num+=1
+    # else:
+    #     continue
+        
+    # if filepaths_seq:
+    filepaths_seq.sort()
+    filepaths_qual.sort()
+    filepaths=[filepaths_seq,filepaths_qual]
+
+    seq_qual_tsv_list = []
+
+    for n_read,pathlist in enumerate(filepaths):
+        dict_merged=collections.defaultdict(list)
+        
+        for path in pathlist:
+            if settings.flash:
+                try:
+                    to_be_processed
+                except NameError:
+                    print("L283:",path)
+                    to_be_processed=path
+                    continue
+            
+            # Load segment seq/qual dictionaries from paired end reads and merge them into a single dictionary
+            with open(path,mode="rb") as pchunk:
+                parsedDict_chunk=pickle.load(pchunk)
+            dict_merged.update(parsedDict_chunk)
+        
+        if settings.flash:
+            nrow_uncombined=len(dict_merged["Header"])
+
+            # Load FLASHed segment sequences
+            with open(to_be_processed,mode="rb") as pchunk:
+                parsedDict_chunk=pickle.load(pchunk)
+
+            # Puck the FLASHed segments but also put segments from uncombined segments
+            for component in ["Header"]+settings.components:
+                if component not in dict_merged:
+                    dict_merged[component] = ["-"]*nrow_uncombined
+                dict_merged[component] += parsedDict_chunk[component]                    
+    
+        # if iter_num==0 and n_read==0:
+        #     f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="wt",encoding="utf-8")
+        # elif iter_num>0 and n_read==0:
+        #     f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="at",encoding="utf-8")
+        # elif iter_num==0 and n_read==1:
+        #     f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="wt",encoding="utf-8")
+        # elif iter_num>0 and n_read==1:
+        #     f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="at",encoding="utf-8")
+
+
+
+        dict_merged_key=["Header"]+settings.components
+        dict_merged_val=[dict_merged[i] for i in ["Header"]+settings.components]
+        dict_merged_val=list(map(list,zip(*dict_merged_val)))
+        dict_merged_val=["\t".join(i) for i in dict_merged_val]
+        dict_merged_val="\n".join(dict_merged_val)+"\n"
+        if cpu_idx==0:
+            dict_merged_val="\t".join(dict_merged_key)+"\n"+dict_merged_val
+        
+        seq_qual_tsv_list.append(dict_merged_val)
+        
+    return seq_qual_tsv_list
+        # f.write(dict_merged_val)
+        # f.close()
+
+
+# Multithreading implementation for file merging
+def merge_parsed_data_parallel_wrapper(input_dir, settings, ncore, n_chunk):
+    retLst = Parallel(n_jobs=ncore,verbose=10)(
+        delayed(merge_parsed_data_process)(input_dir,cpu_idx,settings) for cpu_idx in range(ncore))
+    
+    with gzip.open(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcSeq.tsv.gz",mode="wt",encoding="utf-8") as w:
+        w.write("\n".join([i[0] for i in retLst]))
+    
+    with gzip.open(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcQual.tsv.gz",mode="wt",encoding="utf-8") as w:
+        w.write("\n".join([i[1] for i in retLst]))
+
 
 
 # Multithreading implementation for quality filtering

@@ -1,3 +1,4 @@
+import copy
 from . import settingRequirementCheck
 from . import settingImporter
 from . import segmentImporter
@@ -114,11 +115,12 @@ class BARISTA_IMPORT(object):
         parsedSeqDict=collections.defaultdict(list)
         parsedQualDict=collections.defaultdict(list)
         counterDict={}
-        numSeqDict={}
+        numSeqDict=collections.defaultdict(int)
         readKeys = []
         tmpdir=self.settings.tmpdir
         headerSplitRegex=regex.compile(r"[ |\t]+")
-        
+        n_chunk_max = 0
+
         # Go through READ1, READ2, ...
         for nread,readKey in enumerate(self.settings.src_readPathDict):
             print("Extracting segments: "+readKey,flush=True)
@@ -131,33 +133,33 @@ class BARISTA_IMPORT(object):
                 merge_components_set=set(merge_components)
 
             # Go through chunks of FASTQ
-            # Chunks are again split by 4 lines to handle one record with a single job
+            # Chunks will be again split by 4 lines in the wrapper function to handle one record with a single job
             for n_chunk,fastq_chunk in enumerate(self.fastqDict[readKey]):
+
+                # Making tmp directory for each chunk
+                # This is for the sake of reducing the number of files in a directory
+                outdir_tmp = tmpdir+"/Chunk"+str(n_chunk)
+                os.makedirs(outdir_tmp,exist_ok = True)
+
                 print("Processing file chunk",n_chunk)
-                parsedSeqDict,parsedQualDict = segmentImporter.segmentation_parallel_wrapper(
+                n_records,counterDict_tmp = segmentImporter.segmentation_parallel_wrapper(
                     fastq_chunk= fastq_chunk,
                     settings= self.settings,
                     headerSplitRegex= headerSplitRegex,
                     readKey= readKey,
                     segment_parsed= segment_parsed,
-                    segment_parsed_set= segment_parsed_set,
+                    outdir= outdir_tmp,
                     ncore = self.settings.ncore)
             
-            
-                with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),mode="wb") as p:
-                    pickle.dump(parsedSeqDict,p)
-                with open("_".join([tmpdir+"/",readKey,str(n_chunk),"srcQual.pkl"]),mode="wb") as p:
-                    pickle.dump(parsedQualDict,p)
-                
                 for i in self.settings.barcodes:
-                    if parsedSeqDict.get(i):
+                    if counterDict_tmp.get(i):
                         if i in counterDict:
-                            counterDict_tmp=collections.Counter(parsedSeqDict[i])
-                            counterDict[i].update(counterDict_tmp)
+                            counterDict[i].update(counterDict_tmp[i])
                         else:
-                            counterDict[i]=collections.Counter(parsedSeqDict[i])
+                            counterDict[i]=copy.deepcopy(counterDict_tmp[i])
                 
-                print(1000000*(n_chunk)+len(parsedSeqDict["Header"]),"reads were processed for",readKey,flush=True)
+                numSeqDict[readKey] += n_records
+                print(1000000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)
 
                 # if (nrow+1)%4000000==0:
                 #     n_chunk=int((nrow+1)/4000000) #n_chunk>0
@@ -179,10 +181,10 @@ class BARISTA_IMPORT(object):
                 #     parsedQualDict=collections.defaultdict(list)
                 #     print(str(int((nrow+1)/4))+" reads were processed for "+readKey,flush=True)
                 
-            numSeqDict[readKey] = len(parsedSeqDict["Header"])
+                
             
             # Sequence number check - Interstellar requires the paired end reads and index reads are all sorted and correspond each other.
-            if len(parsedSeqDict["Header"]) != numSeqDict[readKeys[0]]:
+            if numSeqDict[readKey] != numSeqDict[readKeys[0]]:
                 if not self.settings.flash:
                     errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
                     raise InputError(errmsg)
@@ -217,7 +219,8 @@ class BARISTA_IMPORT(object):
             # # print("_".join([tmpdir+"/",readKey,str(n_chunk),"srcSeq.pkl"]),"\n\n")
             # parsedSeqDict=collections.defaultdict(list)
             # parsedQualDict=collections.defaultdict(list)
-            self.n_chunk=n_chunk
+            if n_chunk >= n_chunk_max:
+                self.n_chunk = n_chunk
             # del n_chunk
 
         self.counterDict=counterDict
@@ -226,76 +229,85 @@ class BARISTA_IMPORT(object):
 
 
     def exportExtractedComponents(self):
-        iter_num=-1
+        # iter_num=-1
         for chunk_now in range(self.n_chunk+1):
-            filepaths_seq=glob.glob("_".join([self.tmpdir,"*",str(chunk_now),"srcSeq.pkl"]))
-            filepaths_qual=glob.glob("_".join([self.tmpdir,"*",str(chunk_now),"srcQual.pkl"]))
+            print("Merging file chunk",str(chunk_now),flush=True)
 
-            if filepaths_seq:
-                iter_num+=1
-            else:
-                continue
+            segmentImporter.merge_parsed_data_parallel_wrapper(
+                input_dir= self.tmpdir+"/Chunk"+str(chunk_now),
+                settings= self.settings,
+                ncore = self.settings.ncore,
+                n_chunk= chunk_now
+            )
+            # filepaths_seq=glob.glob("_".join([self.tmpdir,"*",str(chunk_now),"srcSeq.pkl"]))
+            # filepaths_qual=glob.glob("_".join([self.tmpdir,"*",str(chunk_now),"srcQual.pkl"]))
+
+            # if filepaths_seq:
+            #     iter_num+=1
+            # else:
+            #     continue
                 
-            if filepaths_seq:
-                filepaths_seq.sort()
-                filepaths_qual.sort()
-                filepaths=[filepaths_seq,filepaths_qual]
-                merge_filename="_".join([self.tmpdir,"merge"])
-                print("Merging file chunk",str(iter_num),flush=True)
-                for n_read,path in enumerate(filepaths):
-                    dict_merged=collections.defaultdict(list)
+            # if filepaths_seq:
+            #     filepaths_seq.sort()
+            #     filepaths_qual.sort()
+            #     filepaths=[filepaths_seq,filepaths_qual]
+            #     merge_filename="_".join([self.tmpdir,"merge"])
+            #     print("Merging file chunk",str(iter_num),flush=True)
+            #     for n_read,path in enumerate(filepaths):
+            #         dict_merged=collections.defaultdict(list)
                     
-                    for chunk in path:
-                        if self.settings.flash:
-                            try:
-                                to_be_processed
-                            except NameError:
-                                to_be_processed=chunk
-                                continue
-                        with open(chunk,mode="rb") as pchunk:
-                            parsedDict_chunk=pickle.load(pchunk)
-                        dict_merged.update(parsedDict_chunk)
+            #         for chunk in path:
+            #             if self.settings.flash:
+            #                 try:
+            #                     to_be_processed
+            #                 except NameError:
+            #                     to_be_processed=chunk
+            #                     continue
+            #             with open(chunk,mode="rb") as pchunk:
+            #                 parsedDict_chunk=pickle.load(pchunk)
+            #             dict_merged.update(parsedDict_chunk)
                     
-                    if self.settings.flash:
-                        nrow_uncombined=len(dict_merged["Header"])
-                        with open(to_be_processed,mode="rb") as pchunk:
-                            parsedDict_chunk=pickle.load(pchunk)
-                        for component in ["Header"]+self.settings.components:
-                            if component not in dict_merged:
-                                dict_merged[component]=["-"]*nrow_uncombined
-                            # else:
-                            #     print(parsedDict_chunk[component][:5])
-                            #     print("ok\n")
-                            dict_merged[component]+=parsedDict_chunk[component]                    
+            #         if self.settings.flash:
+            #             nrow_uncombined=len(dict_merged["Header"])
+            #             with open(to_be_processed,mode="rb") as pchunk:
+            #                 parsedDict_chunk=pickle.load(pchunk)
+            #             for component in ["Header"]+self.settings.components:
+            #                 if component not in dict_merged:
+            #                     dict_merged[component]=["-"]*nrow_uncombined
+            #                 # else:
+            #                 #     print(parsedDict_chunk[component][:5])
+            #                 #     print("ok\n")
+            #                 dict_merged[component]+=parsedDict_chunk[component]                    
                 
-                    if iter_num==0 and n_read==0:
-                        f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="wt",encoding="utf-8")
-                    elif iter_num>0 and n_read==0:
-                        f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="at",encoding="utf-8")
-                    elif iter_num==0 and n_read==1:
-                        f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="wt",encoding="utf-8")
-                    elif iter_num>0 and n_read==1:
-                        f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="at",encoding="utf-8")
+            #         if iter_num==0 and n_read==0:
+            #             f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="wt",encoding="utf-8")
+            #         elif iter_num>0 and n_read==0:
+            #             f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="at",encoding="utf-8")
+            #         elif iter_num==0 and n_read==1:
+            #             f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="wt",encoding="utf-8")
+            #         elif iter_num>0 and n_read==1:
+            #             f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="at",encoding="utf-8")
 
-                    # d_order = {k:c for c,k in enumerate(["Header"]+self.settings.components)}
-                    # print(d_order)
-                    # print(dict_merged.keys())
-                    # dict_merged_sorted=sorted(dict_merged.items(), key=lambda x: d_order[x[0]])
+            #         # d_order = {k:c for c,k in enumerate(["Header"]+self.settings.components)}
+            #         # print(d_order)
+            #         # print(dict_merged.keys())
+            #         # dict_merged_sorted=sorted(dict_merged.items(), key=lambda x: d_order[x[0]])
 
-                    dict_merged_key=["Header"]+self.settings.components
-                    dict_merged_val=[dict_merged[i] for i in ["Header"]+self.settings.components]
-                    # if iter_num==0:
-                    #     csvwriter_index=csv.writer(f,delimiter="\t")
-                    #     csvwriter_index.writerow(dict_merged_key)
-                    dict_merged_val=list(map(list,zip(*dict_merged_val)))
-                    dict_merged_val=["\t".join(i) for i in dict_merged_val]
-                    dict_merged_val="\n".join(dict_merged_val)+"\n"
-                    if iter_num==0:
-                        dict_merged_val="\t".join(dict_merged_key)+"\n"+dict_merged_val
-                    f.write(dict_merged_val)
-                    f.close()
+            #         dict_merged_key=["Header"]+self.settings.components
+            #         dict_merged_val=[dict_merged[i] for i in ["Header"]+self.settings.components]
+            #         # if iter_num==0:
+            #         #     csvwriter_index=csv.writer(f,delimiter="\t")
+            #         #     csvwriter_index.writerow(dict_merged_key)
+            #         dict_merged_val=list(map(list,zip(*dict_merged_val)))
+            #         dict_merged_val=["\t".join(i) for i in dict_merged_val]
+            #         dict_merged_val="\n".join(dict_merged_val)+"\n"
+            #         if iter_num==0:
+            #             dict_merged_val="\t".join(dict_merged_key)+"\n"+dict_merged_val
+            #         f.write(dict_merged_val)
+            #         f.close()
                 
         shutil.rmtree(self.tmpdir)
         print("Exporting count dictionary...",flush=True)
         with gzip.open(self.settings.outFilePath_and_Prefix+"_srcCount.pkl.gz",mode="wb") as p:
             pickle.dump(self.counterDict,p)
+

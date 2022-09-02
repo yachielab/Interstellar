@@ -41,7 +41,8 @@ def correct_parallel_wrapper(seq_series,suggestion_verbosity,correctOpt,correcti
     # Split the sequence series into chunks by the number of CPUs
     seq_chunks = np.array_split(seq_series,ncore)
     
-    retLst = Parallel(n_jobs=ncore,verbose=10,backend="threading")(delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset) for seq_chunk in seq_chunks)
+    retLst = Parallel(n_jobs=ncore,verbose=10,backend="multiprocessing")(
+        delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset) for seq_chunk in seq_chunks)
     return pd.concat(retLst)
 
 
@@ -141,6 +142,9 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore):
         print("Seed length: ",seedlen,flush=True)
         symspelldb=SymSpell(correctOpt["M2A_CORRECTION"]["levenshtein_distance"],seedlen)
         symspelldb.create_dictionary(correctOpt["M2A_CORRECTION"]["path"])
+
+        random.seed(0)
+        random.shuffle(seq_majority)
         seq_majority_pd=pd.Series(seq_majority)
         print("Correct...",flush=True)
         t0=time.time()
