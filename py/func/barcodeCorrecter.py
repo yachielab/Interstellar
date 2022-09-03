@@ -308,7 +308,8 @@ def seqCleanUp_parallel_wrapper(df_chunk,segments_raw,correctionDictionaries,set
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(gen_clean_segment_seq)(df_subchunk,segments_raw,correctionDictionaries,settings) for df_subchunk in df_subchunks)
+    retLst = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=10)(
+        delayed(gen_clean_segment_seq)(df_subchunk,segments_raw,correctionDictionaries,settings) for df_subchunk in df_subchunks)
     return pd.concat(retLst)
 
 
@@ -342,5 +343,6 @@ def gen_value_table_parallel_wrapper(df_chunk,cat,segments_raw,settings,correcti
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,require='sharedmem',verbose=10)(delayed(seq_to_value_table)(df_subchunk,cat,segments_raw,settings,correctionDictionaries,ref_dic) for df_subchunk in df_subchunks)
+    retLst = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=10)(
+        delayed(seq_to_value_table)(df_subchunk,cat,segments_raw,settings,correctionDictionaries,ref_dic) for df_subchunk in df_subchunks)
     return pd.concat(retLst)

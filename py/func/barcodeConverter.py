@@ -397,7 +397,7 @@ def optimize_value_table_parallel_wrapper(df_chunk,d2s_dict,roots,edge_dict,sett
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,backend='threading',verbose=8)(
+    retLst = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=8)(
         delayed(optimize_value_process)(df_subchunk,d2s_dict,roots,edge_dict,settings,globalComponents,sample_now,global_used_in_dest,destname_dict,tree) for df_subchunk in df_subchunks)
     return pd.concat(retLst)
 
@@ -712,7 +712,7 @@ def gen_dest_seq_parallel_wrapper(df_zip,exportReadStructure,read_now,settings,f
     s_seq_subchunks = np.array_split(df_zip[2],ncore)
     s_qual_subchunks = np.array_split(df_zip[3],ncore)
 
-    retLst = Parallel(n_jobs=ncore,backend='threading',verbose=8)(
+    retLst = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=8)(
         delayed(gen_dest_seq_process)(subchunk_zip,exportReadStructure,read_now,settings,funcdict_key_list,func_dict,seq2seq_refs,referenceDict) for subchunk_zip in zip(d_val_subchunks,d_qual_subchunks,s_seq_subchunks,s_qual_subchunks))
     
     fastq_parse = [i[0] for i in retLst]
@@ -782,7 +782,7 @@ def demultiplex_fastq_parallel_wrapper(export_pd,key_series,settings,readIden,nc
     export_pd = export_pd.groupby("demulti_keys")
 
     # Parallelize the df subsetting and exporting process
-    key_iden_list_now = Parallel(n_jobs=ncore,require=None,verbose=3)(
+    key_iden_list_now = Parallel(n_jobs=ncore,require=None,verbose=3,backend="multiprocessing")(
         delayed(demultiplex_fastq_process)(sub_df,eachkey,settings,readIden) for eachkey,sub_df in export_pd)
     
     key_iden_list_now = [i for i in key_iden_list_now if not i == ""]

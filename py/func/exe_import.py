@@ -89,7 +89,7 @@ class settings_import(object):
         self.regexDictCompiled=regexDictCompiled
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.barcodes=func_dict["barcode_list"]
-        self.ncore = int(cfg["general"]["NUM_CORES"])
+        self.ncore = int(self.opt.ncore)
 
         
 class BARISTA_IMPORT(object):

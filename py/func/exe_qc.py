@@ -23,7 +23,7 @@ class settings_qc(object):
         self.qual=self.opt.rawQual
         self.barcodes=func_dict["barcode_list"]
         self.qscore_dict=settingImporter.getQscoreDict(func_dict)
-        self.ncore = int(cfg["general"]["NUM_CORES"])
+        self.ncore = int(self.opt.ncore)
         outname=self.opt.outname
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=outdir+"/"+outname

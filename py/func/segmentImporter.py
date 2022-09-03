@@ -201,7 +201,7 @@ def fastq_segmentation(cpu_idx,subchunk,headerSplitRegex,segment_parsed,regex_pa
     # print("Get header",t_getheader,"sec", flush=True)
     # print("Regex search",t_regex,"sec", flush=True)
     # print("Packing dict",t_packdic,"sec", flush=True)
-    print("Job time",time.time()-t0,"sec",flush=True)
+    # print("Job time",time.time()-t0,"sec",flush=True)
     return counterDict_tmp
 
 

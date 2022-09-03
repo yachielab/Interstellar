@@ -45,7 +45,7 @@ class settings_correct(object):
         outdir=self.opt.outdir
         self.outdir=outdir
         self.outFilePath_and_Prefix=outdir+"/"+outname
-        self.ncore = int(cfg["general"]["NUM_CORES"])
+        self.ncore = int(self.opt.ncore)
         # self.mk_s_value_components=cfg_correct["make_s_value"].split(",")
 
         

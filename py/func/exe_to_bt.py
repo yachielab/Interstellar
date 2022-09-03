@@ -26,7 +26,7 @@ class settings_to_bt(object):
         outname=self.opt.outname
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)
-        self.ncore = int(cfg["general"]["NUM_CORES"])
+        self.ncore = int(self.opt.ncore)
 
 class BARISTA_TO_BT(object):
     def __init__(self,settings):

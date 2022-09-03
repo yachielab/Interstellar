@@ -69,7 +69,7 @@ class settings_demultiplex(object):
         if not self.run_demulti and self.export_tsv:
             raise UnknownError("KEY is required if FORMAT=TSV.")
         
-        self.ncore = int(cfg["general"]["NUM_CORES"])
+        self.ncore = int(self.opt.ncore)
 
 
 class BARISTA_DEMULTIPLEX(object):

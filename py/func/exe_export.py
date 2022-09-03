@@ -57,7 +57,7 @@ class settings_export(object):
         outname=self.opt.outname
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=outdir+"/"+outname
-        self.ncore = int(cfg["general"]["NUM_CORES"])
+        self.ncore = int(self.opt.ncore)
 
 
 class BARISTA_EXPORT(object):

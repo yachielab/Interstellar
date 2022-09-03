@@ -1,6 +1,6 @@
 import glob
 import os
-import re
+import math
 
 class EmptyError(Exception):
     pass
@@ -123,24 +123,24 @@ def setDefaultConfig(cfg):
     return cfg
 
 
-def setDefaultQConfig(cfg):
-    cfg["qsub"]["MEM_MAX"]=tryAndFill(cfg,"qsub","MEM_MAX","","128")
-    cfg["qsub"]["MEM_MIN"] =tryAndFill(cfg,"qsub","MEM_MIN","","6")
-    cfg["qsub"]["NUM_READS"]=tryAndFill(cfg,"qsub","NUM_READS","2000000")
-    cfg["qsub"]["QOPTION"]=tryAndFill(cfg,"qsub","QOPTION","",required=True)
-    cfg["qsub"]["mem_import"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],1)
-    cfg["qsub"]["mem_qc"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],1)
-    cfg["qsub"]["mem_to_bt"]=cfg["qsub"]["MEM_MAX"]
-    cfg["qsub"]["mem_correct"]=cfg["qsub"]["MEM_MAX"]
-    cfg["qsub"]["mem_mk_sval"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],2)
-    cfg["qsub"]["mem_buildTree"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],1)
-    cfg["qsub"]["mem_mergeTree"]=cfg["qsub"]["MEM_MAX"]
-    cfg["qsub"]["mem_convert"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],3)
-    cfg["qsub"]["mem_bc_sort"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],1)
-    cfg["qsub"]["mem_export"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],3)
-    cfg["qsub"]["mem_demultiplex"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],2)
-    cfg["qsub"]["mem_annotate_header"]=setMemory(cfg["qsub"]["MEM_MAX"],cfg["qsub"]["MEM_MIN"],2)
-    return cfg["qsub"]
+def setDefaultQConfig(qcfg,cfg):
+    qcfg["qsub"]["MEM_MAX"]=tryAndFill(qcfg,"qsub","MEM_MAX","","128")
+    qcfg["qsub"]["MEM_MIN"] =tryAndFill(qcfg,"qsub","MEM_MIN","","6")
+    qcfg["qsub"]["NUM_READS"]=tryAndFill(qcfg,"qsub","NUM_READS","2000000")
+    qcfg["qsub"]["QOPTION"]=tryAndFill(qcfg,"qsub","QOPTION","",required=True)
+    qcfg["qsub"]["mem_import"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],1)
+    qcfg["qsub"]["mem_qc"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],1)
+    qcfg["qsub"]["mem_to_bt"]= qcfg["qsub"]["MEM_MAX"]
+    qcfg["qsub"]["mem_correct"]=str(math.floor(float(qcfg["qsub"]["MEM_MAX"]) * 10 / int(cfg["general"]["NUM_CORES"])) / 10)
+    qcfg["qsub"]["mem_mk_sval"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],2)
+    qcfg["qsub"]["mem_buildTree"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],1)
+    qcfg["qsub"]["mem_mergeTree"]=str(math.floor(float(qcfg["qsub"]["MEM_MAX"]) * 10 / int(cfg["general"]["NUM_CORES"])) / 10)
+    qcfg["qsub"]["mem_convert"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],3)
+    qcfg["qsub"]["mem_bc_sort"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],1)
+    qcfg["qsub"]["mem_export"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],3)
+    qcfg["qsub"]["mem_demultiplex"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],2)
+    qcfg["qsub"]["mem_annotate_header"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],2)
+    return qcfg["qsub"]
 
 
 # def setDefaultFunc_ext(func_dict):

@@ -35,7 +35,7 @@ class settings_mergetree(object):
             if "SEQ2VALUE" in func_dict_ext[i]["func_ordered"]:
                 value_variables.append(i)
         self.value_variables=value_variables
-        self.ncore = int(cfg["general"]["NUM_CORES"])
+        self.ncore = int(self.opt.ncore)
 
 
 class BARISTA_MERGETREE(object):
