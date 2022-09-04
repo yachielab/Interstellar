@@ -137,16 +137,18 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                         sys.exit(1)
                 njobdict[sampledir]=len(file_pool)
             else:
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
-                for f in file_pool:
-                    outname_now=re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f))
-                    cmd_now=[sampledir+"/sh/qc.sh",outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f)]
-                    cmd_now=" ".join(cmd_now)
-                    s=subprocess.run(cmd_now,shell=True)
-                    used_commands.append(cmd_now)
-                    if s.returncode != 0:
-                        print("Job failed: Quality filtering", file=sys.stderr)
-                        sys.exit(1)
+                seq_file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
+                seq_file_pool_concat = ",".join(seq_file_pool)
+                qual_file_pool_concat = re.sub(r"_srcSeq\.","_srcQual.",seq_file_pool_concat)
+                outname_now=",".join([re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f)) for f in seq_file_pool])
+
+                cmd_now=[sampledir+"/sh/qc.sh", outname_now, seq_file_pool_concat, qual_file_pool_concat]
+                cmd_now=" ".join(cmd_now)
+                s=subprocess.run(cmd_now,shell=True)
+                used_commands.append(cmd_now)
+                if s.returncode != 0:
+                    print("Job failed: Quality filtering", file=sys.stderr)
+                    sys.exit(1)
                 
         if is_qsub:
             for sampledir in sampledir_list:
@@ -273,16 +275,17 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             else:
                 file_endfix="_srcSeq.tsv.gz"
                 file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
-                
-            for f in file_pool:
-                outname_now=re.sub(file_endfix,"",os.path.basename(f))
-                cmd_now=[sampledir+"/sh/mk_sval.sh",outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f),sampledir+"/value_extraction/_work/correct/Interstellar_srcCorrect.pkl.gz"]
-                cmd_now=" ".join(cmd_now)
-                s=subprocess.run(cmd_now,shell=True)
-                used_commands.append(cmd_now)
-                if s.returncode != 0:
-                    print("Job failed: Sequence to value conversion", file=sys.stderr)
-                    sys.exit(1)
+
+            seq_file_pool_concat = ",".join(file_pool)
+            qual_file_pool_concat = re.sub(r"_srcSeq\.","_srcQual.",seq_file_pool_concat)
+            outname_now = ",".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
+            cmd_now = [sampledir+"/sh/mk_sval.sh", outname_now, seq_file_pool_concat, qual_file_pool_concat, sampledir+"/value_extraction/_work/correct/Interstellar_srcCorrect.pkl.gz"]
+            cmd_now=" ".join(cmd_now)
+            s=subprocess.run(cmd_now,shell=True)
+            used_commands.append(cmd_now)
+            if s.returncode != 0:
+                print("Job failed: Sequence to value conversion", file=sys.stderr)
+                sys.exit(1)
     if is_qsub:
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]

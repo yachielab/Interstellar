@@ -73,7 +73,6 @@ def getargs(cmd):
         argparser.add_argument('-samplesheet', '--samplesheet', type=str, default="",help='samplesheet if samplemerge==True')
         argparser.add_argument('-o', '--outname', type=str,default="dnaSyn",help='output file name')
         argparser.add_argument('-d', '--outdir', type=str, default=".", help='output directory')
-        return argparser.parse_args()
 
     elif cmd=="convert":
         argparser = ArgumentParser(usage='%(prog)s convert [options]')
@@ -131,5 +130,5 @@ def getargs(cmd):
         argparser.add_argument('-o', '--outname', type=str,default="dnaSyn",help='output file name')
         argparser.add_argument('-d', '--outdir', type=str, default=".", help='output directory')
     
-    argparser.add_argument('-core', '--ncore', type=str, default="1", help='Number of cores')
+    argparser.add_argument('-ncore', '--ncore', type=str, default="1", help='Number of cores')
     return argparser.parse_args()

@@ -87,19 +87,19 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             njobdict[sampledir]=len(file_pool)
             
         else:
-            for f in file_pool:
-                if is_qc:
-                    raw_qual=sampledir+"/value_extraction/_work/qc/"+re.sub(file_endfix,"_srcQual.QC.tsv.gz",os.path.basename(f))
-                else:
-                    raw_qual=sampledir+"/value_extraction/_work/import/"+re.sub(file_endfix,"_srcQual.tsv.gz",os.path.basename(f))
-                correct_qual=os.path.dirname(f)+"/"+re.sub(file_endfix,"_correct_srcQual.tsv.gz",os.path.basename(f))
-                outname_now=re.sub(file_endfix,"",os.path.basename(f))
-                cmd_now=[sampledir+"/sh/"+cmd+".sh",outname_now,f,correct_qual,raw_qual]
-                cmd_now=" ".join(cmd_now)
-                s=subprocess.run(cmd_now,shell=True)
-                if s.returncode != 0:
-                    print("Job failed: Demultiplex', file=sys.stderr")
-                    sys.exit(1)
+            file_pool_concat = ",".join(file_pool)
+            if is_qc:
+                raw_qual = ",".join([sampledir+"/value_extraction/_work/qc/"+re.sub(file_endfix,"_srcQual.QC.tsv.gz",os.path.basename(f)) for f in file_pool])
+            else:
+                raw_qual = ",".join([sampledir+"/value_extraction/_work/import/"+re.sub(file_endfix,"_srcQual.tsv.gz",os.path.basename(f)) for f in file_pool])
+            correct_qual = ",".join([os.path.dirname(f)+"/"+re.sub(file_endfix,"_correct_srcQual.tsv.gz",os.path.basename(f)) for f in file_pool])
+            outname_now = ",".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
+            cmd_now=[sampledir+"/sh/"+cmd+".sh",outname_now,file_pool_concat,correct_qual,raw_qual]
+            cmd_now=" ".join(cmd_now)
+            s=subprocess.run(cmd_now,shell=True)
+            if s.returncode != 0:
+                print("Job failed: Demultiplex', file=sys.stderr")
+                sys.exit(1)
    
     if is_qsub:
         for sampledir in sampledir_list:

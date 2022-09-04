@@ -700,7 +700,7 @@ def gen_dest_seq_process(subchunk_zip,exportReadStructure,read_now,settings,func
             fastq_parse["seq"]=fastq_parse["seq"].str.cat(seq_export_tmp,sep="")
             fastq_parse["qual"]=fastq_parse["qual"].str.cat(qual_export_tmp,sep="")
         
-        return fastq_parse,barcode_correspondence
+    return fastq_parse,barcode_correspondence
     
 
 
@@ -735,8 +735,8 @@ def gen_dest_seq_parallel_wrapper(df_zip,exportReadStructure,read_now,settings,f
     #     return "_"+eachkey+".tsv.gz"
     # else:
     #     return ""
-def demultiplex_tsv_process(sub_df,eachkey,settings):
-    outfilename="_".join([settings.outFilePath_and_Prefix,eachkey])+".tsv.gz"
+def demultiplex_tsv_process(sub_df,eachkey,prefix):
+    outfilename="_".join([prefix,eachkey])+".tsv.gz"
     if not os.path.isfile(outfilename):
         sub_df.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=True)
     else:
@@ -746,9 +746,9 @@ def demultiplex_tsv_process(sub_df,eachkey,settings):
 
 
 # Demultiplex to FASTQ file, process
-def demultiplex_fastq_process(export_pd,eachkey,settings,readIden):
+def demultiplex_fastq_process(export_pd,eachkey,prefix,readIden):
     export_pd_tmp=export_pd[["Header","seq","3rd","qual"]]
-    outfilename="_".join([settings.outFilePath_and_Prefix,eachkey,readIden])+".fastq.gz"
+    outfilename="_".join([prefix,eachkey,readIden])+".fastq.gz"
     export_pd_tmp=export_pd_tmp.stack()
     export_pd_tmp=export_pd_tmp.reset_index()
     export_pd_tmp=pd.DataFrame(export_pd_tmp[0])
@@ -760,21 +760,21 @@ def demultiplex_fastq_process(export_pd,eachkey,settings,readIden):
 
 
 # Multithreading implementation for demultiplexing tsv file
-def demultiplex_tsv_parallel_wrapper(s_seq_chunk,key_series,settings,ncore):
+def demultiplex_tsv_parallel_wrapper(s_seq_chunk,key_series,prefix,ncore):
     s_seq_chunk = s_seq_chunk.copy()
     s_seq_chunk["demulti_keys"] = key_series
     
     # Group by demultiplex keys
     s_seq_chunk = s_seq_chunk.groupby("demulti_keys")
     key_iden_list_now = Parallel(n_jobs=ncore,require=None,verbose=3)(
-        delayed(demultiplex_tsv_process)(sub_df,eachkey,settings) for eachkey,sub_df in s_seq_chunk if not "-" in eachkey)
+        delayed(demultiplex_tsv_process)(sub_df,eachkey,prefix) for eachkey,sub_df in s_seq_chunk if not "-" in eachkey)
     
     key_iden_list_now = [i for i in key_iden_list_now if not i == ""]
     return key_iden_list_now
     
 
 # Multithreading implementation for demultiplexing tsv file
-def demultiplex_fastq_parallel_wrapper(export_pd,key_series,settings,readIden,ncore):
+def demultiplex_fastq_parallel_wrapper(export_pd,key_series,prefix,readIden,ncore):
     export_pd = export_pd.copy()
     export_pd["demulti_keys"] = key_series
 
@@ -783,7 +783,7 @@ def demultiplex_fastq_parallel_wrapper(export_pd,key_series,settings,readIden,nc
 
     # Parallelize the df subsetting and exporting process
     key_iden_list_now = Parallel(n_jobs=ncore,require=None,verbose=3,backend="multiprocessing")(
-        delayed(demultiplex_fastq_process)(sub_df,eachkey,settings,readIden) for eachkey,sub_df in export_pd)
+        delayed(demultiplex_fastq_process)(sub_df,eachkey,prefix,readIden) for eachkey,sub_df in export_pd)
     
     key_iden_list_now = [i for i in key_iden_list_now if not i == ""]
     return key_iden_list_now
