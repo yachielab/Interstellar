@@ -128,6 +128,7 @@ def setDefaultQConfig(qcfg,cfg):
     qcfg["qsub"]["MEM_MIN"] =tryAndFill(qcfg,"qsub","MEM_MIN","","6")
     qcfg["qsub"]["NUM_READS"]=tryAndFill(qcfg,"qsub","NUM_READS","2000000")
     qcfg["qsub"]["QOPTION"]=tryAndFill(qcfg,"qsub","QOPTION","",required=True)
+    qcfg["qsub"]["mem_seqkit"]=str(math.floor(float(qcfg["qsub"]["MEM_MAX"]) * 10 / int(cfg["general"]["NUM_CORES"])) / 10)
     qcfg["qsub"]["mem_import"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],1)
     qcfg["qsub"]["mem_qc"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],1)
     qcfg["qsub"]["mem_to_bt"]= qcfg["qsub"]["MEM_MAX"]

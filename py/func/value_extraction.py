@@ -31,8 +31,9 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
     used_commands=[]
     cfg,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
     d=settingImporter.func_check(cfg)
+
     
-    #import
+    # import
     cmd="import"
     njobdict=dict()
     for sampledir in sampledir_list:

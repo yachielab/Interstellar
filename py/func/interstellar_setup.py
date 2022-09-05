@@ -288,11 +288,12 @@ class SETUP(object):
                         sh_cmd_list=sh_cmd_list_template+["-O",self.settings.sampledir+"/filesplit/"+read_now+"_"+prefix+"_"+str(idx)]+["-1",f]
                         sh_cmd_line=" ".join(sh_cmd_list)
                         generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"seqkit_split_"+prefix+"_"+str(idx)+"_"+read_now)
+            
             # Force the number of cores to be 1 if qsub = True except for correct and merge
-            self.settings.cfg["general"]["NUM_CORES_MAX"] = copy.copy(self.settings.cfg["general"]["NUM_CORES"])
-            self.settings.cfg["general"]["NUM_CORES"] = "1"
+            num_cores_max = copy.copy(self.settings.cfg["general"]["NUM_CORES"])
+            num_cores = "1"
         else:
-            self.settings.cfg["general"]["NUM_CORES_MAX"] = copy.copy(self.settings.cfg["general"]["NUM_CORES"])
+            num_cores_max = copy.copy(self.settings.cfg["general"]["NUM_CORES"])
 
         
         #Generate shell scripts for specified commands
@@ -300,7 +301,7 @@ class SETUP(object):
             outdir=self.settings.sampledir+"/value_extraction/_work/"
             
             # import
-            sh_cmd_list=["Interstellar-exec","import","-conf",self.cfgpath,"-d",outdir+"/import","-o","$1","-ncore",self.settings.cfg["general"]["NUM_CORES"]]
+            sh_cmd_list=["Interstellar-exec","import","-conf",self.cfgpath,"-d",outdir+"/import","-o","$1","-ncore",num_cores]
             if not self.settings.cfg["value_extraction"]["FLASH"]=="":
                 sh_cmd_list+=["-flash",self.settings.cfg["value_extraction"]["FLASH"]]
             for n,i in enumerate(self.settings.read_valid):
@@ -316,22 +317,22 @@ class SETUP(object):
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"import")
 
             # qc
-            sh_cmd_list=["Interstellar-exec","qc","-conf",self.cfgpath,"-d",outdir+"/qc","-o","$1","-rs","$2","-rq","$3","-ncore",self.settings.cfg["general"]["NUM_CORES"]]
+            sh_cmd_list=["Interstellar-exec","qc","-conf",self.cfgpath,"-d",outdir+"/qc","-o","$1","-rs","$2","-rq","$3","-ncore",num_cores]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"qc")
             
             # to_bt
-            sh_cmd_list=["Interstellar-exec","to_bt","-conf",self.cfgpath,"-d",outdir+"/to_bt","-o","$1","-rs","$2","-ncore",self.settings.cfg["general"]["NUM_CORES"]]
+            sh_cmd_list=["Interstellar-exec","to_bt","-conf",self.cfgpath,"-d",outdir+"/to_bt","-o","$1","-rs","$2","-ncore",num_cores]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"to_bt")
             
             # correct
-            sh_cmd_list=["Interstellar-exec","correct","-conf",self.cfgpath,"-d",outdir+"/correct","-o","$1","-ip","$2","-ncore",self.settings.cfg["general"]["NUM_CORES_MAX"]]
+            sh_cmd_list=["Interstellar-exec","correct","-conf",self.cfgpath,"-d",outdir+"/correct","-o","$1","-ip","$2","-ncore",num_cores_max]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"correct")
             
             # mk_sval
-            sh_cmd_list=["Interstellar-exec","mk_sval","-conf",self.cfgpath,"-d",outdir+"/mk_sval","-o","$1","-rs","$2","-rq","$3","-crp","$4","-ncore",self.settings.cfg["general"]["NUM_CORES"]]
+            sh_cmd_list=["Interstellar-exec","mk_sval","-conf",self.cfgpath,"-d",outdir+"/mk_sval","-o","$1","-rs","$2","-rq","$3","-crp","$4","-ncore",num_cores]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"mk_sval")
         
@@ -340,7 +341,7 @@ class SETUP(object):
             outdir=self.settings.sampledir+"/value_translation/_work/"
 
             #buildTree
-            sh_cmd_list=["Interstellar-exec","buildTree","-conf",self.cfgpath,"-d",outdir+"/buildTree","-o","$1","-sv","$2","-ncore",self.settings.cfg["general"]["NUM_CORES"]]
+            sh_cmd_list=["Interstellar-exec","buildTree","-conf",self.cfgpath,"-d",outdir+"/buildTree","-o","$1","-sv","$2","-ncore",num_cores]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
@@ -348,7 +349,7 @@ class SETUP(object):
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"buildTree")
             
             #mergeTree
-            sh_cmd_list=["Interstellar-exec","mergeTree","-conf",self.cfgpath,"-o","$1","-lp","$2","-ncore",self.settings.cfg["general"]["NUM_CORES_MAX"]]
+            sh_cmd_list=["Interstellar-exec","mergeTree","-conf",self.cfgpath,"-o","$1","-lp","$2","-ncore",num_cores_max]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv","-d",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/mergeTree"]
@@ -358,7 +359,7 @@ class SETUP(object):
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"mergeTree")
             
             #convert
-            sh_cmd_list=["Interstellar-exec","convert","-conf",self.cfgpath,"-d",outdir+"/convert","-o","$1","-tree","$2","-sv","$3","-sq","$4","-ncore",self.settings.cfg["general"]["NUM_CORES"]]
+            sh_cmd_list=["Interstellar-exec","convert","-conf",self.cfgpath,"-d",outdir+"/convert","-o","$1","-tree","$2","-sv","$3","-sq","$4","-ncore",num_cores]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
@@ -370,7 +371,7 @@ class SETUP(object):
             # generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"bc_sort")
             
             # export: normal
-            sh_cmd_list=["Interstellar-exec","export","-conf",self.cfgpath,"-d",outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6","-export_bclist","-ncore",self.settings.cfg["general"]["NUM_CORES"]]
+            sh_cmd_list=["Interstellar-exec","export","-conf",self.cfgpath,"-d",outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6","-export_bclist","-ncore",num_cores]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"export")
             # export: bc_sort
@@ -382,7 +383,7 @@ class SETUP(object):
         # demultiplex
         if "demultiplex" in self.settings.cmds_execute:
             outdir=self.settings.sampledir+"/demultiplex/_work"
-            sh_cmd_list=["Interstellar-exec","demultiplex","-conf",self.cfgpath,"-d",outdir,"-o","$1","-cs","$2","-cq","$3","-rq","$4","-ncore",self.settings.cfg["general"]["NUM_CORES"]]
+            sh_cmd_list=["Interstellar-exec","demultiplex","-conf",self.cfgpath,"-d",outdir,"-o","$1","-cs","$2","-cq","$3","-rq","$4","-ncore",num_cores]
             if self.settings.cfg["demultiplex"]["FORMAT"]=="tsv":
                 sh_cmd_list.append("-export_tsv")
             sh_cmd_line=" ".join(sh_cmd_list)
@@ -392,7 +393,7 @@ class SETUP(object):
         # annotate_header
         if "annotate_header" in self.settings.cmds_execute:
             outdir=self.settings.sampledir+"/annotate_header/_work"
-            sh_cmd_list=["Interstellar-exec","annotate_header","-conf",self.cfgpath,"-d",outdir,"-o","$1","-cs","$2","-cq","$3","-rq","$4","-ncore",self.settings.cfg["general"]["NUM_CORES"]]
+            sh_cmd_list=["Interstellar-exec","annotate_header","-conf",self.cfgpath,"-d",outdir,"-o","$1","-cs","$2","-cq","$3","-rq","$4","-ncore",num_cores]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"annotate_header")
     
@@ -404,7 +405,7 @@ class SETUP(object):
 
         print("\nRunnning qsub jobs...: Split FASTQ files for sample "+self.settings.samplename,flush=True)
         qoption=self.settings.qcfg["QOPTION"]
-        qoption=qoption.replace("<mem>",self.settings.qcfg["MEM_MIN"])
+        qoption=qoption.replace("<mem>",self.settings.qcfg["mem_seqkit"])
         qoption=qoption.replace("<num_cores>",self.settings.ncore)
         qcmd_base=["qsub",qoption,"-e",self.settings.sampledir+"/qlog","-o",self.settings.sampledir+"/qlog","-cwd"]
         for i in glob.glob(self.shelldir+"/seqkit*"):
