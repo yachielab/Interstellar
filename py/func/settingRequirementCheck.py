@@ -135,7 +135,8 @@ def setDefaultQConfig(qcfg,cfg):
     qcfg["qsub"]["mem_correct"]=str(math.floor(float(qcfg["qsub"]["MEM_MAX"]) * 10 / int(cfg["general"]["NUM_CORES"])) / 10)
     qcfg["qsub"]["mem_mk_sval"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],2)
     qcfg["qsub"]["mem_buildTree"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],1)
-    qcfg["qsub"]["mem_mergeTree"]=str(math.floor(float(qcfg["qsub"]["MEM_MAX"]) * 10 / int(cfg["general"]["NUM_CORES"])) / 10)
+    # qcfg["qsub"]["mem_mergeTree"]=str(math.floor(float(qcfg["qsub"]["MEM_MAX"]) * 10 / int(cfg["general"]["NUM_CORES"])) / 10)
+    qcfg["qsub"]["mem_mergeTree"]=qcfg["qsub"]["MEM_MAX"]
     qcfg["qsub"]["mem_convert"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],3)
     qcfg["qsub"]["mem_bc_sort"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],1)
     qcfg["qsub"]["mem_export"]=setMemory(qcfg["qsub"]["MEM_MAX"],qcfg["qsub"]["MEM_MIN"],3)

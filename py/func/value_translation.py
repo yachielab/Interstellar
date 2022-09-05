@@ -135,7 +135,8 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         # print("Running qsub jobs...: Merging trees",flush=True)
         qoption=qcfg["QOPTION"]
         qoption=qoption.replace("<mem>",qcfg[mem_key])
-        qoption=qoption.replace("<num_cores>",str(cfg_raw["general"]["NUM_CORES"])) # This process uses maximum amount of CPUs even in qsub mode. Config is fresh since it's improted from the raw file.
+        qoption=qoption.replace("<num_cores>","1")
+        # qoption=qoption.replace("<num_cores>",str(cfg_raw["general"]["NUM_CORES"])) # This process uses maximum amount of CPUs even in qsub mode. Config is fresh since it's improted from the raw file.
         qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"],qoption]
             
         outname_now="merge"
