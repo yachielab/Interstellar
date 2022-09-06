@@ -14,7 +14,7 @@ import os
 import re
 import glob
 import sys
-import copy
+import time
 
 
 def genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,n_core):
@@ -34,132 +34,135 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
 
     
     # import
-    cmd="import"
-    njobdict=dict()
-    for sampledir in sampledir_list:
-        endfix_input=param_dict[os.path.basename(sampledir)]["file_suffix"] 
-        if is_qsub:
-            mem_key="mem_import"
-            # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
+    # t = time.time()
+    # cmd="import"
+    # njobdict=dict()
+    # for sampledir in sampledir_list:
+    #     endfix_input=param_dict[os.path.basename(sampledir)]["file_suffix"] 
+    #     if is_qsub:
+    #         mem_key="mem_import"
+    #         # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
+    #         qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
             
-            #collect input files
-            file_pool=[]
-            for r in ['read1','read2','index1','index2']:
-                if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
-                    file_pool.append([])
+    #         #collect input files
+    #         file_pool=[]
+    #         for r in ['read1','read2','index1','index2']:
+    #             if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
+    #                 file_pool.append([])
 
-            all_files=glob.glob(sampledir+"/filesplit/*/*")
-            for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
-                idx=0
-                for r in ['read1','read2','index1','index2']:
-                    if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
-                        target_files=[i for i in all_files if re.search("/"+r+"_"+fileprefix+r"_[0-9]+/.*"+endfix_input,i)]
-                        file_pool[idx]+=sorted(target_files)
-                        idx+=1
-            # input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
-            # basename_list=[os.path.basename(i) for i in input_file_list]
+    #         all_files=glob.glob(sampledir+"/filesplit/*/*")
+    #         for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
+    #             idx=0
+    #             for r in ['read1','read2','index1','index2']:
+    #                 if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
+    #                     target_files=[i for i in all_files if re.search("/"+r+"_"+fileprefix+r"_[0-9]+/.*"+endfix_input,i)]
+    #                     file_pool[idx]+=sorted(target_files)
+    #                     idx+=1
+    #         # input_file_list=[self.input_read_files[i] for i in ['read1','read2','index1','index2'] if i in self.input_read_files]
+    #         # basename_list=[os.path.basename(i) for i in input_file_list]
             
-            # file_pool=[]
-            # chunk_identifier_pool=os.path.basenaem(glob.glob(sampledir+"/filesplit/*"))
-            # for f_name in basename_list:
-            #     file_pool.append([sampledir+"/filesplit/"+f_name.replace(endfix_input,"")+i+"."+endfix_input for i in chunk_identifier_pool])
-            # else:
-            #     file_pool=[]
-            #     if flg_file==1:
-            #         for f_name in input_file_list:
-            #             file_pool.append([f_name])
-            #     else:
-            #         prefix_pool=[re.sub(r"_[^_]+\."+endfix_input,"",os.path.basename(i)) for i in glob.glob(input_file_list[0]+"/*")]
-            #         for f_name in input_file_list:
-            #             file_pool.append([glob.glob(f_name+"/"+p+"*")[0] for p in prefix_pool])
-            for infile in zip(*file_pool):
-                # infile_now=[infile[i] for i in range(len(param_dict[os.path.basename(sampledir)]["read_valid"]))]
-                outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
-                qcmd_now=qcmd_base+[sampledir+"/sh/import.sh",outname_now]+list(infile)
-                qcmd_now=" ".join(qcmd_now)
-                s=subprocess.run(qcmd_now,shell=True)
-                used_commands.append(qcmd_now)
-                if s.returncode != 0:
-                    print("qsub failed: import", file=sys.stderr)
-                    sys.exit(1)
-            njobdict[sampledir]=len(file_pool[0])
-        else:
-            #collect input files
-            file_pool=[]
-            for r in ['read1','read2','index1','index2']:
-                if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
-                    file_pool.append([])
+    #         # file_pool=[]
+    #         # chunk_identifier_pool=os.path.basenaem(glob.glob(sampledir+"/filesplit/*"))
+    #         # for f_name in basename_list:
+    #         #     file_pool.append([sampledir+"/filesplit/"+f_name.replace(endfix_input,"")+i+"."+endfix_input for i in chunk_identifier_pool])
+    #         # else:
+    #         #     file_pool=[]
+    #         #     if flg_file==1:
+    #         #         for f_name in input_file_list:
+    #         #             file_pool.append([f_name])
+    #         #     else:
+    #         #         prefix_pool=[re.sub(r"_[^_]+\."+endfix_input,"",os.path.basename(i)) for i in glob.glob(input_file_list[0]+"/*")]
+    #         #         for f_name in input_file_list:
+    #         #             file_pool.append([glob.glob(f_name+"/"+p+"*")[0] for p in prefix_pool])
+    #         for infile in zip(*file_pool):
+    #             # infile_now=[infile[i] for i in range(len(param_dict[os.path.basename(sampledir)]["read_valid"]))]
+    #             outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
+    #             qcmd_now=qcmd_base+[sampledir+"/sh/import.sh",outname_now]+list(infile)
+    #             qcmd_now=" ".join(qcmd_now)
+    #             s=subprocess.run(qcmd_now,shell=True)
+    #             used_commands.append(qcmd_now)
+    #             if s.returncode != 0:
+    #                 print("qsub failed: import", file=sys.stderr)
+    #                 sys.exit(1)
+    #         njobdict[sampledir]=len(file_pool[0])
+    #     else:
+    #         #collect input files
+    #         file_pool=[]
+    #         for r in ['read1','read2','index1','index2']:
+    #             if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
+    #                 file_pool.append([])
 
-            for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
-                idx=0
-                for r in ['read1','read2','index1','index2']:
-                    if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
-                        tartget_file_dict=param_dict[os.path.basename(sampledir)]["tartget_file_dict"]
-                        target_files=tartget_file_dict[r]
-                        target_files=[i for i in target_files if re.search(fileprefix+r".*"+endfix_input,os.path.basename(i))]
-                        file_pool[idx]+=sorted(target_files)
-                        idx+=1
+    #         for fileprefix in param_dict[os.path.basename(sampledir)]["target_prefix_list"]:
+    #             idx=0
+    #             for r in ['read1','read2','index1','index2']:
+    #                 if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
+    #                     tartget_file_dict=param_dict[os.path.basename(sampledir)]["tartget_file_dict"]
+    #                     target_files=tartget_file_dict[r]
+    #                     target_files=[i for i in target_files if re.search(fileprefix+r".*"+endfix_input,os.path.basename(i))]
+    #                     file_pool[idx]+=sorted(target_files)
+    #                     idx+=1
 
-            for infile in zip(*file_pool):
-                outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
-                cmd_now=[sampledir+"/sh/import.sh",outname_now]+list(infile)
-                cmd_now=" ".join(cmd_now)
-                s=subprocess.run(cmd_now,shell=True)
-                used_commands.append(cmd_now)
-                if s.returncode != 0:
-                    print("script failed: import", file=sys.stderr)
-                    sys.exit(1)
-    if is_qsub:
-        for sampledir in sampledir_list:
-            jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
-            interstellar_setup.job_wait("Read segmentation",jid_now,sampledir+"/qlog",njobdict[sampledir])
-    
+    #         for infile in zip(*file_pool):
+    #             outname_now=os.path.basename(infile[0].replace("."+endfix_input,""))
+    #             cmd_now=[sampledir+"/sh/import.sh",outname_now]+list(infile)
+    #             cmd_now=" ".join(cmd_now)
+    #             s=subprocess.run(cmd_now,shell=True)
+    #             used_commands.append(cmd_now)
+    #             if s.returncode != 0:
+    #                 print("script failed: import", file=sys.stderr)
+    #                 sys.exit(1)
+    # if is_qsub:
+    #     for sampledir in sampledir_list:
+    #         jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
+    #         interstellar_setup.job_wait("Read segmentation",jid_now,sampledir+"/qlog",njobdict[sampledir])
+    # print("Elapsed time for Read segmentation",round(round(time.time() - t)/60,2),"minutes\n")
 
 
-    #QC
-    if "QUALITY_FILTER" in cfg["functions_used"]:
-        cmd="qc"
-        njobdict=dict()
-        for sampledir in sampledir_list:
-            if is_qsub:
-                mem_key="mem_qc"
-                # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
-                qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
-                for f in file_pool:
-                    outname_now=re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f))
-                    qcmd_now=qcmd_base+[sampledir+"/sh/qc.sh",outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f)]
-                    qcmd_now=" ".join(qcmd_now)
-                    s=subprocess.run(qcmd_now,shell=True)
-                    used_commands.append(qcmd_now)
-                    if s.returncode != 0:
-                        print("qsub failed: Quality filtering", file=sys.stderr)
-                        sys.exit(1)
-                njobdict[sampledir]=len(file_pool)
-            else:
-                seq_file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
-                seq_file_pool_concat = ",".join(seq_file_pool)
-                qual_file_pool_concat = re.sub(r"_srcSeq\.","_srcQual.",seq_file_pool_concat)
-                outname_now=",".join([re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f)) for f in seq_file_pool])
+    # #QC
+    # if "QUALITY_FILTER" in cfg["functions_used"]:
+    #     t = time.time()
+    #     cmd="qc"
+    #     njobdict=dict()
+    #     for sampledir in sampledir_list:
+    #         if is_qsub:
+    #             mem_key="mem_qc"
+    #             # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
+    #             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
+    #             file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
+    #             for f in file_pool:
+    #                 outname_now=re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f))
+    #                 qcmd_now=qcmd_base+[sampledir+"/sh/qc.sh",outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f)]
+    #                 qcmd_now=" ".join(qcmd_now)
+    #                 s=subprocess.run(qcmd_now,shell=True)
+    #                 used_commands.append(qcmd_now)
+    #                 if s.returncode != 0:
+    #                     print("qsub failed: Quality filtering", file=sys.stderr)
+    #                     sys.exit(1)
+    #             njobdict[sampledir]=len(file_pool)
+    #         else:
+    #             seq_file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
+    #             seq_file_pool_concat = ",".join(seq_file_pool)
+    #             qual_file_pool_concat = re.sub(r"_srcSeq\.","_srcQual.",seq_file_pool_concat)
+    #             outname_now=",".join([re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f)) for f in seq_file_pool])
 
-                cmd_now=[sampledir+"/sh/qc.sh", outname_now, seq_file_pool_concat, qual_file_pool_concat]
-                cmd_now=" ".join(cmd_now)
-                s=subprocess.run(cmd_now,shell=True)
-                used_commands.append(cmd_now)
-                if s.returncode != 0:
-                    print("Job failed: Quality filtering", file=sys.stderr)
-                    sys.exit(1)
+    #             cmd_now=[sampledir+"/sh/qc.sh", outname_now, seq_file_pool_concat, qual_file_pool_concat]
+    #             cmd_now=" ".join(cmd_now)
+    #             s=subprocess.run(cmd_now,shell=True)
+    #             used_commands.append(cmd_now)
+    #             if s.returncode != 0:
+    #                 print("Job failed: Quality filtering", file=sys.stderr)
+    #                 sys.exit(1)
                 
-        if is_qsub:
-            for sampledir in sampledir_list:
-                jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
-                interstellar_setup.job_wait("Quality filtering",jid_now,sampledir+"/qlog",njobdict[sampledir])
-
+    #     if is_qsub:
+    #         for sampledir in sampledir_list:
+    #             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
+    #             interstellar_setup.job_wait("Quality filtering",jid_now,sampledir+"/qlog",njobdict[sampledir])
+    #     print("Elapsed time for quality filtering",round(round(time.time() - t)/60,2),"minutes\n")
 
 
     #to_bt
     if "BARTENDER_CORRECTION" in cfg["functions_used"]:
+        t = time.time()
         cmd="to_bt"
         outname_now="to_bt"
         for sampledir in sampledir_list:
@@ -197,9 +200,11 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             for sampledir in sampledir_list:
                 jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
                 interstellar_setup.job_wait("Bartender",jid_now,sampledir+"/qlog",njobs)
+        print("Elapsed time for Bartender",round(round(time.time() - t)/60,2),"minutes\n")
 
 
     #correct
+    t = time.time()
     cmd="correct"
     outname_now="Interstellar"
     for sampledir in sampledir_list:
@@ -236,10 +241,12 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Sequence error correction",jid_now,sampledir,njobs)
+    print("Elapsed time for sequence correction",round(round(time.time() - t)/60,2),"minutes\n")
 
 
     
     #mk_sval
+    t = time.time()
     cmd="mk_sval"
     njobdict=dict()
     for sampledir in sampledir_list:
@@ -291,8 +298,8 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Sequence to value conversion",jid_now,sampledir+"/qlog",njobdict[sampledir])
+    print("Elapsed time for value table generation",round(round(time.time() - t)/60,2),"minutes\n")
 
-    
 
     #Generating a samplesheet
     if is_multisample:

@@ -303,6 +303,7 @@ def func_parse(func_line,func_collection,dest=False,dict_to_terminal=""):
 
                 if "source" in dict_out and str(dict_out["source"])==list:
                     dict_out["source"]=sorted(dict_out["source"])
+
             # Convert VALUE2SEQ into WHITELIST or RANDSEQ
             if funcname=="VALUE2SEQ":
                 # if dict_out.get("allowlist_path") or dict_out.get("conversion_table"):
@@ -312,7 +313,7 @@ def func_parse(func_line,func_collection,dest=False,dict_to_terminal=""):
                     funcname="RANDSEQ_ASSIGNMENT"
                 else:
                     # raise KeyError("Whitelist path, sequence conversion table or random sequence length are required.")
-                    raise KeyError("Whitelist path or random sequence length are required.")
+                    raise KeyError("Allowlist path or random sequence length are required.")
             d[funcname]=dict_out
         funcname_list.append(funcname)
     d["func_ordered"]=funcname_list
@@ -372,14 +373,14 @@ def func_check(cfg):
         funcIllegalOptionCheck(val,func_dict,"QUALITY_FILTER",["source","min_nucleotide_Q-score","min_avg_Q-score"])
         func_dict=funcSetDefault(val,func_dict,"QUALITY_FILTER",["min_nucleotide_Q-score","min_avg_Q-score"],[5,20],opt_int=["min_nucleotide_Q-score","min_avg_Q-score"])
 
-        #KNEE Correct option check
-        funcIllegalOptionCheck(val,func_dict,"I2M_CORRECTION",["source","rank","levenshtein_distance"])
-        func_dict=funcSetDefault(val,func_dict,"I2M_CORRECTION",["rank","levenshtein_distance"],["auto",1],opt_int=["levenshtein_distance"])
+        #I2M CORRECTION option check
+        funcIllegalOptionCheck(val,func_dict,"I2M_CORRECTION",["source","rank","levenshtein_distance","min_num_reads"])
+        func_dict=funcSetDefault(val,func_dict,"I2M_CORRECTION",["rank","levenshtein_distance","min_num_reads"],["auto",1,1],opt_int=["levenshtein_distance","min_num_reads"])
 
-        #WHITELIST Correct option check
-        funcIllegalOptionCheck(val,func_dict,"M2A_CORRECTION",["source","path","levenshtein_distance"])
+        #M2A CORRECTION option check
+        funcIllegalOptionCheck(val,func_dict,"M2A_CORRECTION",["source","path","levenshtein_distance","min_num_reads"])
         funcRequiredOptionCheck(val,func_dict,"M2A_CORRECTION",["path"])
-        func_dict=funcSetDefault(val,func_dict,"M2A_CORRECTION",["levenshtein_distance"],[1],opt_int=["levenshtein_distance"])
+        func_dict=funcSetDefault(val,func_dict,"M2A_CORRECTION",["levenshtein_distance","min_num_reads"],[1,1],opt_int=["levenshtein_distance","min_num_reads"])
 
         #Bartender option check
         funcIllegalOptionCheck(val,func_dict,"BARTENDER_CORRECTION",["source","-c","-d","-l","-z","-s"])

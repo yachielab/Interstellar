@@ -12,6 +12,7 @@ import random
 import string
 import pandas as pd
 from joblib import Parallel, delayed
+import sys
 
 
 
@@ -42,20 +43,26 @@ def correct_parallel_wrapper(seq_series,suggestion_verbosity,correctOpt,correcti
     seq_chunks = np.array_split(seq_series,ncore)
     
     retLst = Parallel(n_jobs=ncore,verbose=10,backend="multiprocessing")(
-        delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset) for seq_chunk in seq_chunks)
+        delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset) for seq_chunk in seq_chunks[:10])
     return pd.concat(retLst)
 
 
-def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore):
+def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_num_reads):
+    print(correctOpt)
     suggestion_verbosity = Verbosity.TOP
     func_tmp=correctOpt["func_ordered"][0]
-    srcComponent=correctOpt[func_tmp]["source"]
+    srcComponent = correctOpt[func_tmp]["source"]
     srcCounter=counterDict[srcComponent]
+    
 
-    seqCount_sort=sorted(srcCounter.items(),key=lambda x:x[1],reverse=True)
-    seqCountSummary=dict(seq=list(),rank=list(),logrank=list(),count=list())
+    seqCount_sort = sorted(srcCounter.items(),key=lambda x:x[1],reverse=True)
+    seqCountSummary = dict(seq=list(),rank=list(),logrank=list(),count=list())
+    seq_discarded = []
     for idx,countSet in enumerate(seqCount_sort):
         if countSet[0]=="-":
+            continue
+        if countSet[1]<min_num_reads:
+            seq_discarded.append(countSet[1])
             continue
         seqCountSummary["seq"].append(countSet[0])
         seqCountSummary["count"].append(countSet[1])
@@ -70,7 +77,6 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore):
     seedlen=math.floor(seqlen_min/2)
 
     seq_minority=[]
-    seq_discarded=[]
 
     if "I2M_CORRECTION" in correctOpt:
         rank_threshold=correctOpt["I2M_CORRECTION"]["rank"]
@@ -88,7 +94,6 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore):
             kneepoint_idx=int(rank_threshold)
         seq_majority=seqCountSummary["seq"][:kneepoint_idx]
         seq_minority=seqCountSummary["seq"][kneepoint_idx:analyzedPosition]
-        seq_discarded=seqCountSummary["seq"][analyzedPosition:]
         print("Majority length",str(len(seq_majority)),flush=True)
 
         #store majority dictionary
@@ -157,30 +162,29 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore):
 
         for seq in seq_minority+seq_discarded:
             correctionDict_wl[seq]="-"
-            if not correctionDict_maj[seq]=="-":
-                corrected_with_majority=correctionDict_maj[seq]
-                if not correctionDict_wl[corrected_with_majority]=="-":
-                    correctionDict_wl[seq]=correctionDict_wl[corrected_with_majority]
+            if correctionDict_maj.get(seq):
+                if not correctionDict_maj[seq]=="-":
+                    corrected_with_majority=correctionDict_maj[seq]
+                    if not correctionDict_wl[corrected_with_majority]=="-":
+                        correctionDict_wl[seq]=correctionDict_wl[corrected_with_majority]
 
         correctionDict["correctionDict"]=correctionDict_wl
         correctionDict["reference"]=wl
 
     total_count=0
-    t3=time.time()
-    # print("make plotting data...",flush=True)
     rawSeqIndexDict={k:v for v,k in enumerate(seqCountSummary["seq"])}
     for i in correctionDict["correctionDict"]:
         if correctionDict["correctionDict"][i]!="-":
             total_count+=seqCountSummary["count"][rawSeqIndexDict[i]]
-    # print("plotting data was made",round(time.time()-t3),flush=True)
-    # print("plotting...\n",flush=True)
     fig=plt.figure()
     p1=fig.add_subplot(1,1,1)
+
     if "-" in seqCountSummary["seq"]:
         idx_nohit=seqCountSummary["seq"].index("-")
         del seqCountSummary["count"][idx_nohit]
         del seqCountSummary["rank"][len(seqCountSummary["rank"])-1]
     p1.plot(seqCountSummary["rank"],seqCountSummary["count"],c="pink")
+
     if show_summary:
         p1.text(1,2,"detected barcode: "+str(sum(seqCountSummary["count"])))
         p1.text(1,1,"corrected barcode: "+str(total_count))
@@ -188,6 +192,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore):
         plt.vlines(kneepoint_idx,min(seqCountSummary["count"]),max(seqCountSummary["count"]),linestyles="dashed")
         p1.text(kneepoint_idx+1,max(seqCountSummary["count"]),kneepoint_idx)
     plt.xscale("log")
+    
     if yaxis_scale=="log":
         plt.yscale("log")
 

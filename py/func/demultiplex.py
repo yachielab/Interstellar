@@ -10,6 +10,7 @@ import re
 import glob
 import sys
 import shutil
+import time
 
 class UnknownError(Exception):
     pass
@@ -57,6 +58,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             raise UnknownError("Segment "+segment+" is not defined in the config file.")
         
     cmd="demultiplex"
+    t = time.time()
     njobdict=dict()
     for sampledir in sampledir_list:
         L_tmp=glob.glob(sampledir+"/demultiplex/_work/*")
@@ -173,3 +175,5 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         for sampledir in sampledir_list:
             jid_now="demulti_filemerge"+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Demultiplex",jid_now,sampledir+"/qlog",njobdict[sampledir])
+    
+    print("Elapsed time for demultiplexing files",round(round(time.time() - t)/60,2),"minutes\n")

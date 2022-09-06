@@ -397,7 +397,7 @@ def optimize_value_table_parallel_wrapper(df_chunk,d2s_dict,roots,edge_dict,sett
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=8)(
+    retLst = Parallel(n_jobs=ncore,backend='threading',verbose=8)(
         delayed(optimize_value_process)(df_subchunk,d2s_dict,roots,edge_dict,settings,globalComponents,sample_now,global_used_in_dest,destname_dict,tree) for df_subchunk in df_subchunks)
     return pd.concat(retLst)
 
@@ -419,6 +419,7 @@ def quality_conversion_process(q_val_subchunk,segments_used,destname_dict):
 # Multithreading implementation for optimizing value table
 def quality_conversion_parallel_wrapper(df_chunk,segments_used,destname_dict,ncore):
     # Further split the data chunks into subchunks by the number of CPUs
+    ncore = 1
     df_subchunks = np.array_split(df_chunk,ncore)
 
     retLst = Parallel(n_jobs=ncore,verbose=8)(

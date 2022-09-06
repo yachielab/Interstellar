@@ -57,10 +57,10 @@ class BARISTA_QC(object):
                     seq_chunk.to_csv(outprefix+"_srcSeq.QC.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
                 else:
                     seq_chunk.to_csv(outprefix+"_srcSeq.QC.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
-            
+                            
             # Export the count up data
             with gzip.open(outprefix+"_srcCount.QC.pkl.gz",mode="wb") as p:
                 pickle.dump(counterDict,p)
-            
+                        
             # Copy the quality score table from the import folder to the qc folder to make the file structure consistent
             shutil.copyfile(qual,outprefix+"_srcQual.QC.tsv.gz")

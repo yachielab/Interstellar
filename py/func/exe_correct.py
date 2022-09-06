@@ -131,7 +131,8 @@ class BARISTA_CORRECT(object):
                 correctionDictionaries[correctedComponent]["correctionDict"]=barcodeCorrecter.gen_bt_dict(bc_file,clstr_file)
 
             elif "I2M_CORRECTION" in correctOpt["func_ordered"] or "M2A_CORRECTION" in correctOpt["func_ordered"]:
-                correctedTables=barcodeCorrecter.bcCorrect(correctOpt,self.counterDict,self.settings.yaxis_scale,self.settings.show_summary,self.settings.outFilePath_and_Prefix,self.settings.ncore)
+                min_num_reads = correctOpt["I2M_CORRECTION"]["min_num_reads"] if "I2M_CORRECTION" in correctOpt["func_ordered"] else correctOpt["M2A_CORRECTION"]["min_num_reads"]
+                correctedTables=barcodeCorrecter.bcCorrect(correctOpt,self.counterDict,self.settings.yaxis_scale,self.settings.show_summary,self.settings.outFilePath_and_Prefix,self.settings.ncore,min_num_reads)
                 correctionDictionaries[correctedComponent]=correctedTables
             
             else:

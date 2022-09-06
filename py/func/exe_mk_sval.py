@@ -83,18 +83,19 @@ class BARISTA_MAKE_S(object):
     def make_s_value(self):
         with gzip.open(self.settings.correctionDictPkl) as p:
             correctionDictionaries=pickle.load(p)
+        
+        ref_dic={}
+        for component_corrected_now in correctionDictionaries:
+            ref_tup=tuple(correctionDictionaries[component_corrected_now]["reference"])
+            ref_dic[component_corrected_now]={k:v for k,v in zip(ref_tup,range(len(ref_tup)))}
 
         for qual,outprefix in zip(self.settings.rawFastqPath["qual"], self.settings.outFilePath_and_Prefix_list):
             parsedSeq_raw_chunk=pd.read_csv(outprefix+"_correct_result.tsv.gz", sep='\t',chunksize=1000000)
             parsedQual_raw_chunk=pd.read_csv(qual, sep='\t',chunksize=1000000,quoting=csv.QUOTE_NONE)
             components_raw=self.components_raw
 
-            ref_dic={}
-            for component_corrected_now in correctionDictionaries:
-                ref_tup=tuple(correctionDictionaries[component_corrected_now]["reference"])
-                ref_dic[component_corrected_now]={k:v for k,v in zip(ref_tup,range(len(ref_tup)))}
-            with gzip.open(outprefix+"_sseq_to_svalue.pkl.gz",mode="wb") as p:
-                    pickle.dump(ref_dic,p)
+            # with gzip.open(outprefix+"_sseq_to_svalue.pkl.gz",mode="wb") as p:
+            #         pickle.dump(ref_dic,p)
                                     
             for cat in ["seq","qual"]:  
                 if cat=="seq":

@@ -13,7 +13,7 @@ import os
 import re
 import glob
 import sys
-import copy
+import time
 
 class UnknownError(Exception):
     pass
@@ -94,6 +94,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                             raise UnknownError("The segment "+i+" is not availbale for the read structure configuration.")
 
     cmd="buildTree"
+    t = time.time()
     njobdict=dict()
     for sampledir in sampledir_list:
         file_endfix="_correct_srcValue.tsv.gz"
@@ -126,10 +127,11 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Building tree",jid_now,sampledir+"/qlog",njobdict[sampledir])
+    print("Elapsed time for building value trees",round(round(time.time() - t)/60,2),"minutes\n")
 
 
-
-    cmd="mergeTree"    
+    cmd="mergeTree"
+    t = time.time()
     if is_qsub:
         mem_key="mem_mergeTree"
         # print("Running qsub jobs...: Merging trees",flush=True)
@@ -158,10 +160,12 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     if is_qsub:
         jid_now=cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"]
         interstellar_setup.job_wait("Merging tree",jid_now,sampledir_list[0]+"/qlog",njob)
+    print("Elapsed time for merging value trees",round(round(time.time() - t)/60,2),"minutes\n")
 
 
 
     cmd="convert"
+    t = time.time()
     njobdict=dict()
     if is_multisample:
         mergetree_dir=proj_dir+"/_multisample/mergeTree"
@@ -211,7 +215,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Value optimization",jid_now,sampledir+"/qlog",njobdict[sampledir])
-
+    print("Elapsed time for generating optimized value tables",round(round(time.time() - t)/60,2),"minutes\n")
 
 
     # if cfg["bc_sort"]:
@@ -259,6 +263,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
 
 
     cmd="export"
+    t = time.time()
     mem_key="mem_export"
     njobdict=dict()
     for sampledir in sampledir_list:
@@ -341,3 +346,4 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 if s.returncode != 0:
                     print("Job failed: Sequence export", file=sys.stderr)
                     sys.exit(1)
+    print("Elapsed time for generating FASTQ files",round(round(time.time() - t)/60,2),"minutes\n")
