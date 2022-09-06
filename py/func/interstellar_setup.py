@@ -349,7 +349,7 @@ class SETUP(object):
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"buildTree")
             
             #mergeTree
-            sh_cmd_list=["Interstellar-exec","mergeTree","-conf",self.cfgpath,"-o","$1","-lp","$2","-ncore",num_cores_max]
+            sh_cmd_list=["Interstellar-exec","mergeTree","-conf",self.cfgpath,"-o","$1","-lp","$2","-ncore",num_cores]
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv","-d",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/mergeTree"]
