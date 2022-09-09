@@ -305,9 +305,13 @@ def merge_count_tree_parallel_wrapper(pkl_path_list,ncore):
     # First round, input = path
     count_tree_list = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=8)(
         delayed(merge_count_tree)(pkl_path_pair,path=True) for pkl_path_pair in pkl_path_pairs)
+    print("First round merge done.")
 
     # 2nd~ round, iterate the pair merging processes until everything is merged
+    cnt = 0
     while True:
+        cnt += 1
+        print("Merging cycle",cnt,flush=True)
         if len(count_tree_list) == 1:
             # Exit condition: everything is merged
             return count_tree_list[0]
