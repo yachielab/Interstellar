@@ -1,3 +1,4 @@
+from glob import glob
 from kneed import KneeLocator
 import regex
 import math
@@ -21,13 +22,13 @@ def getRawIndex(seq,rawReference):
 
 
 # Helper function for error correction
-def sequenceCorrection(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset):
-    seq_chunk = seq_chunk.map(lambda x:findClosestCandidate(x,suggestion_verbosity,correctOpt[correction_method]["levenshtein_distance"],symspelldb,wlset))
+def sequenceCorrection(seq_chunk,suggestion_verbosity,correctOpt,correction_method,wlset_flag):
+    seq_chunk = seq_chunk.map(lambda x:findClosestCandidate(x,suggestion_verbosity,correctOpt[correction_method]["levenshtein_distance"],wlset_flag))
     return seq_chunk
 
 # Return closest hit
-def findClosestCandidate(seq,suggestion_verbosity,dist_thresh,symspelldb,wlset):
-    if wlset:
+def findClosestCandidate(seq,suggestion_verbosity,dist_thresh,wlset_flag):
+    if wlset_flag:
         if seq in wlset:
             return seq
     suggestions = symspelldb.lookup(seq,suggestion_verbosity,dist_thresh,transfer_casing=True)
@@ -38,12 +39,12 @@ def findClosestCandidate(seq,suggestion_verbosity,dist_thresh,symspelldb,wlset):
         return "-"
 
 # Multithreading implementation for error correction
-def correct_parallel_wrapper(seq_series,suggestion_verbosity,correctOpt,correction_method,symspelldb,ncore,wlset=None):
+def correct_parallel_wrapper(seq_series,suggestion_verbosity,correctOpt,correction_method,ncore,wlset_flag=None):
     # Split the sequence series into chunks by the number of CPUs
     seq_chunks = np.array_split(seq_series,ncore)
     
-    retLst = Parallel(n_jobs=ncore,verbose=10,backend="multiprocessing")(
-        delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,symspelldb,wlset) for seq_chunk in seq_chunks[:10])
+    retLst = Parallel(n_jobs=ncore,verbose=4,backend="multiprocessing")(
+        delayed(sequenceCorrection)(seq_chunk,suggestion_verbosity,correctOpt,correction_method,wlset_flag) for seq_chunk in seq_chunks)
     return pd.concat(retLst)
 
 
@@ -53,6 +54,8 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
     func_tmp=correctOpt["func_ordered"][0]
     srcComponent = correctOpt[func_tmp]["source"]
     srcCounter=counterDict[srcComponent]
+    global wlset
+    global symspelldb
     
 
     seqCount_sort = sorted(srcCounter.items(),key=lambda x:x[1],reverse=True)
@@ -116,7 +119,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
             t0=time.time()
             print("Imputation-to-majority correction has been started...",flush=True)
             seq_minority_pd=pd.Series(seq_minority)
-            seq_minority_pd_corrected = correct_parallel_wrapper(seq_minority_pd,suggestion_verbosity,correctOpt,"I2M_CORRECTION",symspelldb,ncore)
+            seq_minority_pd_corrected = correct_parallel_wrapper(seq_minority_pd,suggestion_verbosity,correctOpt,"I2M_CORRECTION",ncore)
             # seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["I2M_CORRECTION"]["levenshtein_distance"],symspelldb))
 
             correctionDict_maj={k:v for k,v in zip(list(seq_minority_pd),list(seq_minority_pd_corrected))}
@@ -128,6 +131,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
         for seq in seq_discarded:
             correctionDict_maj[seq]="-"
         correctionDict=dict(correctionDict=correctionDict_maj,reference=seq_majority)
+        del symspelldb
 
     # Mapping-to-allowlist
     if "M2A_CORRECTION" in correctOpt["func_ordered"]:
@@ -153,7 +157,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
         seq_majority_pd=pd.Series(seq_majority)
         print("Correct...",flush=True)
         t0=time.time()
-        seq_majority_pd_corrected = correct_parallel_wrapper(seq_majority_pd,suggestion_verbosity,correctOpt,"M2A_CORRECTION",symspelldb,ncore,wlset)
+        seq_majority_pd_corrected = correct_parallel_wrapper(seq_majority_pd,suggestion_verbosity,correctOpt,"M2A_CORRECTION",ncore,wlset_flag="yes")
         # seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["M2A_CORRECTION"]["levenshtein_distance"],symspelldb,wlset))
         print("Done.",time.time()-t0,flush=True)
         correctionDict_wl={k:v for k,v in zip(list(seq_majority_pd),list(seq_majority_pd_corrected))}
@@ -313,7 +317,7 @@ def seqCleanUp_parallel_wrapper(df_chunk,segments_raw,correctionDictionaries,set
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=10)(
+    retLst = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=2)(
         delayed(gen_clean_segment_seq)(df_subchunk,segments_raw,correctionDictionaries,settings) for df_subchunk in df_subchunks)
     return pd.concat(retLst)
 
@@ -348,6 +352,6 @@ def gen_value_table_parallel_wrapper(df_chunk,cat,segments_raw,settings,correcti
     # Further split the data chunks into subchunks by the number of CPUs
     df_subchunks = np.array_split(df_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=10)(
+    retLst = Parallel(n_jobs=ncore,backend='multiprocessing',verbose=2)(
         delayed(seq_to_value_table)(df_subchunk,cat,segments_raw,settings,correctionDictionaries,ref_dic) for df_subchunk in df_subchunks)
     return pd.concat(retLst)

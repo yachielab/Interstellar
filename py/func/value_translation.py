@@ -97,7 +97,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     t = time.time()
     njobdict=dict()
     for sampledir in sampledir_list:
-        file_endfix="_correct_srcValue.tsv.gz"
+        file_endfix="_correct_srcValue.pkl"
         file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*") if re.search(file_endfix,i)]
         if is_qsub:
             mem_key="mem_buildTree"
@@ -182,7 +182,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         sampledir_to_mergetree={k:k+"/value_translation/_work/mergeTree/merge_mergeTree.pkl.gz" for k in sampledir_list}
 
     for sampledir in sampledir_list:
-        file_endfix="_correct_srcValue.tsv.gz"
+        file_endfix="_correct_srcValue.pkl"
         file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*") if re.search(file_endfix,i)]
         mergetree=sampledir_to_mergetree[sampledir]
         
@@ -194,7 +194,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 
             for f in file_pool:
                 outname_now=re.sub(file_endfix,"",os.path.basename(f))
-                qcmd_now=qcmd_base+[sampledir+"/sh/convert.sh",outname_now,mergetree,f,re.sub(file_endfix,"_correct_srcQual.tsv.gz",f)]
+                qcmd_now=qcmd_base+[sampledir+"/sh/convert.sh",outname_now,mergetree,f,re.sub(file_endfix,"_correct_srcQual.pkl",f)]
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 if s.returncode != 0:
@@ -203,7 +203,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             njobdict[sampledir]=len(file_pool)
         else:
             file_pool_concat = ",".join(file_pool)
-            qual_file_pool_concat = re.sub(file_endfix,"_correct_srcQual.tsv.gz",file_pool_concat)
+            qual_file_pool_concat = ",".join([sampledir+"/value_extraction/_work/mk_sval/"+re.sub(file_endfix,"",os.path.basename(f))+"_correct_srcQual.pkl" for f in file_pool])
             outname_now=",".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
             cmd_now=[sampledir+"/sh/convert.sh",outname_now,mergetree,file_pool_concat,qual_file_pool_concat]
             cmd_now=" ".join(cmd_now)
@@ -267,25 +267,22 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
     mem_key="mem_export"
     njobdict=dict()
     for sampledir in sampledir_list:
-        file_endfix="_correct_srcValue.tsv.gz"
-        is_qc=checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
+        file_endfix="_correct_srcValue.pkl"
+        is_qc=checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
         if is_qc:
-            file_endfix="_srcSeq.QC.tsv.gz"
+            file_endfix="_srcSeq.QC.pkl"
             file_prefix=[os.path.basename(i).replace(file_endfix,"") for i in glob.glob(sampledir+"/value_extraction/_work/qc/*") if re.search(file_endfix,i)]
         else:
-            file_endfix="_srcSeq.tsv.gz"
+            file_endfix="_srcSeq.pkl"
             file_prefix=[os.path.basename(i.replace(file_endfix,"")) for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search(file_endfix,i)]
         njobdict[sampledir]=len(file_prefix)
 
         if is_qsub:
             for outname_now in file_prefix:
-                dval =sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_value.tsv.gz"
-                dqual=sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_qual.tsv.gz"
+                dval =sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_value.pkl"
+                dqual=sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_qual.pkl"
                 sseq =sampledir+"/value_extraction/_work/mk_sval/"+outname_now+"_correct_result.tsv.gz"
-                if is_qc:
-                    squal=sampledir+"/value_extraction/_work/qc/"+outname_now+"_srcQual.QC.tsv.gz"
-                else:
-                    squal=sampledir+"/value_extraction/_work/import/"+outname_now+"_srcQual.tsv.gz"
+                squal=sampledir+"/value_extraction/_work/import/"+outname_now+"_srcQual.pkl"
                 
                 if is_multisample:
                     sizedict=proj_dir+"/_multisample/mergeTree/merge_"+os.path.basename(sampledir)+"_size_info.pkl.gz"
@@ -304,13 +301,10 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     print("qsub failed: Export", file=sys.stderr)
                     sys.exit(1)
         else:
-            dval = ",".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_value.tsv.gz" for p in file_prefix])
-            dqual= ",".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_qual.tsv.gz" for p in file_prefix])
+            dval = ",".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_value.pkl" for p in file_prefix])
+            dqual= ",".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_qual.pkl" for p in file_prefix])
             sseq = ",".join([sampledir+"/value_extraction/_work/mk_sval/"+p+"_correct_result.tsv.gz" for p in file_prefix])
-            if is_qc:
-                squal = ",".join([sampledir+"/value_extraction/_work/qc/"+p+"_srcQual.QC.tsv.gz" for p in file_prefix])
-            else:
-                squal = ",".join([sampledir+"/value_extraction/_work/import/"+p+"_srcQual.tsv.gz" for p in file_prefix])
+            squal = ",".join([sampledir+"/value_extraction/_work/import/"+p+"_srcQual.pkl" for p in file_prefix])
             outname_now = ",".join(file_prefix)
             
             if is_multisample:

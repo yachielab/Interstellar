@@ -1,7 +1,7 @@
 from . import settingImporter
 from . import barcodeConverter
 from . import settingRequirementCheck
-import regex
+import sys
 import pandas as pd
 import numpy as np
 import gzip
@@ -66,8 +66,10 @@ class BARISTA_CONVERT(object):
 
             with gzip.open(self.settings.tree,mode="rb") as p:
                 tree=pickle.load(p)
-            s_val =pd.read_csv(sval_path,sep='\t',dtype=str,chunksize=1000000)
-            s_qual=pd.read_csv(squal_path,sep='\t',chunksize=1000000)
+            # s_val =pd.read_csv(sval_path,sep='\t',dtype=str,chunksize=1000000)
+            # s_qual=pd.read_csv(squal_path,sep='\t',chunksize=1000000)
+            s_val =[pd.read_pickle(sval_path)]
+            s_qual=[pd.read_pickle(squal_path)]
 
             #s-value conversion
             print("Start converting s-values...")
@@ -114,9 +116,10 @@ class BARISTA_CONVERT(object):
                 #                 compressed_svalue[destname_dict[child]] = s_val_tmp.map(lambda x: barcodeConverter.compression_local(x,component=child,Tree=tree))
                 compressed_svalue = barcodeConverter.optimize_value_table_parallel_wrapper(s_val_chunk,d2s_dict,roots,edge_dict,self.settings,globalComponents,sample_now,global_used_in_dest,destname_dict,tree,self.settings.ncore)
                 if n_chunk==0:
-                    compressed_svalue.to_csv(prefix+"_converted_value.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
-                else:
-                    compressed_svalue.to_csv(prefix+"_converted_value.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+                    # compressed_svalue.to_csv(prefix+"_converted_value.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
+                    compressed_svalue.to_pickle(prefix+"_converted_value.pkl")
+                # else:
+                #     compressed_svalue.to_csv(prefix+"_converted_value.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
 
             #Quality conversion
             print("Start converting read qualities...")
@@ -134,9 +137,11 @@ class BARISTA_CONVERT(object):
                     
                 #     compressed_qvalue[destname_dict[component]]=average_qvalue
                 compressed_qvalue = barcodeConverter.quality_conversion_parallel_wrapper(q_val_chunk,components_used,destname_dict,self.settings.ncore)
+                
 
                 if n_chunk==0:
-                    compressed_qvalue.to_csv(prefix+"_converted_qual.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
-                else:
-                    compressed_qvalue.to_csv(prefix+"_converted_qual.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+                    # compressed_qvalue.to_csv(prefix+"_converted_qual.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
+                    compressed_qvalue.to_pickle(prefix+"_converted_qual.pkl")
+                # else:
+                #     compressed_qvalue.to_csv(prefix+"_converted_qual.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
         

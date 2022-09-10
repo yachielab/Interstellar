@@ -154,10 +154,15 @@ class BARISTA_EXPORT(object):
 
         for d_val_path,d_qual_path,s_seq_path,s_qual_path,prefix in zip(self.settings.destValue,self.settings.destQual,self.settings.rawSeq,self.settings.rawQual,self.settings.outFilePath_and_Prefix_list):
             
-            d_val=pd.read_csv(d_val_path,sep='\t',dtype=str,chunksize=500000)
-            d_qual=pd.read_csv(d_qual_path,sep='\t',dtype=str,chunksize=500000)
+            # d_val=pd.read_csv(d_val_path,sep='\t',dtype=str,chunksize=500000)
+            # d_qual=pd.read_csv(d_qual_path,sep='\t',dtype=str,chunksize=500000)
             s_seq=pd.read_csv(s_seq_path,sep='\t',dtype=str,chunksize=500000)
-            s_qual=pd.read_csv(s_qual_path,sep='\t',dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
+            # s_qual=pd.read_csv(s_qual_path,sep='\t',dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
+
+            d_val=[pd.read_pickle(d_val_path)]
+            d_qual=[pd.read_pickle(d_qual_path)]
+            s_qual=[pd.read_pickle(s_qual_path)]
+            
 
             chunkCount=0
             for df_chunk_zip in zip(d_val,d_qual,s_seq,s_qual):
@@ -169,7 +174,6 @@ class BARISTA_EXPORT(object):
                 # x = np.array_split(df_test,self.settings.ncore)
                 # print(x[0].head())
                 # print("#####\n")
-
 
                 for read_now in export_read_exist:
                     print("Start processing ",read_now+", chunk",chunkCount,"...",flush=True)

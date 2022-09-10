@@ -66,7 +66,8 @@ class BARISTA_BUILDTREE(object):
 
             count_tree={}
 
-            s_val=pd.read_csv(val_file_path,sep='\t',dtype=str,chunksize=1000000)
+            # s_val=pd.read_csv(val_file_path,sep='\t',dtype=str,chunksize=1000000)
+            s_val=[pd.read_pickle(val_file_path)]
             for n_chunk,s_val_chunk in enumerate(s_val):
                 print("Sample:",sample_now,"| Building a count tree for chunk",n_chunk,"start...",flush=True)
                 count_tree = barcodeConverter.build_count_tree_parallel_wrapper(s_val_chunk,roots,edge_dict,d2s_dict,self.settings,globalComponents,sample_now,count_tree,self.settings.ncore)

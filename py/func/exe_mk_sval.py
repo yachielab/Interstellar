@@ -5,7 +5,7 @@ import csv
 import pandas as pd
 import gzip
 import pickle
-import time
+import sys
 
 class settings_make_s(object):
     def __init__(self,opt):
@@ -46,7 +46,8 @@ class BARISTA_MAKE_S(object):
             correctionDictionaries=pickle.load(p)
 
         for seq,outprefix in zip(self.settings.rawFastqPath["seq"], self.settings.outFilePath_and_Prefix_list):
-            parsedSeq_raw_chunk=pd.read_csv(seq, sep='\t', chunksize=1000000)
+            # parsedSeq_raw_chunk=pd.read_csv(seq, sep='\t', chunksize=1000000)
+            parsedSeq_raw_chunk=[pd.read_pickle(seq)]
             components_raw=[]
             for k in self.settings.corrected_components:
                 func_tmp=self.settings.correctOptDict[k]["func_ordered"][0]
@@ -56,6 +57,7 @@ class BARISTA_MAKE_S(object):
             for cnt,parsedSeq_raw_df in enumerate(parsedSeq_raw_chunk):
                 print("Making a sequence table for chunk",cnt,"...",flush=True)
                 parsedSeq_raw_df = barcodeCorrecter.seqCleanUp_parallel_wrapper(parsedSeq_raw_df,components_raw,correctionDictionaries,self.settings,self.settings.ncore)
+
                 # cols_ordered=["Header"]+[i for i in sorted(parsedSeq_raw_df.columns) if not i=="Header"]
                 # cols_ordered_final=[]
                 # for ncol,component_raw_now in enumerate(cols_ordered):
@@ -74,6 +76,8 @@ class BARISTA_MAKE_S(object):
                 #     else:
                 #         cols_ordered_final.append("Header")
                 # parsedSeq_raw_df = parsedSeq_raw_df[cols_ordered_final]
+                
+                # kokokara
                 if cnt==0:
                     parsedSeq_raw_df.to_csv(outprefix+"_correct_result.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
                 else:
@@ -91,7 +95,8 @@ class BARISTA_MAKE_S(object):
 
         for qual,outprefix in zip(self.settings.rawFastqPath["qual"], self.settings.outFilePath_and_Prefix_list):
             parsedSeq_raw_chunk=pd.read_csv(outprefix+"_correct_result.tsv.gz", sep='\t',chunksize=1000000)
-            parsedQual_raw_chunk=pd.read_csv(qual, sep='\t',chunksize=1000000,quoting=csv.QUOTE_NONE)
+            # parsedQual_raw_chunk=pd.read_csv(qual, sep='\t',chunksize=1000000,quoting=csv.QUOTE_NONE)
+            parsedQual_raw_chunk=[pd.read_pickle(qual)]
             components_raw=self.components_raw
 
             # with gzip.open(outprefix+"_sseq_to_svalue.pkl.gz",mode="wb") as p:
@@ -127,14 +132,15 @@ class BARISTA_MAKE_S(object):
                     #                 res[component_corrected_now]=parsedSeq_df[component].map(lambda x: barcodeCorrecter.seq_to_val_ver2(x,dic=ref_dic[component_corrected_now]))
                     #             else:
                     #                 res[component_corrected_now]=parsedSeq_df[component_raw_now].map(barcodeCorrecter.qualityProcessing)
-
                     if cnt == 0:
                         if cat=="seq":
-                            res.to_csv(outprefix+"_correct_srcValue.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
+                            # res.to_csv(outprefix+"_correct_srcValue.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
+                            res.to_pickle(outprefix+"_correct_srcValue.pkl")
                         else:
-                            res.to_csv(outprefix+"_correct_srcQual.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
-                    elif cnt > 0:
-                        if cat=="seq":
-                            res.to_csv(outprefix+"_correct_srcValue.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
-                        else:
-                            res.to_csv(outprefix+"_correct_srcQual.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+                            # res.to_csv(outprefix+"_correct_srcQual.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
+                            res.to_pickle(outprefix+"_correct_srcQual.pkl")
+                    # elif cnt > 0:
+                    #     if cat=="seq":
+                    #         res.to_csv(outprefix+"_correct_srcValue.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+                    #     else:
+                    #         res.to_csv(outprefix+"_correct_srcQual.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)

@@ -79,8 +79,11 @@ class BARISTA_DEMULTIPLEX(object):
     def demultiplex(self):
         for sseq_path,avg_qual_path,raw_qual_path,prefix in zip(self.settings.path_to_seq,self.settings.path_to_avg_qval,self.settings.path_to_rawQual,self.settings.outFilePath_and_Prefix_list):
             s_seq=pd.read_csv(sseq_path,sep='\t',dtype=str,chunksize=500000)
-            s_avg_qual=pd.read_csv(avg_qual_path,sep='\t',dtype=str,chunksize=500000)
-            s_raw_qual=pd.read_csv(raw_qual_path,sep="\t",dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
+            # s_avg_qual=pd.read_csv(avg_qual_path,sep='\t',dtype=str,chunksize=500000)
+            # s_raw_qual=pd.read_csv(raw_qual_path,sep="\t",dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
+            s_avg_qual=[pd.read_pickle(avg_qual_path)]
+            s_raw_qual=[pd.read_pickle(raw_qual_path)]
+
             demulti_key=set()
             cnt_chunk=0
             key_iden_list=[]

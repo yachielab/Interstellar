@@ -35,7 +35,8 @@ class BARISTA_TO_BT(object):
     def to_bt(self):
         dic_rowcount={k:0 for k in self.settings.bt_targets}
         for processCount,input_filepath in enumerate(self.settings.seq):
-            df_tmp=pd.read_csv(input_filepath,sep="\t")
+            # df_tmp=pd.read_csv(input_filepath,sep="\t")
+            df_tmp=pd.read_pickle(input_filepath)
 
             if self.settings.need_match:
                 df_selected=df_tmp[self.settings.need_match].replace("-",np.nan)

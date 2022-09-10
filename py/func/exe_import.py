@@ -105,9 +105,9 @@ class BARISTA_IMPORT(object):
             # else:
             #     fastqDict[readKey]=segmentImporter.sequenceGenerator(fq_path,self.settings)
             if readKey in self.settings.flash_gzipped_reads:
-                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=4000000,from_flash=True)
+                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=2000000,from_flash=True)
             else:
-                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=4000000)
+                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=2000000)
         self.fastqDict=fastqDict
 
 
@@ -159,7 +159,7 @@ class BARISTA_IMPORT(object):
                             counterDict[i]=copy.deepcopy(counterDict_tmp[i])
                 
                 numSeqDict[readKey] += n_records
-                print(1000000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)
+                print(500000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)
 
                 # if (nrow+1)%4000000==0:
                 #     n_chunk=int((nrow+1)/4000000) #n_chunk>0

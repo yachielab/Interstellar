@@ -54,13 +54,14 @@ class BARISTA_QC(object):
                 
                 # Export the quality filtered segment table to TSV
                 if n_chunk==0:
-                    seq_chunk.to_csv(outprefix+"_srcSeq.QC.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
-                else:
-                    seq_chunk.to_csv(outprefix+"_srcSeq.QC.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+                    # seq_chunk.to_csv(outprefix+"_srcSeq.QC.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
+                    seq_chunk.to_pickle(outprefix+"_srcSeq.QC.pkl")
+                # else:
+                #     seq_chunk.to_csv(outprefix+"_srcSeq.QC.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
                             
             # Export the count up data
             with gzip.open(outprefix+"_srcCount.QC.pkl.gz",mode="wb") as p:
                 pickle.dump(counterDict,p)
                         
             # Copy the quality score table from the import folder to the qc folder to make the file structure consistent
-            shutil.copyfile(qual,outprefix+"_srcQual.QC.tsv.gz")
+            # shutil.copyfile(qual,outprefix+"_srcQual.QC.tsv.gz")

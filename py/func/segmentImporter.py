@@ -1,3 +1,4 @@
+import sys
 import regex
 import gzip
 import random
@@ -239,7 +240,7 @@ def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,
     n_lines_per_CPU = 4 * n_records_per_CPU
     regex_pattern_now = settings.regexDictCompiled[readKey]
 
-    out = Parallel(n_jobs=ncore,verbose=10,backend="multiprocessing")(
+    out = Parallel(n_jobs=ncore,verbose=2,backend="multiprocessing")(
         delayed(fastq_segmentation)(cpu_idx,subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,outdir,readKey,settings.barcodes) 
             for cpu_idx,subchunk in enumerate(split_yield_fastq_per_lines(fastq_chunk,n = n_lines_per_CPU))) 
 
@@ -318,10 +319,11 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
         dict_merged_key=["Header"]+settings.components
         dict_merged_val=[dict_merged[i] for i in ["Header"]+settings.components]
         dict_merged_val=list(map(list,zip(*dict_merged_val)))
-        dict_merged_val=["\t".join(i) for i in dict_merged_val]
-        dict_merged_val="\n".join(dict_merged_val)+"\n"
-        if cpu_idx==0:
-            dict_merged_val="\t".join(dict_merged_key)+"\n"+dict_merged_val
+        dict_merged_val = pd.DataFrame(dict_merged_val,columns=dict_merged_key)
+        # dict_merged_val=["\t".join(i) for i in dict_merged_val]
+        # dict_merged_val="\n".join(dict_merged_val)+"\n"
+        # if cpu_idx==0:
+        #     dict_merged_val="\t".join(dict_merged_key)+"\n"+dict_merged_val
         
         seq_qual_tsv_list.append(dict_merged_val)
         
@@ -332,14 +334,17 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
 
 # Multithreading implementation for file merging
 def merge_parsed_data_parallel_wrapper(input_dir, settings, ncore, n_chunk):
-    retLst = Parallel(n_jobs=ncore,verbose=10)(
+    retLst = Parallel(n_jobs=ncore,verbose=2)(
         delayed(merge_parsed_data_process)(input_dir,cpu_idx,settings) for cpu_idx in range(ncore))
+
+    pd.concat([i[0] for i in retLst]).reset_index().to_pickle(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcSeq.pkl")
+    pd.concat([i[1] for i in retLst]).reset_index().to_pickle(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcQual.pkl")
     
-    with gzip.open(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcSeq.tsv.gz",mode="wt",encoding="utf-8") as w:
-        w.write("\n".join([i[0] for i in retLst]))
+    # with gzip.open(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcSeq.tsv.gz",mode="wt",encoding="utf-8") as w:
+    #     w.write("\n".join([i[0] for i in retLst]))
     
-    with gzip.open(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcQual.tsv.gz",mode="wt",encoding="utf-8") as w:
-        w.write("\n".join([i[1] for i in retLst]))
+    # with gzip.open(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcQual.tsv.gz",mode="wt",encoding="utf-8") as w:
+    #     w.write("\n".join([i[1] for i in retLst]))
 
 
 
@@ -349,7 +354,7 @@ def qfilter_parallel_wrapper(seq_chunk, qual_chunk, qc_targets, qscore_dict, nco
     seq_subchunks = np.array_split(seq_chunk,ncore)
     qual_subchunks = np.array_split(qual_chunk,ncore)
 
-    retLst = Parallel(n_jobs=ncore,verbose=10)(delayed(qualityFilteringForDataFrame)(df_set, qc_targets, qscore_dict) for df_set in zip(seq_subchunks,qual_subchunks))
+    retLst = Parallel(n_jobs=ncore,verbose=2)(delayed(qualityFilteringForDataFrame)(df_set, qc_targets, qscore_dict) for df_set in zip(seq_subchunks,qual_subchunks))
     return pd.concat(retLst)
 
 
