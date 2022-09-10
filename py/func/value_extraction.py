@@ -128,9 +128,9 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 mem_key="mem_qc"
                 # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
                 qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
+                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.pkl",i)]
                 for f in file_pool:
-                    outname_now=re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f))
+                    outname_now=re.sub(r"_srcSeq\.pkl$","",os.path.basename(f))
                     qcmd_now=qcmd_base+[sampledir+"/sh/qc.sh",outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f)]
                     qcmd_now=" ".join(qcmd_now)
                     s=subprocess.run(qcmd_now,shell=True)
@@ -140,10 +140,10 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                         sys.exit(1)
                 njobdict[sampledir]=len(file_pool)
             else:
-                seq_file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
+                seq_file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.pkl",i)]
                 seq_file_pool_concat = ",".join(seq_file_pool)
                 qual_file_pool_concat = re.sub(r"_srcSeq\.","_srcQual.",seq_file_pool_concat)
-                outname_now=",".join([re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f)) for f in seq_file_pool])
+                outname_now=",".join([re.sub(r"_srcSeq\.pkl$","",os.path.basename(f)) for f in seq_file_pool])
 
                 cmd_now=[sampledir+"/sh/qc.sh", outname_now, seq_file_pool_concat, qual_file_pool_concat]
                 cmd_now=" ".join(cmd_now)
@@ -224,7 +224,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 print("qsub failed: Sequence error correction", file=sys.stderr)
                 sys.exit(1)
         else:
-            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
+            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
             if is_qc:
                 cmd_now=[sampledir+"/sh/correct.sh",outname_now,'"'+sampledir+"/value_extraction/_work/qc/*_srcCount.QC.pkl.gz"+'"']                        
             else:
