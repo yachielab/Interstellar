@@ -1,3 +1,4 @@
+from asyncore import write
 from random import sample
 
 from pandas.core import base
@@ -31,6 +32,11 @@ def checkRequiredFile(key,flist):
         if re.search(key,f):
             return True
     return False
+
+
+def writeStringInput(input_str,filepath):
+    with open(filepath,mode="wt") as w:
+        w.write(input_str)
 
 
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,cfgpath):
@@ -90,15 +96,21 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             njobdict[sampledir]=len(file_pool)
             
         else:
-            file_pool_concat = ",".join(file_pool)
+            file_pool_concat = "\n".join(file_pool)
             # if is_qc:
             #     raw_qual = ",".join([sampledir+"/value_extraction/_work/qc/"+re.sub(file_endfix,"_srcQual.QC.tsv.gz",os.path.basename(f)) for f in file_pool])
             # else:
             #     raw_qual = ",".join([sampledir+"/value_extraction/_work/import/"+re.sub(file_endfix,"_srcQual.tsv.gz",os.path.basename(f)) for f in file_pool])
-            raw_qual = ",".join([sampledir+"/value_extraction/_work/import/"+re.sub(file_endfix,"_srcQual.pkl",os.path.basename(f)) for f in file_pool])
-            correct_qual = ",".join([os.path.dirname(f)+"/"+re.sub(file_endfix,"_correct_srcQual.pkl",os.path.basename(f)) for f in file_pool])
-            outname_now = ",".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
-            cmd_now=[sampledir+"/sh/"+cmd+".sh",outname_now,file_pool_concat,correct_qual,raw_qual]
+            raw_qual = "\n".join([sampledir+"/value_extraction/_work/import/"+re.sub(file_endfix,"_srcQual.pkl",os.path.basename(f)) for f in file_pool])
+            correct_qual = "\n".join([os.path.dirname(f)+"/"+re.sub(file_endfix,"_correct_srcQual.pkl",os.path.basename(f)) for f in file_pool])
+            outname_now = "\n".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
+
+            writeStringInput(file_pool_concat,sampledir+"/sh/seq_demulti.txt")
+            writeStringInput(raw_qual,sampledir+"/sh/srcQual_demulti.txt")
+            writeStringInput(correct_qual,sampledir+"/sh/qual_demulti.txt")
+            writeStringInput(outname_now,sampledir+"/sh/outnames_demulti.txt")
+
+            cmd_now=[sampledir+"/sh/"+cmd+".sh",sampledir+"/sh/outnames_demulti.txt",sampledir+"/sh/seq_demulti.txt",sampledir+"/sh/qual_demulti.txt",sampledir+"/sh/srcQual_demulti.txt"]
             cmd_now=" ".join(cmd_now)
             s=subprocess.run(cmd_now,shell=True)
             if s.returncode != 0:

@@ -26,11 +26,18 @@ class settings_convert(object):
         self.func_dict=func_dict
         self.samplemerge=self.opt.samplemerge
         self.samplesheet=os.path.expanduser(self.opt.samplesheet)
-        outname=self.opt.outname.split(",")
         outdir=self.opt.outdir
+        
+        if self.opt.mode_local:
+            self.path_to_sval = settingImporter.parseInputFileList(self.opt.srcValue)
+            self.path_to_qual = settingImporter.parseInputFileList(self.opt.srcQuality)
+            outname = settingImporter.parseInputFileList(self.opt.outname)
+        else:
+            self.path_to_sval = [self.opt.srcValue]
+            self.path_to_qual = [self.opt.srcQuality]
+            outname = [self.opt.outname]
         self.outFilePath_and_Prefix_list=[outdir+"/"+i for i in outname]
-        self.path_to_sval=self.opt.srcValue.split(",")
-        self.path_to_qual=self.opt.srcQuality.split(",")
+        
         value_variables=[]
         for i in self.value_segment:
             if "SEQ2VALUE" in func_dict_ext[i]["func_ordered"]:

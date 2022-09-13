@@ -319,21 +319,29 @@ class SETUP(object):
 
             # qc
             sh_cmd_list=["Interstellar-exec","qc","-conf",self.cfgpath,"-d",outdir+"/qc","-o","$1","-rs","$2","-rq","$3","-ncore","1"]
+            if not self.is_qsub:
+                sh_cmd_list += ["-mode_local"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"qc")
             
             # to_bt
             sh_cmd_list=["Interstellar-exec","to_bt","-conf",self.cfgpath,"-d",outdir+"/to_bt","-o","$1","-rs","$2","-ncore","1"]
+            if not self.is_qsub:
+                sh_cmd_list += ["-mode_local"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"to_bt")
             
             # correct
             sh_cmd_list=["Interstellar-exec","correct","-conf",self.cfgpath,"-d",outdir+"/correct","-o","$1","-ip","$2","-ncore",num_cores_max]
+            if not self.is_qsub:
+                sh_cmd_list += ["-mode_local"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"correct")
             
             # mk_sval
             sh_cmd_list=["Interstellar-exec","mk_sval","-conf",self.cfgpath,"-d",outdir+"/mk_sval","-o","$1","-rs","$2","-rq","$3","-crp","$4","-ncore","1"]
+            if not self.is_qsub:
+                sh_cmd_list += ["-mode_local"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"mk_sval")
         
@@ -346,6 +354,8 @@ class SETUP(object):
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
+            if not self.is_qsub:
+                sh_cmd_list += ["-mode_local"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"buildTree")
             
@@ -356,6 +366,8 @@ class SETUP(object):
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv","-d",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/mergeTree"]
             else:
                 sh_cmd_list+=["-d",outdir+"/mergeTree"]
+            if not self.is_qsub:
+                sh_cmd_list += ["-mode_local"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"mergeTree")
             
@@ -364,6 +376,8 @@ class SETUP(object):
             if not self.settings.cfg["general"]["SAMPLESHEET"]=="":
                 sh_cmd_list.append("-samplemerge")
                 sh_cmd_list+=["-samplesheet",self.settings.cfg["general"]["PROJECT_DIR"]+"/_multisample/samplesheet/samplesheet.tsv"]
+            if not self.is_qsub:
+                sh_cmd_list += ["-mode_local"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"convert")
             # bc_sort (cannot executed in multi-sample mode.)
@@ -373,6 +387,8 @@ class SETUP(object):
             
             # export: normal
             sh_cmd_list=["Interstellar-exec","export","-conf",self.cfgpath,"-d",outdir+"/export","-o","$1","-dv","$2","-dq","$3","-rs","$4","-rq","$5","-size","$6","-export_bclist","-ncore","1"]
+            if not self.is_qsub:
+                sh_cmd_list += ["-mode_local"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"export")
             # export: bc_sort
@@ -387,6 +403,8 @@ class SETUP(object):
             sh_cmd_list=["Interstellar-exec","demultiplex","-conf",self.cfgpath,"-d",outdir,"-o","$1","-cs","$2","-cq","$3","-rq","$4","-ncore",num_cores]
             if self.settings.cfg["demultiplex"]["FORMAT"]=="tsv":
                 sh_cmd_list.append("-export_tsv")
+            if not self.is_qsub:
+                sh_cmd_list += ["-mode_local"]
             sh_cmd_line=" ".join(sh_cmd_list)
             generateShellTemplate(self.settings.cfg["general"]["SET_SHELL_ENV"],sh_cmd_line,shelldir,"demultiplex")
 

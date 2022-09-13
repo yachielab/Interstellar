@@ -19,22 +19,29 @@ class settings_qc(object):
         cfg_value_ext,dict_to_terminal = settingImporter.config_extract_value_ext(cfg)
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.qc_targets=[func_dict[val]["QUALITY_FILTER"]["source"] for val in func_dict if "QUALITY_FILTER" in func_dict[val]]
-        self.seq_list=self.opt.rawSeq.split(",")
-        self.qual_list=self.opt.rawQual.split(",")
+        if self.opt.mode_local:
+            self.seq_list = settingImporter.parseInputFileList(self.opt.rawSeq)
+            self.qual_list = settingImporter.parseInputFileList(self.opt.rawQual)
+            outname = settingImporter.parseInputFileList(self.opt.outname)
+        else:
+            self.seq_list = [self.opt.rawSeq]
+            self.qual_list = [self.opt.rawQual]
+            outname = [self.opt.outname]
+
         self.barcodes=func_dict["barcode_list"]
         self.qscore_dict=settingImporter.getQscoreDict(func_dict)
         self.ncore = int(self.opt.ncore)
-        outname=self.opt.outname.split(",")
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix_list=[outdir+"/"+i for i in outname]
+
         
 class BARISTA_QC(object):
     def __init__(self,settings):
         self.settings=settings
     def qualityCheck(self):
         for seq,qual,outprefix in zip(self.settings.seq_list,self.settings.qual_list,self.settings.outFilePath_and_Prefix_list):
-            seq_raw=pd.read_csv(seq, sep='\t',chunksize=1000000)
-            seq_qual=pd.read_csv(qual, sep="\t",chunksize=1000000,quoting=csv.QUOTE_NONE)
+            seq_raw=[pd.read_pickle(seq)]
+            seq_qual=[pd.read_pickle(qual)]
 
             counterDict={}
             for n_chunk,seq_qual_zip in enumerate(zip(seq_raw,seq_qual)):

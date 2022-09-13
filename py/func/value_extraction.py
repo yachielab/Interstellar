@@ -27,6 +27,11 @@ def genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,n_core):
     return qcmd_base
 
 
+def writeStringInput(input_str,filepath):
+    with open(filepath,mode="wt") as w:
+        w.write(input_str+"\n")
+
+
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
     used_commands=[]
     cfg,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
@@ -141,11 +146,15 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 njobdict[sampledir]=len(file_pool)
             else:
                 seq_file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.pkl",i)]
-                seq_file_pool_concat = ",".join(seq_file_pool)
+                seq_file_pool_concat = "\n".join(seq_file_pool)
                 qual_file_pool_concat = re.sub(r"_srcSeq\.","_srcQual.",seq_file_pool_concat)
-                outname_now=",".join([re.sub(r"_srcSeq\.pkl$","",os.path.basename(f)) for f in seq_file_pool])
+                outname_now="\n".join([re.sub(r"_srcSeq\.pkl$","",os.path.basename(f)) for f in seq_file_pool])
 
-                cmd_now=[sampledir+"/sh/qc.sh", outname_now, seq_file_pool_concat, qual_file_pool_concat]
+                writeStringInput(seq_file_pool_concat,sampledir+"/sh/seg_seqs_QC.txt")
+                writeStringInput(qual_file_pool_concat,sampledir+"/sh/seg_quals_QC.txt")
+                writeStringInput(outname_now,sampledir+"/sh/outnames_QC.txt")
+
+                cmd_now=[sampledir+"/sh/qc.sh", sampledir+"/sh/outnames_QC.txt", sampledir+"/sh/seg_seqs_QC.txt", sampledir+"/sh/seg_quals_QC.txt"]
                 cmd_now=" ".join(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 used_commands.append(cmd_now)
@@ -166,16 +175,19 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         cmd="to_bt"
         outname_now="to_bt"
         for sampledir in sampledir_list:
+            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
+            if is_qc:
+                file_pool = glob.glob(sampledir+"/value_extraction/_work/qc/*_srcSeq.QC.pkl")                
+            else:
+                file_pool = glob.glob(sampledir+"/value_extraction/_work/import/*_srcSeq.pkl")
+            file_pool_concat = "\n".join(file_pool)
+            writeStringInput(file_pool_concat,sampledir+"/sh/seqPkl_tobt.txt")
+
             if is_qsub:
                 mem_key="mem_to_bt"
                 # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
                 qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
-                is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-                if is_qc:
-                    qcmd_now=qcmd_base+[sampledir+"/sh/to_bt.sh",outname_now,'"'+sampledir+"/value_extraction/_work/qc/*_srcSeq.QC.pkl"+'"']                        
-                else:
-                    qcmd_now=qcmd_base+[sampledir+"/sh/to_bt.sh",outname_now,'"'+sampledir+"/value_extraction/_work/import/*_srcSeq.pkl"+'"']
-
+                qcmd_now=qcmd_base+[sampledir+"/sh/to_bt.sh",outname_now,sampledir+"/sh/seqPkl_tobt.txt"]
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
@@ -183,12 +195,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                     print("qsub failed: Bartender", file=sys.stderr)
                     sys.exit(1)
             else:
-                is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-                if is_qc:
-                    cmd_now=[sampledir+"/sh/to_bt.sh",outname_now,'"'+sampledir+"/value_extraction/_work/qc/*_srcSeq.QC.pkl"+'"']                        
-                else:
-                    cmd_now=[sampledir+"/sh/to_bt.sh",outname_now,'"'+sampledir+"/value_extraction/_work/import/*_srcSeq.pkl"+'"']
-
+                cmd_now=[sampledir+"/sh/to_bt.sh",outname_now,sampledir+"/sh/seqPkl_tobt.txt"]
                 cmd_now=" ".join(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 used_commands.append(cmd_now)
@@ -208,15 +215,18 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
     cmd="correct"
     outname_now="Interstellar"
     for sampledir in sampledir_list:
+        is_qc=interstellar_setup.checkRequiredFile("_srcCount.QC.pkl.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
+        if is_qc:
+            file_pool = glob.glob(sampledir+"/value_extraction/_work/qc/*_srcCount.QC.pkl.gz")
+        else:
+            file_pool = glob.glob(sampledir+"/value_extraction/_work/import/*_srcCount.pkl.gz")
+        file_pool_concat = "\n".join(file_pool)
+        writeStringInput(file_pool_concat,sampledir+"/sh/seqCount_correct.txt")
+
         if is_qsub:
             mem_key="mem_correct"
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"]) # This process uses maximum amount of CPUs even in qsub mode. Config is fresh since it's improted from the raw file.
-            is_qc=interstellar_setup.checkRequiredFile("_srcCount.QC.pkl.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-            if is_qc:
-                qcmd_now=qcmd_base+[sampledir+"/sh/correct.sh",outname_now,'"'+sampledir+"/value_extraction/_work/qc/*_srcCount.QC.pkl.gz"+'"']
-            else:
-                qcmd_now=qcmd_base+[sampledir+"/sh/correct.sh",outname_now,'"'+sampledir+"/value_extraction/_work/import/*_srcCount.pkl.gz"+'"']
-
+            qcmd_now=qcmd_base+[sampledir+"/sh/correct.sh",outname_now,sampledir+"/sh/seqCount_correct.txt"]
             qcmd_now=" ".join(qcmd_now)
             s=subprocess.run(qcmd_now,shell=True)
             used_commands.append(qcmd_now)
@@ -224,12 +234,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 print("qsub failed: Sequence error correction", file=sys.stderr)
                 sys.exit(1)
         else:
-            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-            if is_qc:
-                cmd_now=[sampledir+"/sh/correct.sh",outname_now,'"'+sampledir+"/value_extraction/_work/qc/*_srcCount.QC.pkl.gz"+'"']                        
-            else:
-                cmd_now=[sampledir+"/sh/correct.sh",outname_now,'"'+sampledir+"/value_extraction/_work/import/*_srcCount.pkl.gz"+'"']
-
+            cmd_now=[sampledir+"/sh/correct.sh",outname_now,sampledir+"/sh/seqCount_correct.txt"]
             cmd_now=" ".join(cmd_now)
             s=subprocess.run(cmd_now,shell=True)
             used_commands.append(cmd_now)
@@ -250,19 +255,19 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
     cmd="mk_sval"
     njobdict=dict()
     for sampledir in sampledir_list:
+        is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
+        if is_qc:
+            file_endfix="_srcSeq.QC.pkl"
+            file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/qc/*") if re.search("_srcSeq.QC.pkl",i)]              
+        else:
+            file_endfix="_srcSeq.pkl"
+            file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.pkl",i)]
+            
         if is_qsub:
             mem_key="mem_mk_sval"
             # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
             qcmd_base=qcmd_base+[sampledir+"/sh/mk_sval.sh"]
-
-            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-            if is_qc:
-                file_endfix="_srcSeq.QC.pkl"
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/qc/*") if re.search("_srcSeq.QC.pkl",i)]              
-            else:
-                file_endfix="_srcSeq.pkl"
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.pkl",i)]
                 
             for f in file_pool:
                 outname_now=re.sub(file_endfix,"",os.path.basename(f))
@@ -277,18 +282,15 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
 
             njobdict[sampledir]=len(file_pool)
         else:
-            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-            if is_qc:
-                file_endfix="_srcSeq.QC.pkl"
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/qc/*") if re.search("_srcSeq.QC.pkl",i)]              
-            else:
-                file_endfix="_srcSeq.pkl"
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.pkl",i)]
+            seq_file_pool_concat = "\n".join(file_pool)
+            qual_file_pool_concat = "\n".join([sampledir+"/value_extraction/_work/import/"+re.sub(file_endfix,"",os.path.basename(f))+"_srcQual.pkl" for f in file_pool])
+            outname_now = "\n".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
 
-            seq_file_pool_concat = ",".join(file_pool)
-            qual_file_pool_concat = ",".join([sampledir+"/value_extraction/_work/import/"+re.sub(file_endfix,"",os.path.basename(f))+"_srcQual.pkl" for f in file_pool])
-            outname_now = ",".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
-            cmd_now = [sampledir+"/sh/mk_sval.sh", outname_now, seq_file_pool_concat, qual_file_pool_concat, sampledir+"/value_extraction/_work/correct/Interstellar_srcCorrect.pkl.gz"]
+            writeStringInput(seq_file_pool_concat,sampledir+"/sh/seq_seqs_mksval.txt")
+            writeStringInput(qual_file_pool_concat,sampledir+"/sh/seg_quals_mksval.txt")
+            writeStringInput(outname_now,sampledir+"/sh/outnames_mksval.txt")
+
+            cmd_now = [sampledir+"/sh/mk_sval.sh", sampledir+"/sh/outnames_mksval.txt", sampledir+"/sh/seq_seqs_mksval.txt", sampledir+"/sh/seg_quals_mksval.txt", sampledir+"/value_extraction/_work/correct/Interstellar_srcCorrect.pkl.gz"]
             cmd_now=" ".join(cmd_now)
             s=subprocess.run(cmd_now,shell=True)
             used_commands.append(cmd_now)

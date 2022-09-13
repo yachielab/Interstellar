@@ -1,4 +1,5 @@
 import configparser
+from dataclasses import replace
 import json
 from argparse import ArgumentError, ArgumentParser
 from random import sample
@@ -751,3 +752,10 @@ def exportOptionParse(exportOption):
             exportOptDict[eachOpt.split(":")[0]]=eachOpt.split(":")[1]    
     return exportOptDict
 
+
+def parseInputFileList(in_path):
+    L = []
+    with open(in_path,mode="rt") as f:
+        for x in f:
+            L.append(x.replace("\n","")) 
+    return L

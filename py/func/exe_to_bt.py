@@ -22,7 +22,7 @@ class settings_to_bt(object):
         #     self.need_match=cfg_to_bt["need_match"].split(",")
         # else:
         self.need_match=None
-        self.seq=self.opt.rawSeq
+        self.seq=settingImporter.parseInputFileList(self.opt.rawSeq)
         outname=self.opt.outname
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix=regex.sub("/$","",str(outdir))+"/"+str(outname)

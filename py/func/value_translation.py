@@ -36,6 +36,11 @@ def checkRequiredFile(key,flist):
     return False
 
 
+def writeStringInput(input_str,filepath):
+    with open(filepath,mode="wt") as w:
+        w.write(input_str)
+
+
 def configRewrite(cfgpath,outdir,outnamedict):
     with open(cfgpath,mode="rt") as r:
         cfg_orig=[re.sub("\\t|\\n| ","",i) for i in r]
@@ -115,9 +120,13 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     sys.exit(1)
             njobdict[sampledir]=len(file_pool)
         else:
-            file_pool_concat = ",".join(file_pool)
-            outname_now=",".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
-            cmd_now=[sampledir+"/sh/buildTree.sh",outname_now,file_pool_concat]
+            file_pool_concat = "\n".join(file_pool)
+            outname_now="\n".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
+
+            writeStringInput(file_pool_concat,sampledir+"/sh/srcValues_buildTree.txt")
+            writeStringInput(outname_now,sampledir+"/sh/outnames_buildTree.txt")
+
+            cmd_now=[sampledir+"/sh/buildTree.sh",sampledir+"/sh/outnames_buildTree.txt",sampledir+"/sh/srcValues_buildTree.txt"]
             cmd_now=" ".join(cmd_now)
             s=subprocess.run(cmd_now,shell=True)
             if s.returncode != 0:
@@ -132,6 +141,10 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
 
     cmd="mergeTree"
     t = time.time()
+    file_pool = glob.glob(proj_dir+"/*/value_translation/_work/buildTree/*_Tree.pkl.gz")
+    file_pool_concat = "\n".join(file_pool)
+    writeStringInput(file_pool_concat, sampledir_list[0]+"/sh/valueTrees_mergeTree.txt")
+
     if is_qsub:
         mem_key="mem_mergeTree"
         # print("Running qsub jobs...: Merging trees",flush=True)
@@ -142,7 +155,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         qcmd_base=["qsub","-e",sampledir_list[0]+"/qlog","-o",sampledir_list[0]+"/qlog","-cwd","-N",cmd+param_dict[os.path.basename(sampledir_list[0])]["today_now"],qoption]
             
         outname_now="merge"
-        qcmd_now=qcmd_base+[sampledir_list[0]+"/sh/mergeTree.sh",outname_now,'"'+proj_dir+"/*/value_translation/_work/buildTree/*_Tree.pkl.gz"+'"']
+        qcmd_now=qcmd_base+[sampledir_list[0]+"/sh/mergeTree.sh",outname_now,sampledir_list[0]+"/sh/valueTrees_mergeTree.txt"]
         qcmd_now=" ".join(qcmd_now)
         s=subprocess.run(qcmd_now,shell=True)
         if s.returncode != 0:
@@ -151,7 +164,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         njob=1
     else:
         outname_now="merge"
-        cmd_now=[sampledir_list[0]+"/sh/mergeTree.sh",outname_now,'"'+proj_dir+"/*/value_translation/_work/buildTree/*_Tree.pkl.gz"+'"']
+        cmd_now=[sampledir_list[0]+"/sh/mergeTree.sh",outname_now,sampledir_list[0]+"/sh/valueTrees_mergeTree.txt"]
         cmd_now=" ".join(cmd_now)
         s=subprocess.run(cmd_now,shell=True)
         if s.returncode != 0:
@@ -202,10 +215,15 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     sys.exit(1)
             njobdict[sampledir]=len(file_pool)
         else:
-            file_pool_concat = ",".join(file_pool)
-            qual_file_pool_concat = ",".join([sampledir+"/value_extraction/_work/mk_sval/"+re.sub(file_endfix,"",os.path.basename(f))+"_correct_srcQual.pkl" for f in file_pool])
-            outname_now=",".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
-            cmd_now=[sampledir+"/sh/convert.sh",outname_now,mergetree,file_pool_concat,qual_file_pool_concat]
+            file_pool_concat = "\n".join(file_pool)
+            qual_file_pool_concat = "\n".join([sampledir+"/value_extraction/_work/mk_sval/"+re.sub(file_endfix,"",os.path.basename(f))+"_correct_srcQual.pkl" for f in file_pool])
+            outname_now="\n".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
+
+            writeStringInput(file_pool_concat, sampledir+"/sh/srcValue_convert.txt")
+            writeStringInput(qual_file_pool_concat, sampledir+"/sh/srcQual_convert.txt")
+            writeStringInput(outname_now, sampledir+"/sh/outname_convert.txt")
+
+            cmd_now=[sampledir+"/sh/convert.sh",sampledir+"/sh/outname_convert.txt",mergetree,sampledir+"/sh/srcValue_convert.txt",sampledir+"/sh/srcQual_convert.txt"]
             cmd_now=" ".join(cmd_now)
             s=subprocess.run(cmd_now,shell=True)
             if s.returncode != 0:
@@ -301,11 +319,17 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                     print("qsub failed: Export", file=sys.stderr)
                     sys.exit(1)
         else:
-            dval = ",".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_value.pkl" for p in file_prefix])
-            dqual= ",".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_qual.pkl" for p in file_prefix])
-            sseq = ",".join([sampledir+"/value_extraction/_work/mk_sval/"+p+"_correct_result.tsv.gz" for p in file_prefix])
-            squal = ",".join([sampledir+"/value_extraction/_work/import/"+p+"_srcQual.pkl" for p in file_prefix])
-            outname_now = ",".join(file_prefix)
+            dval = "\n".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_value.pkl" for p in file_prefix])
+            dqual= "\n".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_qual.pkl" for p in file_prefix])
+            sseq = "\n".join([sampledir+"/value_extraction/_work/mk_sval/"+p+"_correct_result.tsv.gz" for p in file_prefix])
+            squal = "\n".join([sampledir+"/value_extraction/_work/import/"+p+"_srcQual.pkl" for p in file_prefix])
+            outname_now = "\n".join(file_prefix)
+
+            writeStringInput(dval, sampledir+"/sh/optVal_export.txt")
+            writeStringInput(dqual, sampledir+"/sh/qualVal_export.txt")
+            writeStringInput(sseq, sampledir+"/sh/srcSeq_export.txt")
+            writeStringInput(squal, sampledir+"/sh/srcQual_export.txt")
+            writeStringInput(outname_now, sampledir+"/sh/outnames_export.txt")
             
             if is_multisample:
                 sizedict=proj_dir+"/_multisample/mergeTree/merge_"+os.path.basename(sampledir)+"_size_info.pkl.gz"
@@ -313,14 +337,15 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
                 sizedict=sampledir+"/value_translation/_work/mergeTree/merge_size_info.pkl.gz"
 
             if cfg["bc_sort"]:
-                cmd_now=[sampledir+"/sh/export_bc_sort.sh",outname_now,dval,dqual,sseq,squal,sizedict]
+                cmd_now=[sampledir+"/sh/export_bc_sort.sh",sampledir+"/sh/outnames_export.txt",sampledir+"/sh/optVal_export.txt",sampledir+"/sh/qualVal_export.txt",sampledir+"/sh/srcSeq_export.txt",sampledir+"/sh/srcQual_export.txt",sizedict]
             else:
-                cmd_now=[sampledir+"/sh/export.sh",outname_now,dval,dqual,sseq,squal,sizedict]
+                cmd_now=[sampledir+"/sh/export.sh",sampledir+"/sh/outnames_export.txt",sampledir+"/sh/optVal_export.txt",sampledir+"/sh/qualVal_export.txt",sampledir+"/sh/srcSeq_export.txt",sampledir+"/sh/srcQual_export.txt",sizedict]
             cmd_now=" ".join(cmd_now)
             s=subprocess.run(cmd_now,shell=True)
             if s.returncode != 0:
                 print("Job failed: Export", file=sys.stderr)
                 sys.exit(1)
+
     if is_qsub:
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]

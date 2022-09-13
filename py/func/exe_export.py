@@ -32,6 +32,19 @@ class settings_export(object):
         self.destQual=self.opt.destQual.split(",")
         self.rawSeq=self.opt.rawSeq.split(",")
         self.rawQual=self.opt.rawQual.split(",")
+        if self.opt.mode_local:
+            self.destValue = settingImporter.parseInputFileList(self.opt.destValue)
+            self.destQual = settingImporter.parseInputFileList(self.opt.destQual)
+            self.rawSeq = settingImporter.parseInputFileList(self.opt.rawSeq)
+            self.rawQual = settingImporter.parseInputFileList(self.opt.rawQual)
+            outname = settingImporter.parseInputFileList(self.opt.outname)
+        else:
+            self.destValue = [self.opt.destValue]
+            self.destQual = [self.opt.destQual]
+            self.rawSeq = [self.opt.rawSeq]
+            self.rawQual = [self.opt.rawQual]
+            outname = [self.opt.outname]
+
         self.is_barcodelist=self.opt.export_bclist
         size_info=self.opt.size_info
         with gzip.open(size_info,mode="rb") as p:
@@ -54,7 +67,6 @@ class settings_export(object):
         self.exportReadStructure=exportReadStructure
 
         self.dest_barcode_segment=[i for i in self.dest_segments if func_dict[i]["func_ordered"][0]=="WHITELIST_ASSIGNMENT" or func_dict[i]["func_ordered"][0]=="RANDSEQ_ASSIGNMENT" or func_dict[i]["func_ordered"][0]=="SEQ2SEQ"]
-        outname=self.opt.outname.split(",")
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix_list=[outdir+"/"+i for i in outname]
         self.ncore = int(self.opt.ncore)

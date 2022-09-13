@@ -91,9 +91,7 @@ if __name__=="__main__":
         s.settingGetter()
         obj_s=exe_mk_sval.BARISTA_MAKE_S(s)
         obj_s.make_s_seq()
-
-        if not s.resultonly:
-            obj_s.make_s_value()
+        obj_s.make_s_value()
             
     elif cmd=="buildTree":
         print("\nInterstellar: Value tree construction",flush=True)

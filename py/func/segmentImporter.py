@@ -337,8 +337,8 @@ def merge_parsed_data_parallel_wrapper(input_dir, settings, ncore, n_chunk):
     retLst = Parallel(n_jobs=ncore,verbose=2)(
         delayed(merge_parsed_data_process)(input_dir,cpu_idx,settings) for cpu_idx in range(ncore))
 
-    pd.concat([i[0] for i in retLst]).reset_index().to_pickle(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcSeq.pkl")
-    pd.concat([i[1] for i in retLst]).reset_index().to_pickle(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcQual.pkl")
+    pd.concat([i[0] for i in retLst]).reset_index(drop=True).to_pickle(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcSeq.pkl")
+    pd.concat([i[1] for i in retLst]).reset_index(drop=True).to_pickle(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcQual.pkl")
     
     # with gzip.open(settings.outFilePath_and_Prefix+"_Chunk"+str(n_chunk)+"_srcSeq.tsv.gz",mode="wt",encoding="utf-8") as w:
     #     w.write("\n".join([i[0] for i in retLst]))

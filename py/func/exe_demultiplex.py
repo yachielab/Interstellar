@@ -46,11 +46,19 @@ class settings_demultiplex(object):
         # for i in cfg_demulti:
         #     if i in ["READ1_STRUCTURE","READ2_STRUCTURE","INDEX1_STRUCTURE","INDEX2_STRUCTURE"] and cfg_demulti.get(i):
         #         self.exportReadStructure[i]=cfg_demulti[i].split("+")
-        self.path_to_seq=self.opt.correctedSeq.split(",")
-        self.path_to_avg_qval=self.opt.correctedQual.split(",")
-        self.path_to_rawQual=self.opt.rawQual.split(",")
+        
+        if self.opt.mode_local:
+            self.path_to_seq = settingImporter.parseInputFileList(self.opt.correctedSeq)
+            self.path_to_avg_qval = settingImporter.parseInputFileList(self.opt.correctedQual)
+            self.path_to_rawQual = settingImporter.parseInputFileList(self.opt.rawQual)
+            outname = settingImporter.parseInputFileList(self.opt.outname)
+        else:
+            self.path_to_seq = [self.opt.correctedSeq]
+            self.path_to_avg_qval = [self.opt.correctedQual]
+            self.path_to_rawQual = [self.opt.rawQual]
+            outname = [self.opt.outname]
+
         self.export_tsv=self.opt.export_tsv
-        outname=self.opt.outname.split(",")
         outdir=self.opt.outdir
 
         today_now=str(datetime.datetime.today())

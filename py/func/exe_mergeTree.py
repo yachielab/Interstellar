@@ -23,7 +23,7 @@ class settings_mergetree(object):
         self.child2parent_val=settingImporter.getAllocation(func_dict_ext,cfg_value_trans,cfg_value_ext)
         self.dest_segments=cfg_value_trans["dest_segment"]       
         self.value_segment=cfg_value_ext["value_segment"]
-        self.localTreePkl=self.opt.localTreePkl
+        self.localTreePkl=settingImporter.parseInputFileList(self.opt.localTreePkl)
         self.samplesheet=self.opt.samplesheet
         self.samplemerge=self.opt.samplemerge
         self.func_dict=func_dict

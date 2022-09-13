@@ -19,23 +19,17 @@ class settings_make_s(object):
 
         self.corrected_components=cfg_value_ext["value_segment"]
         self.correctionDictPkl=self.opt.correctedPickle
-        self.rawFastqPath=dict(seq=self.opt.rawSeq.split(","),qual=self.opt.rawQual.split(","))
-        
-        # correctOptDict={}
-        # corrected_components_sorted=[]
-        # for i in self.corrected_components:
-        #     correctOption_now=cfg_value_ext[i]
-        #     correctOptDict[i]=settingImporter.correctOptionParse(correctOption_now)
-        #     corrected_components_sorted.append(i)
+        if self.opt.mode_local:
+            self.rawFastqPath = dict(seq=settingImporter.parseInputFileList(self.opt.rawSeq), qual=settingImporter.parseInputFileList(self.opt.rawQual))
+            outname = settingImporter.parseInputFileList(self.opt.outname)
+        else:
+            self.rawFastqPath = dict(seq=[self.opt.rawSeq], qual=[self.opt.rawQual])
+            outname = [self.opt.outname]
         self.correctOptDict=func_dict
-        # self.corrected_components_sorted=corrected_components_sorted
-        self.resultonly=self.opt.resultonly
-        outname=self.opt.outname.split(",")
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix_list=[outdir+"/"+i for i in outname]
         self.ncore = int(self.opt.ncore)
-        # self.mk_s_value_components=cfg_correct["make_s_value"].split(",")
-
+        
 
 class BARISTA_MAKE_S(object):
     def __init__(self,settings):

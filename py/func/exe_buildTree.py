@@ -26,8 +26,12 @@ class settings_buildTree(object):
         self.func_dict=func_dict
         self.samplesheet=os.path.expanduser(self.opt.samplesheet)
         self.samplemerge=self.opt.samplemerge
-        self.path_to_sval=self.opt.srcValue.split(",")
-        outname=self.opt.outname.split(",")
+        if self.opt.mode_local:
+            self.path_to_sval = settingImporter.parseInputFileList(self.opt.srcValue)
+            outname = settingImporter.parseInputFileList(self.opt.outname)
+        else:
+            self.path_to_sval = [self.opt.srcValue]
+            outname = [self.opt.outname]
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix_list=[outdir+"/"+i for i in outname]
 

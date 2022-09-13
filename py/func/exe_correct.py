@@ -26,11 +26,7 @@ class settings_correct(object):
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.correctOptDict=func_dict
         self.corrected_components=cfg_value_ext["value_segment"]
-        
-        if "*" in self.opt.pickle[0]:
-            self.importPkl=glob.glob(self.opt.pickle[0])
-        else:
-            self.importPkl=self.opt.pickle
+        self.importPkl = settingImporter.parseInputFileList(self.opt.pickle)
 
         # correctOptDict={}
         # for i in self.corrected_components:
