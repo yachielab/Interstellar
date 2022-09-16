@@ -71,7 +71,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         for l in L_tmp:
             shutil.rmtree(l) #clearance
 
-        file_endfix="_correct_result.tsv.gz"
+        file_endfix="_correct_result.pkl"
         file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*") if re.search(file_endfix,i)]
         is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
         if is_qsub:

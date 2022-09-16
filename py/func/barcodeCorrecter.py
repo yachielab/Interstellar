@@ -123,7 +123,6 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
             # seq_minority_pd_corrected=seq_minority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["I2M_CORRECTION"]["levenshtein_distance"],symspelldb))
 
             correctionDict_maj={k:v for k,v in zip(list(seq_minority_pd),list(seq_minority_pd_corrected))}
-            print("Done.",time.time()-t0,flush=True)
             os.remove(fname)
 
         for seq in seq_majority:
@@ -159,7 +158,6 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
         t0=time.time()
         seq_majority_pd_corrected = correct_parallel_wrapper(seq_majority_pd,suggestion_verbosity,correctOpt,"M2A_CORRECTION",ncore,wlset_flag="yes")
         # seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["M2A_CORRECTION"]["levenshtein_distance"],symspelldb,wlset))
-        print("Done.",time.time()-t0,flush=True)
         correctionDict_wl={k:v for k,v in zip(list(seq_majority_pd),list(seq_majority_pd_corrected))}
         # seq_success=seq_majority_pd[seq_majority_pd_corrected!="-"]
         # seq_fail=seq_majority_pd[seq_majority_pd_corrected=="-"]

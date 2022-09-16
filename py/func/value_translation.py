@@ -8,12 +8,14 @@ from pandas.core import base
 # from . import exe_mk_sval
 from . import interstellar_setup
 from . import settingImporter
+from . import segmentImporter
 import subprocess
 import os
 import re
 import glob
 import sys
 import time
+import pandas as pd
 
 class UnknownError(Exception):
     pass
@@ -299,7 +301,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             for outname_now in file_prefix:
                 dval =sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_value.pkl"
                 dqual=sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_qual.pkl"
-                sseq =sampledir+"/value_extraction/_work/mk_sval/"+outname_now+"_correct_result.tsv.gz"
+                sseq =sampledir+"/value_extraction/_work/mk_sval/"+outname_now+"_correct_result.pkl"
                 squal=sampledir+"/value_extraction/_work/import/"+outname_now+"_srcQual.pkl"
                 
                 if is_multisample:
@@ -321,7 +323,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         else:
             dval = "\n".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_value.pkl" for p in file_prefix])
             dqual= "\n".join([sampledir+"/value_translation/_work/convert/"+p+"_converted_qual.pkl" for p in file_prefix])
-            sseq = "\n".join([sampledir+"/value_extraction/_work/mk_sval/"+p+"_correct_result.tsv.gz" for p in file_prefix])
+            sseq = "\n".join([sampledir+"/value_extraction/_work/mk_sval/"+p+"_correct_result.pkl" for p in file_prefix])
             squal = "\n".join([sampledir+"/value_extraction/_work/import/"+p+"_srcQual.pkl" for p in file_prefix])
             outname_now = "\n".join(file_prefix)
 
@@ -353,16 +355,25 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
 
     for sampledir in sampledir_list:
         out_files=glob.glob(sampledir+"/value_translation/_work/export/*")
-        key_list=["_R1.fastq.gz","_R2.fastq.gz","_I1.fastq.gz","_I2.fastq.gz"]
+        key_list=["_R1.fastq.pkl","_R2.fastq.pkl","_I1.fastq.pkl","_I2.fastq.pkl"]
         
         for key in key_list:
+            # target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
+            # target_files=sorted(target_files)
+            # if len(target_files)>0:
+            #     cmd=["echo"]+target_files+[" | xargs cat >",sampledir+"/value_translation/out/translated"+key]
+            #     cmd=" ".join(cmd)
+            #     s=subprocess.run(cmd,shell=True)
+            #     if s.returncode != 0:
+            #         print("Job failed: Sequence export", file=sys.stderr)
+            #         sys.exit(1)
+        
             target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
-            target_files=sorted(target_files)
-            if len(target_files)>0:
-                cmd=["echo"]+target_files+[" | xargs cat >",sampledir+"/value_translation/out/translated"+key]
-                cmd=" ".join(cmd)
-                s=subprocess.run(cmd,shell=True)
-                if s.returncode != 0:
-                    print("Job failed: Sequence export", file=sys.stderr)
-                    sys.exit(1)
+
+            for idx,file_4set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=4)):
+                Output = pd.concat([pd.read_pickle(x) for x in file_4set])
+                if idx == 0:
+                    Output.to_csv(sampledir+"/value_translation/out/translated"+key.replace("pkl","gz"),mode="w",compression="gzip",sep="\t",index=False,header=False)
+                else:
+                    Output.to_csv(sampledir+"/value_translation/out/translated"+key.replace("pkl","gz"),mode="a",compression="gzip",sep="\t",index=False,header=False)
     print("Elapsed time for generating FASTQ files",round(round(time.time() - t)/60,2),"minutes\n")

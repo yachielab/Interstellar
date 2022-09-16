@@ -2,6 +2,7 @@ from posixpath import basename
 from random import sample
 
 from pandas.core import base
+
 # from . import exe_import
 # from . import exe_qc
 # from . import exe_to_bt
@@ -9,12 +10,14 @@ from pandas.core import base
 # from . import exe_mk_sval
 from . import interstellar_setup
 from . import settingImporter
+from . import segmentImporter
 import subprocess
 import os
 import re
 import glob
 import sys
 import time
+import pandas as pd
 
 
 def genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,n_core):
@@ -120,7 +123,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Read segmentation",jid_now,sampledir+"/qlog",njobdict[sampledir])
-    print("Elapsed time for Read segmentation",round(round(time.time() - t)/60,2),"minutes\n")
+    print("Elapsed time for Read segmentation",round(round(time.time() - t)/60,2),"minutes\n", flush=True)
 
 
     #QC
@@ -166,7 +169,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             for sampledir in sampledir_list:
                 jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
                 interstellar_setup.job_wait("Quality filtering",jid_now,sampledir+"/qlog",njobdict[sampledir])
-        print("Elapsed time for quality filtering",round(round(time.time() - t)/60,2),"minutes\n")
+        print("Elapsed time for quality filtering",round(round(time.time() - t)/60,2),"minutes\n", flush=True)
 
 
     #to_bt
@@ -207,7 +210,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             for sampledir in sampledir_list:
                 jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
                 interstellar_setup.job_wait("Bartender",jid_now,sampledir+"/qlog",njobs)
-        print("Elapsed time for Bartender",round(round(time.time() - t)/60,2),"minutes\n")
+        print("Elapsed time for Bartender",round(round(time.time() - t)/60,2),"minutes\n", flush=True)
 
 
     #correct
@@ -246,7 +249,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Sequence error correction",jid_now,sampledir,njobs)
-    print("Elapsed time for sequence correction",round(round(time.time() - t)/60,2),"minutes\n")
+    print("Elapsed time for sequence correction",round(round(time.time() - t)/60,2),"minutes\n", flush=True)
 
 
     
@@ -301,9 +304,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Sequence to value conversion",jid_now,sampledir+"/qlog",njobdict[sampledir])
-    print("Elapsed time for value table generation",round(round(time.time() - t)/60,2),"minutes\n")
-
-
+    
     #Generating a samplesheet
     if is_multisample:
         valuefile_list=[]
@@ -316,23 +317,34 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             w.write(samplesheet_table)
         
     
+    print("Start merging the error-corrected file chunks...")
     for sampledir in sampledir_list:
         out_files=glob.glob(sampledir+"/value_extraction/_work/mk_sval/*")
-        key_list=["_correct_result.tsv.gz"]
+        key="_correct_result.pkl"
         
-        for key in key_list:
-            target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
-            if len(target_files)>0:
-                cmd1=["cat"]+[target_files[0]]+[" | gunzip -c | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
-                cmd1=" ".join(cmd1)
-                cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
-                cmd2=" ".join(cmd2)
-                cmd3=["cat",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content | gzip -c > ",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
-                cmd3=" ".join(cmd3)
-                cmd4=["rm",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content"]
-                cmd4=" ".join(cmd4)
-                for cmd in [cmd1,cmd2,cmd3,cmd4]:
-                    s=subprocess.run(cmd,shell=True)
-                    if s.returncode != 0:
-                        print("Job failed: Tagged file merge", file=sys.stderr)
-                        sys.exit(1)
+        target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
+
+        for idx,file_4set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=4)):
+            Output = pd.concat([pd.read_pickle(x) for x in file_4set])
+            if idx == 0:
+                Output.to_csv(sampledir+"/value_extraction/out/corrected_table.tsv.gz",mode="w",compression="gzip",sep="\t",index=False,header=True)
+            else:
+                Output.to_csv(sampledir+"/value_extraction/out/corrected_table.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+
+        # if len(target_files)>0:
+        #     cmd1=["cat"]+[target_files[0]]+[" | gunzip -c | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
+        #     cmd1=" ".join(cmd1)
+        #     cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
+        #     cmd2=" ".join(cmd2)
+        #     cmd3=["cat",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content | gzip -c > ",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
+        #     cmd3=" ".join(cmd3)
+        #     cmd4=["rm",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content"]
+        #     cmd4=" ".join(cmd4)
+        #     for cmd in [cmd1,cmd2,cmd3,cmd4]:
+        #         s=subprocess.run(cmd,shell=True)
+        #         if s.returncode != 0:
+        #             print("Job failed: Tagged file merge", file=sys.stderr)
+        #             sys.exit(1)
+    print("File merging done.")
+
+    print("Elapsed time for value table generation",round(round(time.time() - t)/60,2),"minutes\n", flush=True)

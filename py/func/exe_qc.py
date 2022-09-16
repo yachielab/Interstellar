@@ -39,36 +39,26 @@ class BARISTA_QC(object):
     def __init__(self,settings):
         self.settings=settings
     def qualityCheck(self):
+        n_chunk = 0
         for seq,qual,outprefix in zip(self.settings.seq_list,self.settings.qual_list,self.settings.outFilePath_and_Prefix_list):
-            seq_raw=[pd.read_pickle(seq)]
-            seq_qual=[pd.read_pickle(qual)]
-
+            seq_chunk=pd.read_pickle(seq)
+            qual_chunk=pd.read_pickle(qual)
             counterDict={}
-            for n_chunk,seq_qual_zip in enumerate(zip(seq_raw,seq_qual)):
-                seq_chunk=seq_qual_zip[0]
-                qual_chunk=seq_qual_zip[1]
-                
-                # Quality filtering
-                seq_chunk = segmentImporter.qfilter_parallel_wrapper(seq_chunk, qual_chunk, self.settings.qc_targets, self.settings.qscore_dict, self.settings.ncore)
-                
-                # Re-creating the count up data
-                for col in self.settings.barcodes:
-                    counterDict_tmp=collections.Counter(seq_chunk[col])
-                    if n_chunk == 0:
-                        counterDict[col] = counterDict_tmp
-                    else:
-                        counterDict[col].update(counterDict_tmp)
-                
-                # Export the quality filtered segment table to TSV
-                if n_chunk==0:
-                    # seq_chunk.to_csv(outprefix+"_srcSeq.QC.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
-                    seq_chunk.to_pickle(outprefix+"_srcSeq.QC.pkl")
-                # else:
-                #     seq_chunk.to_csv(outprefix+"_srcSeq.QC.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+
+            print("Processing file chunk",n_chunk)
+            n_chunk += 1
+            
+            # Quality filtering
+            seq_chunk = segmentImporter.qfilter_parallel_wrapper(seq_chunk, qual_chunk, self.settings.qc_targets, self.settings.qscore_dict, self.settings.ncore)
+            
+            # Re-creating the count up data
+            for col in self.settings.barcodes:
+                counterDict[col] = collections.Counter(seq_chunk[col])
+            
+            # Export the quality filtered segment table to TSV
+            seq_chunk.to_pickle(outprefix+"_srcSeq.QC.pkl")
                             
             # Export the count up data
             with gzip.open(outprefix+"_srcCount.QC.pkl.gz",mode="wb") as p:
                 pickle.dump(counterDict,p)
                         
-            # Copy the quality score table from the import folder to the qc folder to make the file structure consistent
-            # shutil.copyfile(qual,outprefix+"_srcQual.QC.tsv.gz")
