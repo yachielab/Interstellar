@@ -92,7 +92,7 @@ class BARISTA_MAKE_S(object):
             if self.settings.mode_local:
                 parsedSeq_raw_chunk=pd.read_pickle(outprefix+"_correct_result.pkl")
             else:
-                parsedSeq_raw_chunk=pd.read_pickle(outprefix+"_correct_result.tsv.gz", sep='\t')
+                parsedSeq_raw_chunk=pd.read_csv(outprefix+"_correct_result.tsv.gz", sep='\t')
             # parsedQual_raw_chunk=pd.read_csv(qual, sep='\t',chunksize=1000000,quoting=csv.QUOTE_NONE)
             parsedQual_raw_chunk=pd.read_pickle(qual)
             components_raw=self.components_raw
