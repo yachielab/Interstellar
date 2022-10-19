@@ -320,16 +320,48 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
     print("Start merging the error-corrected file chunks...")
     for sampledir in sampledir_list:
         out_files=glob.glob(sampledir+"/value_extraction/_work/mk_sval/*")
-        key="_correct_result.pkl"
-        
-        target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
 
-        for idx,file_4set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=4)):
-            Output = pd.concat([pd.read_pickle(x) for x in file_4set])
-            if idx == 0:
-                Output.to_csv(sampledir+"/value_extraction/out/corrected_table.tsv.gz",mode="w",compression="gzip",sep="\t",index=False,header=True)
-            else:
-                Output.to_csv(sampledir+"/value_extraction/out/corrected_table.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+        if is_qsub:
+            key="_correct_result.tsv.gz"
+            
+            target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
+            target_files = sorted(target_files)
+
+            for idx,file_40set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=40)):
+                if idx==0:
+                    cmd1=["cat"]+[file_40set[0]]+[" | gunzip -c | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
+                    cmd1=" ".join(cmd1)
+                    cmd2=["echo"]+file_40set+["| xargs cat | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
+                    cmd2=" ".join(cmd2)
+                    cmd3=["cat",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content | gzip -c > ",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
+                    cmd3=" ".join(cmd3)
+                    cmd4=["rm",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content"]
+                    cmd4=" ".join(cmd4)
+                    for cmd in [cmd1,cmd2,cmd3,cmd4]:
+                        s=subprocess.run(cmd,shell=True)
+                        if s.returncode != 0:
+                            print("Job failed: Tagged file merge", file=sys.stderr)
+                            sys.exit(1)
+                else:
+                    cmd2=["echo"]+file_40set+["| xargs cat | zgrep -v Header | gzip -c >>",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
+                    cmd2=" ".join(cmd2)
+                    for cmd in [cmd2]:
+                        s=subprocess.run(cmd,shell=True)
+                        if s.returncode != 0:
+                            print("Job failed: Tagged file merge", file=sys.stderr)
+                            sys.exit(1)
+        else:    
+            key="_correct_result.pkl"
+            
+            target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
+            target_files = sorted(target_files)
+
+            for idx,file_4set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=4)):
+                Output = pd.concat([pd.read_pickle(x) for x in file_4set])
+                if idx == 0:
+                    Output.to_csv(sampledir+"/value_extraction/out/corrected_table.tsv.gz",mode="w",compression="gzip",sep="\t",index=False,header=True)
+                else:
+                    Output.to_csv(sampledir+"/value_extraction/out/corrected_table.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
 
         # if len(target_files)>0:
         #     cmd1=["cat"]+[target_files[0]]+[" | gunzip -c | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]

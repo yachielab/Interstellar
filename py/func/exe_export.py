@@ -70,6 +70,7 @@ class settings_export(object):
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix_list=[outdir+"/"+i for i in outname]
         self.ncore = int(self.opt.ncore)
+        self.mode_local = self.opt.mode_local
 
 
 class BARISTA_EXPORT(object):
@@ -330,7 +331,10 @@ class BARISTA_EXPORT(object):
                 fastq_parse=pd.DataFrame(fastq_parse[0])
                 # print(read_now_out,"exporting...")
 
-                fastq_parse.to_pickle(prefix+"_"+read_now_out+".fastq.pkl")
+                if not self.settings.mode_local:
+                    fastq_parse.to_csv(prefix+"_"+read_now_out+".fastq.gz",mode="w",compression="gzip",sep="\t",index=False,header=False)
+                else:
+                    fastq_parse.to_pickle(prefix+"_"+read_now_out+".fastq.pkl")
 
             cnt += 1
             # print("\n")

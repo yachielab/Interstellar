@@ -352,28 +352,39 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Sequence export",jid_now,sampledir+"/qlog",njobdict[sampledir])
-
+                
+    
     for sampledir in sampledir_list:
-        out_files=glob.glob(sampledir+"/value_translation/_work/export/*")
-        key_list=["_R1.fastq.pkl","_R2.fastq.pkl","_I1.fastq.pkl","_I2.fastq.pkl"]
-        
-        for key in key_list:
-            # target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
-            # target_files=sorted(target_files)
-            # if len(target_files)>0:
-            #     cmd=["echo"]+target_files+[" | xargs cat >",sampledir+"/value_translation/out/translated"+key]
-            #     cmd=" ".join(cmd)
-            #     s=subprocess.run(cmd,shell=True)
-            #     if s.returncode != 0:
-            #         print("Job failed: Sequence export", file=sys.stderr)
-            #         sys.exit(1)
-        
-            target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
-
-            for idx,file_4set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=4)):
-                Output = pd.concat([pd.read_pickle(x) for x in file_4set])
-                if idx == 0:
-                    Output.to_csv(sampledir+"/value_translation/out/translated"+key.replace("pkl","gz"),mode="w",compression="gzip",sep="\t",index=False,header=False)
-                else:
-                    Output.to_csv(sampledir+"/value_translation/out/translated"+key.replace("pkl","gz"),mode="a",compression="gzip",sep="\t",index=False,header=False)
+        if is_qsub:
+            out_files=glob.glob(sampledir+"/value_translation/_work/export/*")
+            key_list=["_R1.fastq.gz","_R2.fastq.gz","_I1.fastq.gz","_I2.fastq.gz"]
+            
+            for key in key_list:
+                target_files = [t for t in out_files if re.search(key+r"$",os.path.basename(t))]
+                target_files = sorted(target_files)
+                
+                for idx,file_40set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=40)):
+                    if idx == 0:
+                        cmd=["echo"]+file_40set+[" | xargs cat >",sampledir+"/value_translation/out/translated"+key]
+                    else:
+                        cmd=["echo"]+file_40set+[" | xargs cat >>",sampledir+"/value_translation/out/translated"+key]
+                    cmd=" ".join(cmd)
+                    s=subprocess.run(cmd,shell=True)
+                    if s.returncode != 0:
+                        print("Job failed: Sequence export", file=sys.stderr)
+                        sys.exit(1)
+        else:
+            out_files=glob.glob(sampledir+"/value_translation/_work/export/*")
+            key_list=["_R1.fastq.pkl","_R2.fastq.pkl","_I1.fastq.pkl","_I2.fastq.pkl"]
+            
+            for key in key_list:
+                target_files = [t for t in out_files if re.search(key+r"$",os.path.basename(t))]
+                target_files = sorted(target_files)
+                
+                for idx,file_4set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=4)):
+                    Output = pd.concat([pd.read_pickle(x) for x in file_4set])
+                    if idx == 0:
+                        Output.to_csv(sampledir+"/value_translation/out/translated"+key.replace("pkl","gz"),mode="w",compression="gzip",sep="\t",index=False,header=False)
+                    else:
+                        Output.to_csv(sampledir+"/value_translation/out/translated"+key.replace("pkl","gz"),mode="a",compression="gzip",sep="\t",index=False,header=False)
     print("Elapsed time for generating FASTQ files",round(round(time.time() - t)/60,2),"minutes\n")

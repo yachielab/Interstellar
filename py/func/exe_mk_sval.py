@@ -29,6 +29,7 @@ class settings_make_s(object):
         outdir=self.opt.outdir
         self.outFilePath_and_Prefix_list=[outdir+"/"+i for i in outname]
         self.ncore = int(self.opt.ncore)
+        self.mode_local = self.opt.mode_local
         
 
 class BARISTA_MAKE_S(object):
@@ -71,8 +72,10 @@ class BARISTA_MAKE_S(object):
                 #     else:
                 #         cols_ordered_final.append("Header")
                 # parsedSeq_raw_df = parsedSeq_raw_df[cols_ordered_final]
-                
-            parsedSeq_raw_df.to_pickle(outprefix+"_correct_result.pkl")
+            if self.settings.mode_local:
+                parsedSeq_raw_df.to_pickle(outprefix+"_correct_result.pkl")
+            else:
+                parsedSeq_raw_df.to_csv(outprefix+"_correct_result.tsv.gz",mode="w",compression="gzip",sep="\t",index=False)
         
     
     def make_s_value(self):
