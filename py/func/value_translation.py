@@ -301,7 +301,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             for outname_now in file_prefix:
                 dval =sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_value.pkl"
                 dqual=sampledir+"/value_translation/_work/convert/"+outname_now+"_converted_qual.pkl"
-                sseq =sampledir+"/value_extraction/_work/mk_sval/"+outname_now+"_correct_result.pkl"
+                sseq =sampledir+"/value_extraction/_work/mk_sval/"+outname_now+"_correct_result.tsv.gz"
                 squal=sampledir+"/value_extraction/_work/import/"+outname_now+"_srcQual.pkl"
                 
                 if is_multisample:
