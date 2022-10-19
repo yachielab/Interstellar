@@ -170,7 +170,10 @@ class BARISTA_EXPORT(object):
             
             # d_val=pd.read_csv(d_val_path,sep='\t',dtype=str,chunksize=500000)
             # d_qual=pd.read_csv(d_qual_path,sep='\t',dtype=str,chunksize=500000)
-            df_chunk_zip = [pd.read_pickle(d_val_path), pd.read_pickle(d_qual_path), pd.read_pickle(s_seq_path), pd.read_pickle(s_qual_path)]
+            if self.settings.mode_local:
+                df_chunk_zip = [pd.read_pickle(d_val_path), pd.read_pickle(d_qual_path), pd.read_pickle(s_seq_path), pd.read_pickle(s_qual_path)]
+            else:
+                df_chunk_zip = [pd.read_pickle(d_val_path), pd.read_pickle(d_qual_path), pd.read_csv(s_seq_path,sep="\t",dtype=str), pd.read_pickle(s_qual_path)]
             # s_qual=pd.read_csv(s_qual_path,sep='\t',dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
 
             survived_idx_dict={}
