@@ -123,8 +123,16 @@ def jobCheck(jid,outdir,n_jobs):
         return False
 
     stat_table = pd.read_csv(outdir+"/qlog.tmp",delim_whitespace=True,header=None)
+    resheduled_row_list = []
+    if stat_table.shape[1]==4:
+        L = stat_table.index[stat_table[3]=="rescheduling"].tolist()
+        for i in L:
+            resheduled_row_list.append(i)
+            resheduled_row_list.append(i+1)
+        stat_table = stat_table.drop(index=resheduled_row_list)
+        
     if s.returncode != 0:
-        print("streamline: job check failed.', file=sys.stderr")
+        print("Job check failed.', file=sys.stderr")
         sys.exit(1)
     # os.remove(outdir+"/qlog.tmp")
     
