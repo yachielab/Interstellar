@@ -7,7 +7,6 @@ import sys
 import time
 import os
 import copy
-from aem import con
 import pandas as pd
 
 
