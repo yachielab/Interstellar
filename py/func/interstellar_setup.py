@@ -1,3 +1,4 @@
+from dataclasses import replace
 import subprocess
 import re
 import glob
@@ -6,6 +7,7 @@ import sys
 import time
 import os
 import copy
+from aem import con
 import pandas as pd
 
 
@@ -122,23 +124,41 @@ def jobCheck(jid,outdir,n_jobs):
     if os.path.getsize(outdir+"/qlog.tmp")==0:
         return False
 
-    stat_table = pd.read_csv(outdir+"/qlog.tmp",delim_whitespace=True,header=None)
-    resheduled_row_list = []
-    if stat_table.shape[1]==4:
-        L = stat_table.index[stat_table[3]=="rescheduling"].tolist()
-        for i in L:
-            resheduled_row_list.append(i)
-            resheduled_row_list.append(i+1)
-        stat_table = stat_table.drop(index=resheduled_row_list)
-        
+    flag = 0
+    sum_status = 0
+    num_completed_jobs = 0
+    with open(outdir+"/qlog.tmp",mode="rt") as w:
+        for l in w:
+            l = l.replace("\n","")
+            l = l.split()
+            if l[0]=="failed" or l[0]=="exit_status":
+                if flag == 1:
+                    flag = 0
+                    continue
+                if "rescheduling" in l:
+                    flag = 1
+                    continue
+                sum_status += int(l[1])
+                num_completed_jobs += 1 # A single job has "failed" and "exit_status" slot so this value should be 2*n_jobs
+
+            
+    # stat_table = pd.read_csv(outdir+"/qlog.tmp",delim_whitespace=True,header=None)
+    # resheduled_row_list = []
+    # if stat_table.shape[1]==4:
+    #     L = stat_table.index[stat_table[3]=="rescheduling"].tolist()
+    #     for i in L:
+    #         resheduled_row_list.append(i)
+    #         resheduled_row_list.append(i+1)
+    #     stat_table = stat_table.drop(index=resheduled_row_list)
+
     if s.returncode != 0:
         print("Job check failed.', file=sys.stderr")
         sys.exit(1)
     # os.remove(outdir+"/qlog.tmp")
     
-    if sum(stat_table[1])>0:
+    if sum_status > 0:
         raise UnknownError("qsub failed.")
-    elif stat_table.shape[0]==2*n_jobs:
+    elif num_completed_jobs == 2*n_jobs:
         return True
     else:
         return False
