@@ -173,17 +173,21 @@ xxx=...
 PROJECT_DIR=/path/to/project_directory
 SET_SHELL_ENV=/path/to/set_shell_env.sh
 SAMPLESHEET=/path/to/samplesheet.tsv
+NUM_CORES = 10
 ```
 
 **Description**
 
 - PROJECT_DIR (required)
+
   Absolute path to a project directory. All processes will be performed under this directory. If INTERSTELLAR is executed without a directory in the designated path, a new directory will be created. When a directory exists in the designated path, INTERSTELLAR seeks for completed processes in the configuration file and resumes the remaining processes if any. For example, if a command error happens at value_translation, INTERSTELLAR skips the value_extraction step when it is re-executed with a modified value_translation configuration.
 
 - SET_SHELL_ENV (required)
+
   Path to a shell script to activate your environment. Example file (https://github.com/yachielab/Interstellar/blob/main/example-dataset/templates/set_shell_env).
 
 - SAMPLESHEET (required)
+
   A TSV file to specify the correspondence between the input FASTQ file prefixes and their sample names. The input FASTQ file names need to contain the prefix, like \<fileprefix>_R1_001.fastq (or fastq.gz). This allows INTERSTELLAR to interpret distinct samples independently. 
 
   Example samplesheet format:
@@ -213,6 +217,10 @@ SAMPLESHEET=/path/to/samplesheet.tsv
   ├── svf_plate04_SRR5664330_R2-001.fastq.gz #sample group: plate04
   └── svf_plate04_SRR5664330_R2-002.fastq.gz #sample group: plate04
   ```
+
+- NUM_CORES
+
+  Number of threads used for the processes.
 
 
 
@@ -479,6 +487,7 @@ Variable names of identified sequence segments can be freely defined by the user
     Convert segment sequences into (unoptimized) segment values. This process is required if the segment sequences are supposed to be translated into different sequences.
 
     - source
+
       Sequence segment variable name. Not required if defined upstream and inherited by “>>” (see below).
 
   - Pipe-like operator
@@ -566,6 +575,7 @@ Variable names of destination sequence segments can be freely defined by the use
       Destination sequence segment structure defined by IUPAC codes. If multiple destination sequence segments are to be defined, provide their corresponding allowlists as comma-separated values in the same order of destination sequence segments. 
 
   - SEQ2SEQ()
+
     Assigns destination segment sequences defined for their corresponding source segment sequences according to a user-defined sequence conversion table.
 
     - source (required):
@@ -594,6 +604,7 @@ Variable names of destination sequence segments can be freely defined by the use
       
 
   - Bequeathing a source segment
+
     Source sequence segment variables can be used to define destination reads.
 
 - READ1_STRUCTURE, READ2_STRUCTURE, INDEX1_STRUCTURE, and INDEX2_STRUCTURE 
@@ -648,7 +659,7 @@ This section enables demultiplexing of input reads according to sequence segment
 
 ```
 [qsub]
-QOPTION=”-l s_vmem=<mem>G,mem_req=<mem>G”
+QOPTION=”-l s_vmem=<mem>G,mem_req=<mem>G -pe def_slot <num_cores>”
 MEM_MAX=128
 MEM_MIN=6
 NUM_READS=2000000
@@ -660,7 +671,7 @@ The distributed computing mode can be configured in this section by defining the
 
 - QOPTION (required)
 
-  Options to be added to the qsub command. This is strongly recommended to be defined as some of the INTERSTELLAR operations require a large memory size. In each step of INTERSTELLAR operations, \<mem> will be replaced by an empirically estimated sufficient memory size between MEM_MIN and MEM_MAX defined below. The example QOPTION above represents the one that can be used in a UGE environment.
+  Options to be added to the qsub command. This is strongly recommended to be defined as some of the INTERSTELLAR operations require a large memory size. In each step of INTERSTELLAR operations, \<mem> will be replaced by an empirically estimated sufficient memory size between MEM_MIN and MEM_MAX defined below. \<num_cores> will be replaced with the number of threads specified by NUM_CORES in the process configuration file. The example QOPTION above represents the one that can be used in a specific UGE environment.
 
 - MEM_MAX
 

@@ -2,6 +2,7 @@ from posixpath import basename
 from random import sample
 
 from pandas.core import base
+
 # from . import exe_import
 # from . import exe_qc
 # from . import exe_to_bt
@@ -9,36 +10,47 @@ from pandas.core import base
 # from . import exe_mk_sval
 from . import interstellar_setup
 from . import settingImporter
+from . import segmentImporter
 import subprocess
 import os
 import re
 import glob
 import sys
-import copy
+import time
+import pandas as pd
 
 
-def genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key):
+def genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,n_core):
     today_now=param_dict[os.path.basename(sampledir)]["today_now"]
     qoption=qcfg["QOPTION"]
     qoption=qoption.replace("<mem>",qcfg[mem_key])
+    qoption=qoption.replace("<num_cores>",str(n_core))
     jid_now=cmd+today_now
     qcmd_base=["qsub","-e",sampledir+"/qlog","-o",sampledir+"/qlog","-cwd","-N",jid_now,qoption]
     return qcmd_base
+
+
+def writeStringInput(input_str,filepath):
+    with open(filepath,mode="wt") as w:
+        w.write(input_str+"\n")
 
 
 def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
     used_commands=[]
     cfg,dict_to_terminal=settingImporter.config_extract_value_ext(cfg_raw)
     d=settingImporter.func_check(cfg)
+
     
-    #import
+    # import
+    t = time.time()
     cmd="import"
     njobdict=dict()
     for sampledir in sampledir_list:
         endfix_input=param_dict[os.path.basename(sampledir)]["file_suffix"] 
         if is_qsub:
             mem_key="mem_import"
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
+            # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
             
             #collect input files
             file_pool=[]
@@ -94,7 +106,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                     if r in param_dict[os.path.basename(sampledir)]["read_valid"] and not param_dict[os.path.basename(sampledir)]["read_valid"][r]=="":
                         tartget_file_dict=param_dict[os.path.basename(sampledir)]["tartget_file_dict"]
                         target_files=tartget_file_dict[r]
-                        # target_files=[i for i in glob.glob(param_dict[os.path.basename(sampledir)]["read_valid"][r]+"/*") if re.search(fileprefix+read_identifier+r".*"+endfix_input,os.path.basename(i))]
+                        target_files=[i for i in target_files if re.search(fileprefix+r".*"+endfix_input,os.path.basename(i))]
                         file_pool[idx]+=sorted(target_files)
                         idx+=1
 
@@ -111,20 +123,22 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Read segmentation",jid_now,sampledir+"/qlog",njobdict[sampledir])
-    
+    print("Elapsed time for Read segmentation",round(round(time.time() - t)/60,2),"minutes\n", flush=True)
 
 
     #QC
     if "QUALITY_FILTER" in cfg["functions_used"]:
+        t = time.time()
         cmd="qc"
         njobdict=dict()
         for sampledir in sampledir_list:
             if is_qsub:
                 mem_key="mem_qc"
-                qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
+                # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
+                qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
+                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.pkl",i)]
                 for f in file_pool:
-                    outname_now=re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f))
+                    outname_now=re.sub(r"_srcSeq\.pkl$","",os.path.basename(f))
                     qcmd_now=qcmd_base+[sampledir+"/sh/qc.sh",outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f)]
                     qcmd_now=" ".join(qcmd_now)
                     s=subprocess.run(qcmd_now,shell=True)
@@ -134,38 +148,49 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                         sys.exit(1)
                 njobdict[sampledir]=len(file_pool)
             else:
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
-                for f in file_pool:
-                    outname_now=re.sub(r"_srcSeq\.tsv\.gz$","",os.path.basename(f))
-                    cmd_now=[sampledir+"/sh/qc.sh",outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f)]
-                    cmd_now=" ".join(cmd_now)
-                    s=subprocess.run(cmd_now,shell=True)
-                    used_commands.append(cmd_now)
-                    if s.returncode != 0:
-                        print("Job failed: Quality filtering", file=sys.stderr)
-                        sys.exit(1)
+                seq_file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.pkl",i)]
+                seq_file_pool_concat = "\n".join(seq_file_pool)
+                qual_file_pool_concat = re.sub(r"_srcSeq\.","_srcQual.",seq_file_pool_concat)
+                outname_now="\n".join([re.sub(r"_srcSeq\.pkl$","",os.path.basename(f)) for f in seq_file_pool])
+
+                writeStringInput(seq_file_pool_concat,sampledir+"/sh/seg_seqs_QC.txt")
+                writeStringInput(qual_file_pool_concat,sampledir+"/sh/seg_quals_QC.txt")
+                writeStringInput(outname_now,sampledir+"/sh/outnames_QC.txt")
+
+                cmd_now=[sampledir+"/sh/qc.sh", sampledir+"/sh/outnames_QC.txt", sampledir+"/sh/seg_seqs_QC.txt", sampledir+"/sh/seg_quals_QC.txt"]
+                cmd_now=" ".join(cmd_now)
+                s=subprocess.run(cmd_now,shell=True)
+                used_commands.append(cmd_now)
+                if s.returncode != 0:
+                    print("Job failed: Quality filtering", file=sys.stderr)
+                    sys.exit(1)
                 
         if is_qsub:
             for sampledir in sampledir_list:
                 jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
                 interstellar_setup.job_wait("Quality filtering",jid_now,sampledir+"/qlog",njobdict[sampledir])
-
+        print("Elapsed time for quality filtering",round(round(time.time() - t)/60,2),"minutes\n", flush=True)
 
 
     #to_bt
     if "BARTENDER_CORRECTION" in cfg["functions_used"]:
+        t = time.time()
         cmd="to_bt"
         outname_now="to_bt"
         for sampledir in sampledir_list:
+            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
+            if is_qc:
+                file_pool = glob.glob(sampledir+"/value_extraction/_work/qc/*_srcSeq.QC.pkl")                
+            else:
+                file_pool = glob.glob(sampledir+"/value_extraction/_work/import/*_srcSeq.pkl")
+            file_pool_concat = "\n".join(file_pool)
+            writeStringInput(file_pool_concat,sampledir+"/sh/seqPkl_tobt.txt")
+
             if is_qsub:
                 mem_key="mem_to_bt"
-                qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
-                is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-                if is_qc:
-                    qcmd_now=qcmd_base+[sampledir+"/sh/to_bt.sh",outname_now,'"'+sampledir+"/value_extraction/_work/qc/*_srcSeq.QC.tsv.gz"+'"']                        
-                else:
-                    qcmd_now=qcmd_base+[sampledir+"/sh/to_bt.sh",outname_now,'"'+sampledir+"/value_extraction/_work/import/*_srcSeq.tsv.gz"+'"']
-
+                # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
+                qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
+                qcmd_now=qcmd_base+[sampledir+"/sh/to_bt.sh",outname_now,sampledir+"/sh/seqPkl_tobt.txt"]
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
@@ -173,12 +198,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                     print("qsub failed: Bartender", file=sys.stderr)
                     sys.exit(1)
             else:
-                is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-                if is_qc:
-                    cmd_now=[sampledir+"/sh/to_bt.sh",outname_now,'"'+sampledir+"/value_extraction/_work/qc/*_srcSeq.QC.tsv.gz"+'"']                        
-                else:
-                    cmd_now=[sampledir+"/sh/to_bt.sh",outname_now,'"'+sampledir+"/value_extraction/_work/import/*_srcSeq.tsv.gz"+'"']
-
+                cmd_now=[sampledir+"/sh/to_bt.sh",outname_now,sampledir+"/sh/seqPkl_tobt.txt"]
                 cmd_now=" ".join(cmd_now)
                 s=subprocess.run(cmd_now,shell=True)
                 used_commands.append(cmd_now)
@@ -190,21 +210,26 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             for sampledir in sampledir_list:
                 jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
                 interstellar_setup.job_wait("Bartender",jid_now,sampledir+"/qlog",njobs)
+        print("Elapsed time for Bartender",round(round(time.time() - t)/60,2),"minutes\n", flush=True)
 
 
     #correct
+    t = time.time()
     cmd="correct"
     outname_now="Interstellar"
     for sampledir in sampledir_list:
+        is_qc=interstellar_setup.checkRequiredFile("_srcCount.QC.pkl.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
+        if is_qc:
+            file_pool = glob.glob(sampledir+"/value_extraction/_work/qc/*_srcCount.QC.pkl.gz")
+        else:
+            file_pool = glob.glob(sampledir+"/value_extraction/_work/import/*_srcCount.pkl.gz")
+        file_pool_concat = "\n".join(file_pool)
+        writeStringInput(file_pool_concat,sampledir+"/sh/seqCount_correct.txt")
+
         if is_qsub:
             mem_key="mem_correct"
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
-            is_qc=interstellar_setup.checkRequiredFile("_srcCount.QC.pkl.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-            if is_qc:
-                qcmd_now=qcmd_base+[sampledir+"/sh/correct.sh",outname_now,'"'+sampledir+"/value_extraction/_work/qc/*_srcCount.QC.pkl.gz"+'"']
-            else:
-                qcmd_now=qcmd_base+[sampledir+"/sh/correct.sh",outname_now,'"'+sampledir+"/value_extraction/_work/import/*_srcCount.pkl.gz"+'"']
-
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"]) # This process uses maximum amount of CPUs even in qsub mode. Config is fresh since it's improted from the raw file.
+            qcmd_now=qcmd_base+[sampledir+"/sh/correct.sh",outname_now,sampledir+"/sh/seqCount_correct.txt"]
             qcmd_now=" ".join(qcmd_now)
             s=subprocess.run(qcmd_now,shell=True)
             used_commands.append(qcmd_now)
@@ -212,12 +237,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
                 print("qsub failed: Sequence error correction", file=sys.stderr)
                 sys.exit(1)
         else:
-            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-            if is_qc:
-                cmd_now=[sampledir+"/sh/correct.sh",outname_now,'"'+sampledir+"/value_extraction/_work/qc/*_srcCount.QC.pkl.gz"+'"']                        
-            else:
-                cmd_now=[sampledir+"/sh/correct.sh",outname_now,'"'+sampledir+"/value_extraction/_work/import/*_srcCount.pkl.gz"+'"']
-
+            cmd_now=[sampledir+"/sh/correct.sh",outname_now,sampledir+"/sh/seqCount_correct.txt"]
             cmd_now=" ".join(cmd_now)
             s=subprocess.run(cmd_now,shell=True)
             used_commands.append(cmd_now)
@@ -229,29 +249,33 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Sequence error correction",jid_now,sampledir,njobs)
+    print("Elapsed time for sequence correction",round(round(time.time() - t)/60,2),"minutes\n", flush=True)
 
 
     
     #mk_sval
+    t = time.time()
     cmd="mk_sval"
     njobdict=dict()
     for sampledir in sampledir_list:
+        is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
+        if is_qc:
+            file_endfix="_srcSeq.QC.pkl"
+            file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/qc/*") if re.search("_srcSeq.QC.pkl",i)]              
+        else:
+            file_endfix="_srcSeq.pkl"
+            file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.pkl",i)]
+            
         if is_qsub:
             mem_key="mem_mk_sval"
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key)
+            # qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # single core if qsub
             qcmd_base=qcmd_base+[sampledir+"/sh/mk_sval.sh"]
-
-            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-            if is_qc:
-                file_endfix="_srcSeq.QC.tsv.gz"
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/qc/*") if re.search("_srcSeq.QC.tsv.gz",i)]              
-            else:
-                file_endfix="_srcSeq.tsv.gz"
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
                 
             for f in file_pool:
                 outname_now=re.sub(file_endfix,"",os.path.basename(f))
-                qcmd_now=qcmd_base+[outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f),sampledir+"/value_extraction/_work/correct/Interstellar_srcCorrect.pkl.gz"]
+                qual_file_path = sampledir+"/value_extraction/_work/import/"+outname_now+"_srcQual.pkl"
+                qcmd_now=qcmd_base+[outname_now,f,qual_file_path,sampledir+"/value_extraction/_work/correct/Interstellar_srcCorrect.pkl.gz"]
                 qcmd_now=" ".join(qcmd_now)
                 s=subprocess.run(qcmd_now,shell=True)
                 used_commands.append(qcmd_now)
@@ -261,35 +285,31 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
 
             njobdict[sampledir]=len(file_pool)
         else:
-            is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
-            if is_qc:
-                file_endfix="_srcSeq.QC.tsv.gz"
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/qc/*") if re.search("_srcSeq.QC.tsv.gz",i)]              
-            else:
-                file_endfix="_srcSeq.tsv.gz"
-                file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/import/*") if re.search("_srcSeq.tsv.gz",i)]
-                
-            for f in file_pool:
-                outname_now=re.sub(file_endfix,"",os.path.basename(f))
-                cmd_now=[sampledir+"/sh/mk_sval.sh",outname_now,f,re.sub(r"_srcSeq\.","_srcQual.",f),sampledir+"/value_extraction/_work/correct/Interstellar_srcCorrect.pkl.gz"]
-                cmd_now=" ".join(cmd_now)
-                s=subprocess.run(cmd_now,shell=True)
-                used_commands.append(cmd_now)
-                if s.returncode != 0:
-                    print("Job failed: Sequence to value conversion", file=sys.stderr)
-                    sys.exit(1)
+            seq_file_pool_concat = "\n".join(file_pool)
+            qual_file_pool_concat = "\n".join([sampledir+"/value_extraction/_work/import/"+re.sub(file_endfix,"",os.path.basename(f))+"_srcQual.pkl" for f in file_pool])
+            outname_now = "\n".join([re.sub(file_endfix,"",os.path.basename(f)) for f in file_pool])
+
+            writeStringInput(seq_file_pool_concat,sampledir+"/sh/seq_seqs_mksval.txt")
+            writeStringInput(qual_file_pool_concat,sampledir+"/sh/seg_quals_mksval.txt")
+            writeStringInput(outname_now,sampledir+"/sh/outnames_mksval.txt")
+
+            cmd_now = [sampledir+"/sh/mk_sval.sh", sampledir+"/sh/outnames_mksval.txt", sampledir+"/sh/seq_seqs_mksval.txt", sampledir+"/sh/seg_quals_mksval.txt", sampledir+"/value_extraction/_work/correct/Interstellar_srcCorrect.pkl.gz"]
+            cmd_now=" ".join(cmd_now)
+            s=subprocess.run(cmd_now,shell=True)
+            used_commands.append(cmd_now)
+            if s.returncode != 0:
+                print("Job failed: Sequence to value conversion", file=sys.stderr)
+                sys.exit(1)
     if is_qsub:
         for sampledir in sampledir_list:
             jid_now=cmd+param_dict[os.path.basename(sampledir)]["today_now"]
             interstellar_setup.job_wait("Sequence to value conversion",jid_now,sampledir+"/qlog",njobdict[sampledir])
-
     
-
     #Generating a samplesheet
     if is_multisample:
         valuefile_list=[]
         for sampledir in sampledir_list:
-            valuefile_list_tmp=[[i,os.path.basename(sampledir)] for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*_correct_srcValue.tsv.gz")]
+            valuefile_list_tmp=[[i,os.path.basename(sampledir)] for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*_correct_srcValue.pkl")]
             valuefile_list+=valuefile_list_tmp
         valuefile_list=["\t".join(i) for i in valuefile_list]
         samplesheet_table="\n".join(valuefile_list)+"\n"
@@ -297,23 +317,66 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir):
             w.write(samplesheet_table)
         
     
+    print("Start merging the error-corrected file chunks...")
     for sampledir in sampledir_list:
         out_files=glob.glob(sampledir+"/value_extraction/_work/mk_sval/*")
-        key_list=["_correct_result.tsv.gz"]
-        
-        for key in key_list:
+
+        if is_qsub:
+            key="_correct_result.tsv.gz"
+            
             target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
-            if len(target_files)>0:
-                cmd1=["cat"]+[target_files[0]]+[" | gunzip -c | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
-                cmd1=" ".join(cmd1)
-                cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
-                cmd2=" ".join(cmd2)
-                cmd3=["cat",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content | gzip -c > ",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
-                cmd3=" ".join(cmd3)
-                cmd4=["rm",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content"]
-                cmd4=" ".join(cmd4)
-                for cmd in [cmd1,cmd2,cmd3,cmd4]:
-                    s=subprocess.run(cmd,shell=True)
-                    if s.returncode != 0:
-                        print("Job failed: Tagged file merge", file=sys.stderr)
-                        sys.exit(1)
+            target_files = sorted(target_files)
+
+            for idx,file_40set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=40)):
+                if idx==0:
+                    cmd1=["cat"]+[file_40set[0]]+[" | gunzip -c | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
+                    cmd1=" ".join(cmd1)
+                    cmd2=["echo"]+file_40set+["| xargs cat | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
+                    cmd2=" ".join(cmd2)
+                    cmd3=["cat",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content | gzip -c > ",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
+                    cmd3=" ".join(cmd3)
+                    cmd4=["rm",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content"]
+                    cmd4=" ".join(cmd4)
+                    for cmd in [cmd1,cmd2,cmd3,cmd4]:
+                        s=subprocess.run(cmd,shell=True)
+                        if s.returncode != 0:
+                            print("Job failed: Tagged file merge", file=sys.stderr)
+                            sys.exit(1)
+                else:
+                    cmd2=["echo"]+file_40set+["| xargs cat | zgrep -v Header | gzip -c >>",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
+                    cmd2=" ".join(cmd2)
+                    for cmd in [cmd2]:
+                        s=subprocess.run(cmd,shell=True)
+                        if s.returncode != 0:
+                            print("Job failed: Tagged file merge", file=sys.stderr)
+                            sys.exit(1)
+        else:    
+            key="_correct_result.pkl"
+            
+            target_files=[t for t in out_files if re.search(key+r"$",os.path.basename(t))]
+            target_files = sorted(target_files)
+
+            for idx,file_4set in enumerate(segmentImporter.split_yield_fastq_per_lines(target_files, n=4)):
+                Output = pd.concat([pd.read_pickle(x) for x in file_4set])
+                if idx == 0:
+                    Output.to_csv(sampledir+"/value_extraction/out/corrected_table.tsv.gz",mode="w",compression="gzip",sep="\t",index=False,header=True)
+                else:
+                    Output.to_csv(sampledir+"/value_extraction/out/corrected_table.tsv.gz",mode="a",compression="gzip",sep="\t",index=False,header=False)
+
+        # if len(target_files)>0:
+        #     cmd1=["cat"]+[target_files[0]]+[" | gunzip -c | head -n1 >",sampledir+"/value_extraction/out/corrected_table.header"]
+        #     cmd1=" ".join(cmd1)
+        #     cmd2=["echo"]+target_files+["| xargs cat | zgrep -v Header >",sampledir+"/value_extraction/out/corrected_table.content"]
+        #     cmd2=" ".join(cmd2)
+        #     cmd3=["cat",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content | gzip -c > ",sampledir+"/value_extraction/out/corrected_table.tsv.gz"]
+        #     cmd3=" ".join(cmd3)
+        #     cmd4=["rm",sampledir+"/value_extraction/out/corrected_table.header",sampledir+"/value_extraction/out/corrected_table.content"]
+        #     cmd4=" ".join(cmd4)
+        #     for cmd in [cmd1,cmd2,cmd3,cmd4]:
+        #         s=subprocess.run(cmd,shell=True)
+        #         if s.returncode != 0:
+        #             print("Job failed: Tagged file merge", file=sys.stderr)
+        #             sys.exit(1)
+    print("File merging done.")
+
+    print("Elapsed time for value table generation",round(round(time.time() - t)/60,2),"minutes\n", flush=True)

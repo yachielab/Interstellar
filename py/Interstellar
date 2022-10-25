@@ -37,7 +37,7 @@ def getOpt():
 
 if __name__=="__main__":
     opt=getOpt()
-    print("Interstellar 1.0",flush=True)
+    print("Interstellar 1.0: dev branch",flush=True)
 
     # read config file
     cfg=settingImporter.readconfig(opt.config)
@@ -64,7 +64,6 @@ if __name__=="__main__":
     cfg=settingRequirementCheck.setDefaultConfig(cfg)
 
 
-
     # Multi-sample?
     if cfg["general"]["SAMPLESHEET"]=="":
         is_multisample=False
@@ -88,9 +87,9 @@ if __name__=="__main__":
         is_qsub=True
         qcfg=settingImporter.readconfig(opt.qconfig)
         qcfg={k:settingImporter.configClean(qcfg[k],qconf=True) for k in qcfg}
-        qcfg=settingRequirementCheck.setDefaultQConfig(qcfg)
+        qcfg=settingRequirementCheck.setDefaultQConfig(qcfg,cfg)
 
-
+    
     # setup
     param_dict={}
     for sampledir in sampledir_list:
@@ -114,7 +113,6 @@ if __name__=="__main__":
         if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
             setup_obj.fastq_split()
 
-
     # fastq split job monitoring
     if "value_extraction" in cmds_execute and is_qsub and not "_fastqsplit" in flg_files:
         for sampledir in sampledir_list:
@@ -128,7 +126,6 @@ if __name__=="__main__":
         value_extraction.run(sampledir_list,cfg,qcfg,is_qsub,is_multisample,param_dict,proj_dir)
         with open(proj_dir+"/_flg/_valueextraction",mode="wt") as w:
             w.write("")
-
 
     # value translation
     flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]

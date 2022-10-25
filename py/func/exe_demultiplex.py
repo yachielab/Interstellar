@@ -46,42 +46,56 @@ class settings_demultiplex(object):
         # for i in cfg_demulti:
         #     if i in ["READ1_STRUCTURE","READ2_STRUCTURE","INDEX1_STRUCTURE","INDEX2_STRUCTURE"] and cfg_demulti.get(i):
         #         self.exportReadStructure[i]=cfg_demulti[i].split("+")
-        self.path_to_seq=self.opt.correctedSeq
-        self.path_to_avg_qval=self.opt.correctedQual
-        self.path_to_rawQual=self.opt.rawQual
+        
+        if self.opt.mode_local:
+            self.path_to_seq = settingImporter.parseInputFileList(self.opt.correctedSeq)
+            self.path_to_avg_qval = settingImporter.parseInputFileList(self.opt.correctedQual)
+            self.path_to_rawQual = settingImporter.parseInputFileList(self.opt.rawQual)
+            outname = settingImporter.parseInputFileList(self.opt.outname)
+        else:
+            self.path_to_seq = [self.opt.correctedSeq]
+            self.path_to_avg_qval = [self.opt.correctedQual]
+            self.path_to_rawQual = [self.opt.rawQual]
+            outname = [self.opt.outname]
+
         self.export_tsv=self.opt.export_tsv
-        outname=self.opt.outname
         outdir=self.opt.outdir
 
         today_now=str(datetime.datetime.today())
         today_now=regex.sub(r"\W","",today_now)
-        new_outdir="_".join([outdir+"/demulti",outname,today_now])
-        flag=os.path.isdir(new_outdir)
-        while flag:
-            today_now=str(datetime.datetime.today())
-            today_now=regex.sub(r"\W","",today_now)
-            new_outdir="_".join([outdir+"/demulti",outname,today_now])
+        new_outdir_list=["_".join([outdir+"/demulti",i,today_now]) for i in outname]
+        for new_outdir in new_outdir_list:
             flag=os.path.isdir(new_outdir)
-        os.mkdir(new_outdir)
-        self.outFilePath_and_Prefix=new_outdir+"/"+outname
+            while flag:
+                today_now=str(datetime.datetime.today())
+                today_now=regex.sub(r"\W","",today_now)
+                new_outdir="_".join([outdir+"/demulti",outname,today_now])
+                flag=os.path.isdir(new_outdir)
+            os.mkdir(new_outdir)
+        self.outFilePath_and_Prefix_list=[new_outdir+"/"+i for new_outdir,i in zip(new_outdir_list,outname)]
         self.today_now=today_now
 
         if not self.run_demulti and self.export_tsv:
             raise UnknownError("KEY is required if FORMAT=TSV.")
+        
+        self.ncore = int(self.opt.ncore)
 
 
 class BARISTA_DEMULTIPLEX(object):
     def __init__(self,settings):
         self.settings=settings
     def demultiplex(self):
-        s_seq=pd.read_csv(self.settings.path_to_seq,sep='\t',dtype=str,chunksize=500000)
-        s_avg_qual=pd.read_csv(self.settings.path_to_avg_qval,sep='\t',dtype=str,chunksize=500000)
-        s_raw_qual=pd.read_csv(self.settings.path_to_rawQual,sep="\t",dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
-        demulti_key=set()
-        cnt_chunk=0
-        key_iden_list=[]
-        for s_seq_chunk,s_avg_qual_chunk,s_raw_qual_chunk in zip(s_seq,s_avg_qual,s_raw_qual):
-            print("Start demultiplexing chunk",cnt_chunk,flush=True)
+        cnt = 0
+        for sseq_path,avg_qual_path,raw_qual_path,prefix in zip(self.settings.path_to_seq,self.settings.path_to_avg_qval,self.settings.path_to_rawQual,self.settings.outFilePath_and_Prefix_list):
+            s_seq_chunk = pd.read_pickle(sseq_path)
+            # s_avg_qual=pd.read_csv(avg_qual_path,sep='\t',dtype=str,chunksize=500000)
+            # s_raw_qual=pd.read_csv(raw_qual_path,sep="\t",dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
+            s_avg_qual_chunk = pd.read_pickle(avg_qual_path)
+            s_raw_qual_chunk = pd.read_pickle(raw_qual_path)
+
+            demulti_key=set()
+            key_iden_list=[]
+            print("Start demultiplexing chunk",cnt,flush=True)
             s_avg_qual_chunk=s_avg_qual_chunk.drop("Header",axis=1)
             s_raw_qual_chunk=s_raw_qual_chunk.drop("Header",axis=1)
 
@@ -94,17 +108,18 @@ class BARISTA_DEMULTIPLEX(object):
                 key_series=s_seq_chunk[self.settings.key].apply("_".join,axis=1)
                 demulti_key|=set(key_series)
                 s_seq_chunk=s_seq_chunk[["Header"]+self.settings.target]
-                for eachkey in demulti_key:
-                    if not "-" in eachkey:
-                        export_pd_tmp=s_seq_chunk[key_series==eachkey]
-                        outfilename="_".join([self.settings.outFilePath_and_Prefix,eachkey])+".tsv.gz"
-                        if not os.path.isfile(outfilename):
-                            export_pd_tmp.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=True)
-                        else:
-                            export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
-                        key_iden_list.append("_"+eachkey+".tsv.gz")
+                key_iden_list_now = barcodeConverter.demultiplex_tsv_parallel_wrapper(s_seq_chunk,key_series,prefix,self.settings.ncore)
+                # for eachkey in demulti_key:
+                #     if not "-" in eachkey:
+                #         export_pd_tmp=s_seq_chunk[key_series==eachkey]
+                #         outfilename="_".join([self.settings.outFilePath_and_Prefix,eachkey])+".tsv.gz"
+                #         if not os.path.isfile(outfilename):
+                #             export_pd_tmp.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=True)
+                #         else:
+                #             export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
+                #         key_iden_list.append("_"+eachkey+".tsv.gz")
             else:
-                #Collect segment names to be used
+                # Collect segment names to be used
                 use_segment_list=set(["Header"])
                 for exportReadNum in self.settings.exportReadStructure:
                     if exportReadNum in self.settings.annotate_headers:
@@ -114,33 +129,36 @@ class BARISTA_DEMULTIPLEX(object):
                 use_segment_list |= set(self.settings.key)
                 use_segment_list=list(use_segment_list)
 
-                #constant sequence
+                # Constant sequence
                 for exportReadNum in self.settings.exportReadStructure:
                     structure_now=self.settings.exportReadStructure[exportReadNum]
                     for component in structure_now:
                         if not component in s_seq_chunk.columns:
                             s_seq_chunk[component]=component
-
+                
+                # Cut off unused columns
                 s_seq_chunk=s_seq_chunk[use_segment_list]
                 
+                # Drop missing rows containing segments
                 s_seq_chunk=s_seq_chunk[s_seq_chunk!="-"].dropna()
                 s_avg_qual_chunk=s_avg_qual_chunk.loc[s_seq_chunk.index]
                 s_raw_qual_chunk=s_raw_qual_chunk.loc[s_seq_chunk.index]
-
                 s_avg_qual_chunk=s_avg_qual_chunk.astype("int8")
                 if s_seq_chunk.shape[0]==0:
                     raise UnknownError("All rows were dropped out.")
+                
+                # Generating demultiplex keys
                 key_series=s_seq_chunk[self.settings.key].apply("_".join,axis=1)
                 demulti_key|=set(key_series)
+
                 export_pd=pd.DataFrame()
                 export_pd["Header"]=s_seq_chunk["Header"]
-                # s_seq_chunk=s_seq_chunk.drop("Header",axis=1)
                     
                 for exportReadNum in self.settings.exportReadStructure:
                     export_pd["3rd"]=["+"]*export_pd.shape[0]
                     export_pd["qual"]=[""]*export_pd.shape[0]
 
-                    #annotate header
+                    # Annotating header
                     if exportReadNum in self.settings.annotate_headers:
                         annotate_header_now=self.settings.annotate_headers[exportReadNum]
                     else:
@@ -152,16 +170,16 @@ class BARISTA_DEMULTIPLEX(object):
                     else:
                         #Deal with non-tag reads
                         export_pd["Header"]=s_seq_chunk["Header"]
-                   
+                
                     structure_now=self.settings.exportReadStructure[exportReadNum]
                     
-                    #sequence concatenation
+                    # Sequence segment concatenation
                     if len(structure_now)>1:
                         export_pd["seq"]=s_seq_chunk[structure_now[0]].str.cat(s_seq_chunk[structure_now[1:]],sep="")
                     else:
                         export_pd["seq"]=s_seq_chunk[structure_now[0]]
 
-                    #generating qualities
+                    # Quality segment concatenation
                     for component in structure_now:
                         if component in s_avg_qual_chunk:
                             df_seq_qual_tmp=s_seq_chunk[component].str.cat(s_avg_qual_chunk[component].astype(str),sep="_")
@@ -177,32 +195,29 @@ class BARISTA_DEMULTIPLEX(object):
 
                     export_pd=export_pd[["Header","seq","3rd","qual"]]
 
-                    if exportReadNum=="READ1_STRUCTURE":
-                        readIden="R1"
-                    elif exportReadNum=="READ2_STRUCTURE":
-                        readIden="R2"
-                    elif exportReadNum=="INDEX1_STRUCTURE":
-                        readIden="I1"
-                    elif exportReadNum=="INDEX2_STRUCTURE":
-                        readIden="I2"
+                    if exportReadNum == "READ1_STRUCTURE": readIden="R1"
+                    if exportReadNum == "READ2_STRUCTURE": readIden="R2"
+                    if exportReadNum == "INDEX1_STRUCTURE": readIden="I1"
+                    if exportReadNum == "INDEX2_STRUCTURE": readIden="I2"
 
                     #FASTQ exportation
                     if self.settings.run_demulti:
                         #demultiplex
-                        for eachkey in demulti_key:
-                            export_pd_tmp=export_pd[key_series==eachkey]
-                            outfilename="_".join([self.settings.outFilePath_and_Prefix,eachkey,readIden])+".fastq.gz"
-                            export_pd_tmp=export_pd_tmp.stack()
-                            export_pd_tmp=export_pd_tmp.reset_index()
-                            export_pd_tmp=pd.DataFrame(export_pd_tmp[0])
-                            if not os.path.isfile(outfilename):
-                                export_pd_tmp.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=False)
-                            else:
-                                export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
-                            key_iden_list.append("_"+eachkey+"_"+readIden+".fastq.gz")
+                        key_iden_list_now = barcodeConverter.demultiplex_fastq_parallel_wrapper(export_pd,key_series,prefix,readIden,self.settings.ncore)
+                        # for eachkey in demulti_key:
+                        #     export_pd_tmp=export_pd[key_series==eachkey]
+                        #     outfilename="_".join([self.settings.outFilePath_and_Prefix,eachkey,readIden])+".fastq.gz"
+                        #     export_pd_tmp=export_pd_tmp.stack()
+                        #     export_pd_tmp=export_pd_tmp.reset_index()
+                        #     export_pd_tmp=pd.DataFrame(export_pd_tmp[0])
+                        #     if not os.path.isfile(outfilename):
+                        #         export_pd_tmp.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=False)
+                        #     else:
+                        #         export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
+                        #     key_iden_list.append("_"+eachkey+"_"+readIden+".fastq.gz")
                     else:
                         #just tagging
-                        outfilename="_".join([self.settings.outFilePath_and_Prefix,"annotated",readIden])+".fastq.gz"
+                        outfilename="_".join([prefix,"annotated",readIden])+".fastq.gz"
                         export_pd_tmp=export_pd.stack()
                         export_pd_tmp=export_pd_tmp.reset_index()
                         export_pd_tmp=pd.DataFrame(export_pd_tmp[0])
@@ -210,10 +225,12 @@ class BARISTA_DEMULTIPLEX(object):
                             export_pd_tmp.to_csv(outfilename,mode="w",compression="gzip",sep="\t",index=False,header=False)
                         else:
                             export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
-                        key_iden_list.append("_annotated_"+readIden+".fastq.gz")
-            cnt_chunk+=1
+                        key_iden_list_now = ["_annotated_"+readIden+".fastq.gz"]
 
-        key_iden_list=list(set(key_iden_list))
-        with open(self.settings.outFilePath_and_Prefix+"_demulti_key_list.txt",mode="wt") as w:
-            for i in key_iden_list:
-                w.write(i+"\n")
+            cnt += 1
+            key_iden_list += key_iden_list_now
+
+            key_iden_list=list(set(key_iden_list))
+            with open(prefix+"_demulti_key_list.txt",mode="wt") as w:
+                for i in key_iden_list:
+                    w.write(i+"\n")
