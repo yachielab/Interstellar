@@ -1,4 +1,6 @@
 [qsub]
 MEM_MAX=128
-MEM_MIN=8
-QOPTION="-l s_vmem=<mem>G,mem_req=<mem>G"
+MEM_MIN=20
+QOPTION="-l s_vmem=<mem>G,mem_req=<mem>G -pe def_slot <num_cores> -j y"
+NUM_READS=4000000
+
