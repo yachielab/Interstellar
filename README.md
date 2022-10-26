@@ -2,6 +2,7 @@
 
 ## Version history
 
+- v1.1.0: Implemented multithreading
 - v1.0.1: Bugfix for the distributed computing mode (Apr 17, 2022)
 - v1.0.0: Initial release (Apr 16, 2022)
 
