@@ -23,6 +23,8 @@ def getRawIndex(seq,rawReference):
 
 # Helper function for error correction
 def sequenceCorrection(seq_chunk,suggestion_verbosity,correctOpt,correction_method,wlset_flag):
+    print(type(wlset))
+
     seq_chunk = seq_chunk.map(lambda x:findClosestCandidate(x,suggestion_verbosity,correctOpt[correction_method]["levenshtein_distance"],wlset_flag))
     return seq_chunk
 
@@ -49,13 +51,15 @@ def correct_parallel_wrapper(seq_series,suggestion_verbosity,correctOpt,correcti
 
 
 def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_num_reads):
-    print(correctOpt)
     suggestion_verbosity = Verbosity.TOP
     func_tmp=correctOpt["func_ordered"][0]
     srcComponent = correctOpt[func_tmp]["source"]
     srcCounter=counterDict[srcComponent]
     global wlset
     global symspelldb
+
+    print(correctOpt)
+    print(counterDict)
     
 
     seqCount_sort = sorted(srcCounter.items(),key=lambda x:x[1],reverse=True)
@@ -134,6 +138,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
 
     # Mapping-to-allowlist
     if "M2A_CORRECTION" in correctOpt["func_ordered"]:
+
         if not "I2M_CORRECTION" in correctOpt["func_ordered"]:
             seq_majority=seqCountSummary["seq"][:kneepoint_idx]
             correctionDict_maj={}
@@ -147,6 +152,7 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
             wl=[regex.sub("\n","",i) for i in f]
 
         wlset=set(wl)
+
         print("Seed length: ",seedlen,flush=True)
         symspelldb=SymSpell(correctOpt["M2A_CORRECTION"]["levenshtein_distance"],seedlen)
         symspelldb.create_dictionary(correctOpt["M2A_CORRECTION"]["path"])
@@ -155,7 +161,6 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
         random.shuffle(seq_majority)
         seq_majority_pd=pd.Series(seq_majority)
         print("Correct...",flush=True)
-        t0=time.time()
         seq_majority_pd_corrected = correct_parallel_wrapper(seq_majority_pd,suggestion_verbosity,correctOpt,"M2A_CORRECTION",ncore,wlset_flag="yes")
         # seq_majority_pd_corrected=seq_majority_pd.map(lambda x:findMostFeasibleCandidate(x,suggestion_verbosity,correctOpt["M2A_CORRECTION"]["levenshtein_distance"],symspelldb,wlset))
         correctionDict_wl={k:v for k,v in zip(list(seq_majority_pd),list(seq_majority_pd_corrected))}

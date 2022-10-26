@@ -280,10 +280,7 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
         
         for path in pathlist:
             if settings.flash:
-                try:
-                    to_be_processed
-                except NameError:
-                    print("L283:",path)
+                if "_merge_src_srcSeq.pkl" in path:
                     to_be_processed=path
                     continue
             
@@ -298,7 +295,7 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
             # Load FLASHed segment sequences
             with open(to_be_processed,mode="rb") as pchunk:
                 parsedDict_chunk=pickle.load(pchunk)
-
+            
             # Puck the FLASHed segments but also put segments from uncombined segments
             for component in ["Header"]+settings.components:
                 if component not in dict_merged:

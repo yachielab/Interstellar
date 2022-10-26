@@ -31,6 +31,8 @@ The distributed computing process is designed to perform many small conversion t
 
 ### Software dependencies:
 
+** We realized the multithreading process doesn't work in an M1 environment (M1 CPU / Python 3.8.13). We'll keep troubleshooting the problem but at thi point we recommend to use Intel CPU. **
+
 - Python3 (version: 3.7.0 or later)
 - matplotlib <https://anaconda.org/conda-forge/matplotlib>
 - numpy <https://anaconda.org/conda-forge/numpy>
@@ -48,6 +50,7 @@ The following versions have been tested for INTERSTELLAR 1.0.0:
 - regex 2021.4.4
 - kneed 0.7.0
 - symspellpy 6.7.0
+- joblib 1.1.0
 
 The following tools can optionally be used. Set the paths to $PATH.
 
