@@ -31,7 +31,7 @@ The distributed computing process is designed to perform many small conversion t
 
 ### Software dependencies:
 
-** We realized the multithreading process doesn't work in an M1 environment (M1 CPU / Python 3.8.13). We'll keep troubleshooting the problem but at thi point we recommend to use Intel CPU. **
+**We realized the multithreading process doesn't work in an M1 environment (M1 CPU / Python 3.8.13). We'll keep troubleshooting the problem but at thi point we recommend to use Intel CPU.**
 
 - Python3 (version: 3.7.0 or later)
 - matplotlib <https://anaconda.org/conda-forge/matplotlib>
