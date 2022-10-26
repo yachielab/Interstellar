@@ -23,8 +23,6 @@ def getRawIndex(seq,rawReference):
 
 # Helper function for error correction
 def sequenceCorrection(seq_chunk,suggestion_verbosity,correctOpt,correction_method,wlset_flag):
-    print(type(wlset))
-
     seq_chunk = seq_chunk.map(lambda x:findClosestCandidate(x,suggestion_verbosity,correctOpt[correction_method]["levenshtein_distance"],wlset_flag))
     return seq_chunk
 
