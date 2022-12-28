@@ -87,7 +87,10 @@ class BARISTA_DEMULTIPLEX(object):
     def demultiplex(self):
         cnt = 0
         for sseq_path,avg_qual_path,raw_qual_path,prefix in zip(self.settings.path_to_seq,self.settings.path_to_avg_qval,self.settings.path_to_rawQual,self.settings.outFilePath_and_Prefix_list):
-            s_seq_chunk = pd.read_pickle(sseq_path)
+            if regex.search(r"\.pkl$",sseq_path):
+                s_seq_chunk = pd.read_pickle(sseq_path)
+            else:
+                s_seq_chunk = pd.read_csv(sseq_path,sep='\t',dtype=str)
             # s_avg_qual=pd.read_csv(avg_qual_path,sep='\t',dtype=str,chunksize=500000)
             # s_raw_qual=pd.read_csv(raw_qual_path,sep="\t",dtype=str,chunksize=500000,quoting=csv.QUOTE_NONE)
             s_avg_qual_chunk = pd.read_pickle(avg_qual_path)
