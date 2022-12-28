@@ -77,7 +77,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*") if re.search(file_endfix,i)]
             mem_key="mem_"+cmd
             print("Running qsub jobs...: Demultiplex",flush=True)
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,1) # 1 core if qsub
                 
             for f in file_pool:
                 # if is_qc:
@@ -142,7 +142,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         njobdict[sampledir]=len(key_set)
         if is_qsub:
             # Qsub for each key
-            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,"demulti_filemerge",mem_key,cfg_raw["general"]["NUM_CORES"])
+            qcmd_base=genCmdBase(param_dict,sampledir,qcfg,"demulti_filemerge",mem_key,1) # 1 core if qsub
             for key in key_set:
                 target_files=[t for t in demulti_filename_list if key in os.path.basename(t)]
                 if cfg["FORMAT"]=="tsv":
