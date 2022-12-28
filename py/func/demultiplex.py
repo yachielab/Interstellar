@@ -71,10 +71,10 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
         for l in L_tmp:
             shutil.rmtree(l) #clearance
 
-        file_endfix="_correct_result.pkl"
-        file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*") if re.search(file_endfix,i)]
         is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(sampledir+"/value_extraction/_work/qc/*"))
         if is_qsub:
+            file_endfix="_correct_result.tsv.gz"
+            file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*") if re.search(file_endfix,i)]
             mem_key="mem_"+cmd
             print("Running qsub jobs...: Demultiplex",flush=True)
             qcmd_base=genCmdBase(param_dict,sampledir,qcfg,cmd,mem_key,cfg_raw["general"]["NUM_CORES"])
@@ -96,6 +96,8 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
             njobdict[sampledir]=len(file_pool)
             
         else:
+            file_endfix="_correct_result.pkl"
+            file_pool=[i for i in glob.glob(sampledir+"/value_extraction/_work/mk_sval/*") if re.search(file_endfix,i)]
             file_pool_concat = "\n".join(file_pool)
             # if is_qc:
             #     raw_qual = ",".join([sampledir+"/value_extraction/_work/qc/"+re.sub(file_endfix,"_srcQual.QC.tsv.gz",os.path.basename(f)) for f in file_pool])
