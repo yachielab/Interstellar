@@ -56,10 +56,6 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
     global wlset
     global symspelldb
 
-    print(correctOpt)
-    print(counterDict)
-    
-
     seqCount_sort = sorted(srcCounter.items(),key=lambda x:x[1],reverse=True)
     seqCountSummary = dict(seq=list(),rank=list(),logrank=list(),count=list())
     seq_discarded = []
@@ -114,8 +110,11 @@ def bcCorrect(correctOpt,counterDict,yaxis_scale,show_summary,outname,ncore,min_
             with open(fname,mode="wt") as w:
                 for seqm in seq_majority:
                     w.write(seqm+"\n")
-
-            symspelldb=SymSpell(correctOpt["I2M_CORRECTION"]["levenshtein_distance"],seedlen)
+            try:
+                symspelldb=SymSpell(correctOpt["I2M_CORRECTION"]["levenshtein_distance"],seedlen)
+            except ValueError:
+                msg = "Levenshtein distace needs to be less than (minimum length of target sequences) / 2."
+                raise ValueError(msg)
             symspelldb.create_dictionary(fname)
 
             t0=time.time()
