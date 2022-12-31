@@ -77,7 +77,7 @@ class BARISTA_CORRECT(object):
         correctionDictionaries={}
 
         # Setup custom corection
-        is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.tsv.gz",glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/qc/*"))
+        is_qc=interstellar_setup.checkRequiredFile("_srcSeq.QC.pkl",glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/qc/*"))
         custom_correction_segments=list()
         for rawSegment in self.counterDict:
             if rawSegment not in corresponding_val:
@@ -89,9 +89,9 @@ class BARISTA_CORRECT(object):
                 custom_correction_segments.append(rawSegment)
         
         if is_qc:
-            src_seq_paths=glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/qc/*_srcSeq.QC.tsv.gz")
+            src_seq_paths=glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/qc/*_srcSeq.QC.pkl")
         else:
-            src_seq_paths=glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/import/*_srcSeq.tsv.gz")
+            src_seq_paths=glob.glob(os.path.dirname(re.sub(r"\/$","",self.settings.outdir))+"/import/*_srcSeq.pkl")
         barcodeCorrecter.custom_correction_setup(custom_correction_segments,self.settings.outdir,src_seq_paths)
 
         #Correction        

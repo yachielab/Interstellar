@@ -261,7 +261,7 @@ def custom_correction_setup(target_segment_list,outdir,src_seq_paths):
 
     # Export the input files for a custom error correction code per barcode
     for processCount,input_filepath in enumerate(src_seq_paths):
-        df_tmp=pd.read_csv(input_filepath,sep="\t")
+        df_tmp=pd.read_pickle(input_filepath)
 
         for bc in target_segment_list:
             seg_seqs=[i for i in list(df_tmp[bc]) if i != "-"] # Segment sequence list without NA characters
