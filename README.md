@@ -64,10 +64,10 @@ The following tools can optionally be used. Set the paths to $PATH.
 Obtain INTERSTELLAR by:   	
 
 ```bash
-git clone /URL/to/Interstellar.git Add the executable authority to Interstellar/py/*
+git clone /URL/to/Interstellar.git 
 ```
 
- and set the `Interstellar/py/` directory to $PATH:
+Add the executable authority to `Interstellar/py/*` and set the `Interstellar/py/` directory to $PATH:
 
 ```bash
 cd Interstellar
