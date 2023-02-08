@@ -280,7 +280,7 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
         
         for path in pathlist:
             if settings.flash:
-                if "_merge_src_srcSeq.pkl" in path:
+                if "_merge_src_srcSeq.pkl" in path or "_merge_src_srcQual.pkl" in path:
                     to_be_processed=path
                     continue
             
