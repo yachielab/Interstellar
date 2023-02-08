@@ -170,7 +170,7 @@ def config_extract_value_ext(cfg_raw):
     #sequence segment label extractioon
     segments=[]
     for key in cfg_value_ext:
-        if "READ1_STRUCTURE" in key or "READ2_STRUCTURE" in key or "INDEX1_STRUCTURE" in key or "INDEX2_STRUCTURE" in key or "READ_FLASH" in key:
+        if "READ1_STRUCTURE" in key or "READ2_STRUCTURE" in key or "INDEX1_STRUCTURE" in key or "INDEX2_STRUCTURE" in key or "READ_FLASH_STRUCTURE" in key:
             segments+=re.findall(r"\?P\<([^\>]+)\>",cfg_value_ext[key])
     cfg_value_ext["segments"]=sorted(list(set(segments)))
 

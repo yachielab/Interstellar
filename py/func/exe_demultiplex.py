@@ -24,7 +24,15 @@ class settings_demultiplex(object):
 
         self.key=cfg_demulti["KEY"].split(",")
         self.run_demulti = True if self.key else False
-        self.target=cfg_demulti["TARGET"].split(",")
+
+        # Convert targets if they are source segment names
+        self.target = []
+        for i in cfg_demulti["TARGET"].split(","):
+            if i in cfg_value_ext["value_segment"]:
+                self.target.append(i)
+            elif i in cfg_value_ext["segments"]:
+                self.target.append(dict_to_terminal[i])
+
         if cfg_demulti["TARGET"]=="":
             self.target=cfg_value_ext["value_segment"]
         self.exportReadStructure={}

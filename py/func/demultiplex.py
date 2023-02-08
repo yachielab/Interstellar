@@ -60,7 +60,7 @@ def run(sampledir_list,cfg_raw,qcfg,is_qsub,is_multisample,param_dict,proj_dir,c
 
 
     for segment in cfg["TARGET"].split(","):
-        if not segment=="" and not segment in cfg_ext["value_segment"]:
+        if not segment=="" and not segment in cfg_ext["value_segment"] + cfg_ext["segments"]:
             raise UnknownError("Segment "+segment+" is not defined in the config file.")
         
     cmd="demultiplex"
