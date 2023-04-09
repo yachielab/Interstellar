@@ -237,9 +237,10 @@ class BARISTA_DEMULTIPLEX(object):
                         else:
                             export_pd_tmp.to_csv(outfilename,mode="a",compression="gzip",sep="\t",index=False,header=False)
                         key_iden_list_now = ["_annotated_"+readIden+".fastq.gz"]
+                    
+                    key_iden_list += key_iden_list_now
 
-                cnt += 1
-                key_iden_list += key_iden_list_now
+            cnt += 1
 
             key_iden_list=list(set(key_iden_list))
             with open(prefix+"_demulti_key_list.txt",mode="wt") as w:
