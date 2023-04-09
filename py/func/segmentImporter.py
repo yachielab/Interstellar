@@ -301,26 +301,11 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
                 if component not in dict_merged:
                     dict_merged[component] = ["-"]*nrow_uncombined
                 dict_merged[component] += parsedDict_chunk[component]                    
-    
-        # if iter_num==0 and n_read==0:
-        #     f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="wt",encoding="utf-8")
-        # elif iter_num>0 and n_read==0:
-        #     f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcSeq.tsv.gz",mode="at",encoding="utf-8")
-        # elif iter_num==0 and n_read==1:
-        #     f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="wt",encoding="utf-8")
-        # elif iter_num>0 and n_read==1:
-        #     f=gzip.open(self.settings.outFilePath_and_Prefix+"_srcQual.tsv.gz",mode="at",encoding="utf-8")
-
-
 
         dict_merged_key=["Header"]+settings.components
         dict_merged_val=[dict_merged[i] for i in ["Header"]+settings.components]
         dict_merged_val=list(map(list,zip(*dict_merged_val)))
         dict_merged_val = pd.DataFrame(dict_merged_val,columns=dict_merged_key)
-        # dict_merged_val=["\t".join(i) for i in dict_merged_val]
-        # dict_merged_val="\n".join(dict_merged_val)+"\n"
-        # if cpu_idx==0:
-        #     dict_merged_val="\t".join(dict_merged_key)+"\n"+dict_merged_val
         
         seq_qual_tsv_list.append(dict_merged_val)
         
