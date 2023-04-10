@@ -139,7 +139,7 @@ class BARISTA_IMPORT(object):
                 # Making tmp directory for each chunk
                 # This is for the sake of reducing the number of files in a directory
                 outdir_tmp = tmpdir+"/Chunk"+str(n_chunk)
-                os.makedirs(outdir_tmp,exist_ok = True)
+                os.makedirs(outdir_tmp, exist_ok = True)
 
                 print("Processing file chunk",n_chunk)
                 n_records,counterDict_tmp = segmentImporter.segmentation_parallel_wrapper(
@@ -170,6 +170,7 @@ class BARISTA_IMPORT(object):
 
             if n_chunk >= n_chunk_max:
                 self.n_chunk = n_chunk
+                n_chunk_max = n_chunk
             # del n_chunk
 
         self.counterDict=counterDict
