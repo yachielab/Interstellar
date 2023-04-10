@@ -110,7 +110,7 @@ if __name__=="__main__":
 
         # Parameter export
         with open(sampledir + "/config/parameters.txt", mode = "wt") as w:
-            w.write("Sample directory:",sampledir+"\n")
+            w.write("Sample directory: "+sampledir+"\n")
             sub_dict = param_dict[os.path.basename(sampledir)]
             for tup in sorted(param_dict[os.path.basename(sampledir)].items(), key=lambda x: x[0]):
                 w.write("\t".join(tup)+"\n")
