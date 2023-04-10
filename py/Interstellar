@@ -3,6 +3,7 @@
 
 import os
 import glob
+import json
 from argparse import ArgumentParser
 from distutils.util import strtobool
 # from func import arg
@@ -112,8 +113,7 @@ if __name__=="__main__":
         with open(sampledir + "/config/parameters.txt", mode = "wt") as w:
             w.write("Sample directory: "+sampledir+"\n")
             sub_dict = param_dict[os.path.basename(sampledir)]
-            for tup in sorted(param_dict[os.path.basename(sampledir)].items(), key=lambda x: x[0]):
-                w.write("\t".join(tup)+"\n")
+            w.write(json.dumps(sub_dict, indent=5)+"\n")
 
         # fastq split
         flg_files=[os.path.basename(i) for i in glob.glob(proj_dir+"/_flg/*")]
