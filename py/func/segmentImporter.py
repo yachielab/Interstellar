@@ -14,6 +14,16 @@ import time
 import pickle
 import glob
 
+# New function of FLASH
+def run_flash2(path_read_1, path_read_2, flash_min, flash_max, outdir, n_core):
+    print("Merging reads using Flash2...",flush=True)
+    cmdlist_flash=["flash2", "-z", "-t", str(n_core), "-m", flash_min, "-M", flash_max, "-d", outdir, "-o", "merge", path_read_1, path_read_2]
+    cmd=" ".join(cmdlist_flash)
+    subprocess.run(cmd,shell=True)
+    print("Merging done!",flush=True)
+
+    filepath_out = [outdir+"/merge.notCombined_1.fastq.gz", outdir+"/merge.notCombined_2.fastq.gz", outdir+"/merge.extendedFrags.fastq.gz"]
+    return filepath_out
 
 
 def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config,n_core):
@@ -277,6 +287,7 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
 
     for n_read,pathlist in enumerate(filepaths):
         dict_merged=collections.defaultdict(list)
+        to_be_processed = ""
         
         for path in pathlist:
             if settings.flash:
@@ -289,7 +300,8 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
                 parsedDict_chunk=pickle.load(pchunk)
             dict_merged.update(parsedDict_chunk)
         
-        if settings.flash:
+        # FLASH data merging
+        if settings.flash and to_be_processed != "":
             nrow_uncombined=len(dict_merged["Header"])
 
             # Load FLASHed segment sequences
@@ -305,6 +317,17 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
 
                 if component not in parsedDict_chunk:
                     continue
+        
+        # # FLASH data merging; if the chunk only contains non-flash reads
+        # if settings.flash and to_be_processed == "":
+        #     nrow_uncombined=len(dict_merged["Header"])
+
+        #     # Puck the non-FLASH segments
+        #     for component in ["Header"]+settings.components:
+        #         if component not in dict_merged:
+
+                    
+
                                  
 
         dict_merged_key=["Header"]+settings.components

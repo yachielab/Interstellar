@@ -80,8 +80,7 @@ class settings_import(object):
         srcReadPaths=[i for i in [self.opt.read1,self.opt.read2,self.opt.index1,self.opt.index2] if not i==""]
         readPathDict={k:v for k,v in zip(srcReadKeys,srcReadPaths) if v!=""}
         self.flash_gzipped_reads=[]
-
-        self.flash_gzipped_reads,self.src_readPathDict=segmentImporter.merge_reads_flash2(readPathDict,self.flash,self.input_fastq_gzipped,tmpdir,cfg_value_ext,cfg["general"]["NUM_CORES"])
+        self.readPathDict = readPathDict
         
         regexDictCompiled={}
         for readKey in regexDict:
@@ -90,6 +89,9 @@ class settings_import(object):
         func_dict=settingImporter.func_check(cfg_value_ext)
         self.barcodes=func_dict["barcode_list"]
         self.ncore = int(self.opt.ncore)
+        self.flash_min=str(cfg_value_ext["FLASH_MIN_OVERLAP"])
+        self.flash_max=str(cfg_value_ext["FLASH_MAX_OVERLAP"])
+        self.flash_core = str(cfg["general"]["NUM_CORES"])
 
         
 class BARISTA_IMPORT(object):
@@ -98,8 +100,8 @@ class BARISTA_IMPORT(object):
 
     def importFastq(self):
         fastqDict={}
-        for readKey in self.settings.src_readPathDict:
-            fq_path=self.settings.src_readPathDict[readKey]
+        for readKey in self.settings.readPathDict:
+            fq_path=self.settings.readPathDict[readKey]
             # if readKey in self.settings.flash_gzipped_reads:
             #     fastqDict[readKey]=segmentImporter.sequenceGenerator(fq_path,self.settings,from_flash=True)
             # else:
@@ -112,8 +114,6 @@ class BARISTA_IMPORT(object):
 
 
     def extractComponents(self):
-        parsedSeqDict=collections.defaultdict(list)
-        parsedQualDict=collections.defaultdict(list)
         counterDict={}
         numSeqDict=collections.defaultdict(int)
         readKeys = []
@@ -121,60 +121,152 @@ class BARISTA_IMPORT(object):
         headerSplitRegex=regex.compile(r"[ |\t]+")
         n_chunk_max = 0
 
-        # Go through READ1, READ2, ...
-        for nread,readKey in enumerate(self.settings.src_readPathDict):
-            print("Extracting segments: "+readKey,flush=True)
-            segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
-            segment_parsed_set=set(segment_parsed)
-            readKeys.append(readKey)
-            
-            if self.settings.flash:
-                merge_components=segmentImporter.parseSegmentFromRegex(self.settings.regexDict["merge_src"])
-                merge_components_set=set(merge_components)
-
-            # Go through chunks of FASTQ
-            # Chunks will be again split by 4 lines in the wrapper function to handle one record with a single job
-            for n_chunk,fastq_chunk in enumerate(self.fastqDict[readKey]):
-
-                # Making tmp directory for each chunk
-                # This is for the sake of reducing the number of files in a directory
-                outdir_tmp = tmpdir+"/Chunk"+str(n_chunk)
-                os.makedirs(outdir_tmp, exist_ok = True)
-
-                print("Processing file chunk",n_chunk)
-                n_records,counterDict_tmp = segmentImporter.segmentation_parallel_wrapper(
-                    fastq_chunk= fastq_chunk,
-                    settings= self.settings,
-                    headerSplitRegex= headerSplitRegex,
-                    readKey= readKey,
-                    segment_parsed= segment_parsed,
-                    outdir= outdir_tmp,
-                    ncore = self.settings.ncore)
-            
-                for i in self.settings.barcodes:
-                    if counterDict_tmp.get(i):
-                        if i in counterDict:
-                            counterDict[i].update(counterDict_tmp[i])
-                        else:
-                            counterDict[i]=copy.deepcopy(counterDict_tmp[i])
+        if not self.settings.flash:
+            # Go through READ1, READ2, ...
+            for nread,readKey in enumerate(self.settings.readPathDict):
+                print("Extracting segments: "+readKey,flush=True)
+                segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
+                segment_parsed_set=set(segment_parsed)
+                readKeys.append(readKey)
                 
-                numSeqDict[readKey] += n_records
-                print(500000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)                
-                
-            
-            # Sequence number check - Interstellar requires the paired end reads and index reads are all sorted and correspond each other.
-            if numSeqDict[readKey] != numSeqDict[readKeys[0]]:
-                if not self.settings.flash:
-                    errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
-                    raise InputError(errmsg)
+                # Go through chunks of FASTQ
+                # Chunks will be again split by 4 lines in the wrapper function to handle one record with a single job
+                for n_chunk,fastq_chunk in enumerate(self.fastqDict[readKey]):
 
-            if n_chunk >= n_chunk_max:
-                self.n_chunk = n_chunk
-                n_chunk_max = n_chunk
-            # del n_chunk
+                    # Making tmp directory for each chunk
+                    # This is for the sake of reducing the number of files in a directory
+                    outdir_tmp = tmpdir+"/Chunk"+str(n_chunk)
+                    os.makedirs(outdir_tmp, exist_ok = True)
+
+                    print("Processing file chunk",n_chunk)
+                    n_records,counterDict_tmp = segmentImporter.segmentation_parallel_wrapper(
+                        fastq_chunk= fastq_chunk,
+                        settings= self.settings,
+                        headerSplitRegex= headerSplitRegex,
+                        readKey= readKey,
+                        segment_parsed= segment_parsed,
+                        outdir= outdir_tmp,
+                        ncore = self.settings.ncore)
+                
+                    for i in self.settings.barcodes:
+                        if counterDict_tmp.get(i):
+                            if i in counterDict:
+                                counterDict[i].update(counterDict_tmp[i])
+                            else:
+                                counterDict[i]=copy.deepcopy(counterDict_tmp[i])
+                    
+                    numSeqDict[readKey] += n_records
+                    print(500000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)                
+                    
+                
+                # Sequence number check - Interstellar requires the paired end reads and index reads are all sorted and correspond each other.
+                if numSeqDict[readKey] != numSeqDict[readKeys[0]]:
+                    if not self.settings.flash:
+                        errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
+                        raise InputError(errmsg)
+
+                if n_chunk >= n_chunk_max:
+                    self.n_chunk = n_chunk
+                    n_chunk_max = n_chunk
+
+
+        # FLASH
+        if self.settings.flash:
+            flash=self.settings.flash.replace("READ","Read")
+            flash=flash.replace("INDEX","Index")
+            merge_reads=[i+"_src" for i in flash.split("-")]
+
+            # Go through READ1, READ2, ... but set FLASH reads aside.
+            for nread,readKey in enumerate(self.settings.readPathDict):
+                print("Extracting segments: "+readKey,flush=True)
+                segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
+                readKeys.append(readKey)
+                
+                # Go through chunks of FASTQ
+                # Chunks will be again split by 4 lines in the wrapper function to handle one record with a single job
+                for n_chunk,fastq_chunk in enumerate(self.fastqDict[readKey]):
+
+                    # Making tmp directory for each chunk
+                    # This is for the sake of reducing the number of files in a directory
+                    outdir_tmp = tmpdir+"/Chunk"+str(n_chunk)
+                    os.makedirs(outdir_tmp, exist_ok = True)
+                    os.makedirs(outdir_tmp+"/FLASH", exist_ok = True)
+
+                    if readKey in merge_reads:
+                        with open(outdir_tmp+"/FLASH/for_flash_"+readKey+".fastq", mode = "wt") as w:
+                            for l in fastq_chunk:
+                                w.write(l+"\n")
+                        numSeqDict[readKey] += len(fastq_chunk) / 4
+                        continue # On hold for reads that will be FLASHed later
+                    
+                    # Non-FLASH reads are processed as they are
+                    print("Processing file chunk",n_chunk)
+                    n_records,counterDict_tmp = segmentImporter.segmentation_parallel_wrapper(
+                        fastq_chunk= fastq_chunk,
+                        settings= self.settings,
+                        headerSplitRegex= headerSplitRegex,
+                        readKey= readKey,
+                        segment_parsed= segment_parsed,
+                        outdir= outdir_tmp,
+                        ncore = self.settings.ncore)
+                
+                    for i in self.settings.barcodes:
+                        if counterDict_tmp.get(i):
+                            if i in counterDict:
+                                counterDict[i].update(counterDict_tmp[i])
+                            else:
+                                counterDict[i]=copy.deepcopy(counterDict_tmp[i])
+                    
+                    numSeqDict[readKey] += n_records
+                    print(500000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)                
+                
+                # Store number of chunks
+                if n_chunk >= n_chunk_max:
+                    self.n_chunk = copy.deepcopy(n_chunk)
+                    n_chunk_max = copy.deepcopy(n_chunk)
+
+                # Sequence number check - Interstellar requires the paired end reads and index reads are all sorted and correspond each other.
+                if numSeqDict[readKey] != numSeqDict[readKeys[0]]:
+                    if not self.settings.flash:
+                        errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
+                        raise InputError(errmsg)
+            
+            # FLASH and segmentation for each chunk
+            for chunk_now in range(self.n_chunk+1):
+                outdir = tmpdir+"/Chunk"+str(chunk_now)
+                FLASHed_filepath = segmentImporter.run_flash2(outdir+"/FLASH/for_flash_"+merge_reads[0]+".fastq", outdir+"/FLASH/for_flash_"+merge_reads[1]+".fastq", self.settings.flash_min, self.settings.flash_max, outdir+"/FLASH", self.settings.flash_core)
+
+                for idx,readKey in enumerate(merge_reads+["merge_src"]):
+                    fastq_chunk = []
+                    with gzip.open(FLASHed_filepath[idx], mode = "rt") as r:
+                        for l in r:
+                            l = l.replace("\n", "")
+                            fastq_chunk.append(l)
+                    
+                    segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
+                    print("Processing file chunk",chunk_now)
+                    n_records,counterDict_tmp = segmentImporter.segmentation_parallel_wrapper(
+                        fastq_chunk= fastq_chunk,
+                        settings= self.settings,
+                        headerSplitRegex= headerSplitRegex,
+                        readKey= readKey,
+                        segment_parsed= segment_parsed,
+                        outdir= outdir,
+                        ncore = self.settings.ncore)
+                
+                    for i in self.settings.barcodes:
+                        if counterDict_tmp.get(i):
+                            if i in counterDict:
+                                counterDict[i].update(counterDict_tmp[i])
+                            else:
+                                counterDict[i]=copy.deepcopy(counterDict_tmp[i])
+                    
+                    numSeqDict[readKey] += n_records
+                    print(500000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)
+
+                
 
         self.counterDict=counterDict
-        # self.today_now=today_now
         self.tmpdir=tmpdir+"/"
 
 
