@@ -300,7 +300,8 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
             for component in ["Header"]+settings.components:
                 if component not in dict_merged:
                     dict_merged[component] = ["-"]*nrow_uncombined
-                dict_merged[component] += parsedDict_chunk[component]                    
+                else:
+                    dict_merged[component] += parsedDict_chunk[component]                    
 
         dict_merged_key=["Header"]+settings.components
         dict_merged_val=[dict_merged[i] for i in ["Header"]+settings.components]
