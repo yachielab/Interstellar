@@ -294,14 +294,18 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
 
             # Load FLASHed segment sequences
             with open(to_be_processed,mode="rb") as pchunk:
-                parsedDict_chunk=pickle.load(pchunk)
+                parsedDict_chunk = pickle.load(pchunk)
             
             # Puck the FLASHed segments but also put segments from uncombined segments
             for component in ["Header"]+settings.components:
-                if component not in dict_merged:
-                    dict_merged[component] = ["-"]*nrow_uncombined
-                else:
-                    dict_merged[component] += parsedDict_chunk[component]                    
+                if component in parsedDict_chunk:
+                    if component not in dict_merged:
+                        dict_merged[component] = ["-"]*nrow_uncombined
+                    dict_merged[component] += parsedDict_chunk[component]
+
+                if component not in parsedDict_chunk:
+                    continue
+                                 
 
         dict_merged_key=["Header"]+settings.components
         dict_merged_val=[dict_merged[i] for i in ["Header"]+settings.components]
