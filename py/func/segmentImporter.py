@@ -131,6 +131,7 @@ def qualityFilteringForDataFrame(df_set,qc_targets,qscore_dict):
     qual_chunk = df_set[1]
 
     for seg in qc_targets:
+        print(seg, flush=True)
         bool_filtered=qual_chunk[seg].map(lambda x: qualityFiltering(x,min_base_quality=qscore_dict[seg]["min_base"],min_avg_quality=qscore_dict[seg]["min_avg"]))
         seq_chunk[seg][bool_filtered]="-"
     
