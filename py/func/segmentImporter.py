@@ -116,7 +116,7 @@ def patMatching(readNow,patternList):
 
 
 def qualityFiltering(qualNow,min_base_quality,min_avg_quality):
-    print(qualNow.head())
+    print(qualNow)
     qual_list=[ord(i)-33 for i in qualNow]
     qual_min_now=min(qual_list)
     qual_avg_now=sum(qual_list)/len(qual_list)
