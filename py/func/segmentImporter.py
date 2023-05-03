@@ -20,10 +20,34 @@ def run_flash2(path_read_1, path_read_2, flash_min, flash_max, outdir, n_core):
     cmdlist_flash=["flash2", "-z", "-t", str(n_core), "-m", flash_min, "-M", flash_max, "-d", outdir, "-o", "merge", path_read_1, path_read_2]
     cmd=" ".join(cmdlist_flash)
     subprocess.run(cmd,shell=True)
-    print("Merging done!",flush=True)
+    print("Merging done!\n",flush=True)
 
     filepath_out = [outdir+"/merge.notCombined_1.fastq.gz", outdir+"/merge.notCombined_2.fastq.gz", outdir+"/merge.extendedFrags.fastq.gz"]
     return filepath_out
+
+
+def get_header(filepath, headerSplitRegex, gz):
+    out = []
+    if not glob.glob(filepath):
+        return out # In case FLASH merged or failed all the reads without one of the uncombined or combined files
+
+    if gz:
+        with gzip.open(filepath, mode="rt") as r:
+            for idx,l in enumerate(r):
+                if idx%4 == 0:
+                    l = l.replace("\n", "")
+                    header=headerSplitRegex.split(l)[0]
+                    out.append(header)
+    else:
+        with open(filepath, mode="rt") as r:
+            for idx,l in enumerate(r):
+                if idx%4 == 0:
+                    l = l.replace("\n", "")
+                    header=headerSplitRegex.split(l)[0]
+                    out.append(header)
+    return out
+
+
 
 
 def merge_reads_flash2(readPathDict,flash,gzipped,tmpdir,config,n_core):
@@ -151,18 +175,12 @@ def fastq_segmentation(cpu_idx,subchunk,headerSplitRegex,segment_parsed,regex_pa
     t0 = time.time()
     parsedSeqDict_tmp={k:["-"]*int(len(subchunk)/4) for k in (["Header"]+segment_parsed)}
     parsedQualDict_tmp={k:["-"]*int(len(subchunk)/4)for k in (["Header"]+segment_parsed)}
-    
-    # print("Formatting",time.time()-t0,"sec", flush=True)
 
     t_getheader=0
     t_regex = 0
     t_packdic = 0
 
     for idx,lines in enumerate(split_yield_fastq_per_lines(subchunk,n=4)):
-        # line_header = lines[0]
-        # line_sequence = lines[1]
-        # line_quality = lines[3]
-        
         # Header treatment
         T=time.time()
         header=headerSplitRegex.split(lines[0])[0]
@@ -208,11 +226,6 @@ def fastq_segmentation(cpu_idx,subchunk,headerSplitRegex,segment_parsed,regex_pa
     for bc in barcodes:
         if bc in parsedSeqDict_tmp:
             counterDict_tmp[bc] = collections.Counter(parsedSeqDict_tmp[bc])
-
-    # print("Get header",t_getheader,"sec", flush=True)
-    # print("Regex search",t_regex,"sec", flush=True)
-    # print("Packing dict",t_packdic,"sec", flush=True)
-    # print("Job time",time.time()-t0,"sec",flush=True)
     return counterDict_tmp
 
 
@@ -242,8 +255,20 @@ def fastq_segmentation(cpu_idx,subchunk,headerSplitRegex,segment_parsed,regex_pa
 #     return out_seq,out_qual
 
 
-# Multithreading implementation for read segmentation
-def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,segment_parsed,outdir,ncore):
+def sort_fastq(fastq_chunk, sort_idx_order):
+    ordered_list = [""]*len(sort_idx_order)*4
+    for pos,i in enumerate(sort_idx_order):
+        ordered_list[4*pos] = fastq_chunk[4*i]
+        ordered_list[4*pos+1] = fastq_chunk[4*i+1]
+        ordered_list[4*pos+2] = fastq_chunk[4*i+2]
+        ordered_list[4*pos+3] = fastq_chunk[4*i+3]
+    with open("hoge.fastq", mode = "wt") as w:
+        for x in ordered_list:
+            w.write(x+"\n")
+    return ordered_list
+
+
+def segmentation_subwrapper(fastq_chunk,settings,headerSplitRegex,readKey,segment_parsed,outdir,ncore,filesuffix=""):
     n_lines = len(fastq_chunk)
     n_records = n_lines / 4
     n_records_per_CPU = math.ceil(n_records / ncore)
@@ -251,8 +276,36 @@ def segmentation_parallel_wrapper(fastq_chunk,settings,headerSplitRegex,readKey,
     regex_pattern_now = settings.regexDictCompiled[readKey]
 
     out = Parallel(n_jobs=ncore,verbose=2,backend="multiprocessing")(
-        delayed(fastq_segmentation)(cpu_idx,subchunk,headerSplitRegex,segment_parsed,regex_pattern_now,outdir,readKey,settings.barcodes) 
-            for cpu_idx,subchunk in enumerate(split_yield_fastq_per_lines(fastq_chunk,n = n_lines_per_CPU))) 
+        delayed(fastq_segmentation)(cpu_idx, subchunk, headerSplitRegex, segment_parsed, regex_pattern_now, outdir, readKey+filesuffix, settings.barcodes) 
+            for cpu_idx,subchunk in enumerate(split_yield_fastq_per_lines(fastq_chunk, n = n_lines_per_CPU))) 
+
+    return n_records,out
+
+
+
+# Multithreading implementation for read segmentation
+def segmentation_parallel_wrapper(fastq_chunk, settings, headerSplitRegex, readKey, segment_parsed, outdir, ncore, sort_idx_order_uncomb="", sort_idx_order_merged=""):
+    if sort_idx_order_uncomb or sort_idx_order_merged:
+        # Uncombined read
+        if sort_idx_order_uncomb:
+            fastq_chunk_uncomb = sort_fastq(fastq_chunk, sort_idx_order_uncomb)
+            n_records,out = segmentation_subwrapper(fastq_chunk_uncomb,settings,headerSplitRegex,readKey,segment_parsed,outdir,ncore,filesuffix="_uncombined")
+        else:
+            n_records = 0
+            out = []
+
+        # Merged read
+        if sort_idx_order_merged:
+            fastq_chunk_merged = sort_fastq(fastq_chunk, sort_idx_order_merged)
+            n_records2,out2 = segmentation_subwrapper(fastq_chunk_merged,settings,headerSplitRegex,readKey,segment_parsed,outdir,ncore,filesuffix="_combined")
+        else:
+            n_records2 = 0
+            out2 = []
+        
+        n_records += n_records2
+        out += out2
+    else:
+        n_records,out = segmentation_subwrapper(fastq_chunk,settings,headerSplitRegex,readKey,segment_parsed,outdir,ncore)
 
     # Pile up the count dictionaries from all CPUs
     counterDict = {}
@@ -284,13 +337,23 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
     filepaths=[filepaths_seq,filepaths_qual]
 
     seq_qual_tsv_list = []
-
+    
     for n_read,pathlist in enumerate(filepaths):
         dict_merged=collections.defaultdict(list)
         to_be_processed = ""
-        
+        path_queue_uncomb = []
+        path_queue_comb = []
+
         for path in pathlist:
             if settings.flash:
+                if "_uncombined_" in path:
+                    path_queue_uncomb.append(path)
+                    continue
+
+                if "_combined_" in path:
+                    path_queue_comb.append(path)
+                    continue
+
                 if "_merge_src_srcSeq.pkl" in path or "_merge_src_srcQual.pkl" in path:
                     to_be_processed=path
                     continue
@@ -299,11 +362,45 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
             with open(path,mode="rb") as pchunk:
                 parsedDict_chunk=pickle.load(pchunk)
             dict_merged.update(parsedDict_chunk)
+
+            # Store the number of rows at this point so that we can fill segment sequences existing in FLASH read structure as "-"
+            if settings.flash:
+                nrow_uncombined=len(dict_merged["Header"])
+
         
+        # Merge non-FLASH reads in the order of uncombined
+        if settings.flash and path_queue_uncomb:
+            for i in path_queue_uncomb:
+                # Load uncombined segment sequences
+                parsedDict_chunk = pd.read_pickle(i)
+
+                # Puck the FLASHed segments but also put segments from uncombined segments
+                for component in settings.components:
+                    if component in parsedDict_chunk:
+                        # if component not in dict_merged:
+                        #     dict_merged[component] = ["-"]*nrow_uncombined
+                        dict_merged[component] += parsedDict_chunk[component]
+
+                    # if component not in parsedDict_chunk:
+                    #     continue
+        
+
+        # Merge non-FLASH combined reads 
+        if settings.flash and path_queue_comb:
+            for i in path_queue_comb:
+                # Load uncombined segment sequences
+                parsedDict_chunk = pd.read_pickle(i)
+
+                # Puck the FLASHed segments but also put segments from uncombined segments
+                for component in settings.components:
+                    if component in parsedDict_chunk:
+                        # if component not in dict_merged:
+                        #     dict_merged[component] = ["-"]*nrow_uncombined
+                        dict_merged[component] += parsedDict_chunk[component]
+
+
         # FLASH data merging
         if settings.flash and to_be_processed != "":
-            nrow_uncombined=len(dict_merged["Header"])
-
             # Load FLASHed segment sequences
             with open(to_be_processed,mode="rb") as pchunk:
                 parsedDict_chunk = pickle.load(pchunk)
@@ -325,10 +422,6 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
         #     # Puck the non-FLASH segments
         #     for component in ["Header"]+settings.components:
         #         if component not in dict_merged:
-
-                    
-
-                                 
 
         dict_merged_key=["Header"]+settings.components
         dict_merged_val=[dict_merged[i] for i in ["Header"]+settings.components]

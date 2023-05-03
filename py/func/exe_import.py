@@ -9,6 +9,7 @@ import os
 import gzip
 import collections
 import pickle
+import pandas as pd
 import glob
 import shutil
 
@@ -176,10 +177,9 @@ class BARISTA_IMPORT(object):
             flash=flash.replace("INDEX","Index")
             merge_reads=[i+"_src" for i in flash.split("-")]
 
-            # Go through READ1, READ2, ... but set FLASH reads aside.
-            for nread,readKey in enumerate(self.settings.readPathDict):
-                print("Extracting segments: "+readKey,flush=True)
-                segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
+            # Go through READ1, READ2, ... and store FLASH-merged reads as fastq.
+            for readKey in merge_reads:
+                # print("Extracting segments: "+readKey,flush=True)
                 readKeys.append(readKey)
                 
                 # Go through chunks of FASTQ
@@ -196,29 +196,29 @@ class BARISTA_IMPORT(object):
                         with open(outdir_tmp+"/FLASH/for_flash_"+readKey+".fastq", mode = "wt") as w:
                             for l in fastq_chunk:
                                 w.write(l+"\n")
-                        numSeqDict[readKey] += len(fastq_chunk) / 4
+                        # numSeqDict[readKey] += len(fastq_chunk) / 4
                         continue # On hold for reads that will be FLASHed later
                     
-                    # Non-FLASH reads are processed as they are
-                    print("Processing file chunk",n_chunk)
-                    n_records,counterDict_tmp = segmentImporter.segmentation_parallel_wrapper(
-                        fastq_chunk= fastq_chunk,
-                        settings= self.settings,
-                        headerSplitRegex= headerSplitRegex,
-                        readKey= readKey,
-                        segment_parsed= segment_parsed,
-                        outdir= outdir_tmp,
-                        ncore = self.settings.ncore)
+                    # # Non-FLASH reads are processed as they are
+                    # print("Processing file chunk",n_chunk)
+                    # n_records,counterDict_tmp = segmentImporter.segmentation_parallel_wrapper(
+                    #     fastq_chunk= fastq_chunk,
+                    #     settings= self.settings,
+                    #     headerSplitRegex= headerSplitRegex,
+                    #     readKey= readKey,
+                    #     segment_parsed= segment_parsed,
+                    #     outdir= outdir_tmp,
+                    #     ncore = self.settings.ncore)
                 
-                    for i in self.settings.barcodes:
-                        if counterDict_tmp.get(i):
-                            if i in counterDict:
-                                counterDict[i].update(counterDict_tmp[i])
-                            else:
-                                counterDict[i]=copy.deepcopy(counterDict_tmp[i])
+                    # for i in self.settings.barcodes:
+                    #     if counterDict_tmp.get(i):
+                    #         if i in counterDict:
+                    #             counterDict[i].update(counterDict_tmp[i])
+                    #         else:
+                    #             counterDict[i]=copy.deepcopy(counterDict_tmp[i])
                     
-                    numSeqDict[readKey] += n_records
-                    print(500000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)                
+                    # numSeqDict[readKey] += n_records
+                    # print(500000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)                
                 
                 # Store number of chunks
                 if n_chunk >= n_chunk_max:
@@ -231,6 +231,9 @@ class BARISTA_IMPORT(object):
                         errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
                         raise InputError(errmsg)
             
+
+
+
             # FLASH and segmentation for each chunk
             for chunk_now in range(self.n_chunk+1):
                 outdir = tmpdir+"/Chunk"+str(chunk_now)
@@ -261,10 +264,83 @@ class BARISTA_IMPORT(object):
                             else:
                                 counterDict[i]=copy.deepcopy(counterDict_tmp[i])
                     
+                    print(n_records)
                     numSeqDict[readKey] += n_records
-                    print(500000*(n_chunk)+n_records,"reads were processed for",readKey,flush=True)
+                    print(numSeqDict[readKey],"reads were processed for",readKey,"\n",flush=True)
 
+                # Extract and store headers to sort the other non-FLASH reads
+                header_original = segmentImporter.get_header(outdir+"/FLASH/for_flash_"+merge_reads[0]+".fastq", headerSplitRegex, gz=False)
+                orig2idx_dict = {val:idx for idx, val in enumerate(header_original)}
+
+                # Fastq headers need to be unique
+                if not len(orig2idx_dict) == len(header_original):
+                    raise settingImporter.InputError("FASTQ headers need to be unique")
+
+                header_ordered_uncomb = segmentImporter.get_header(FLASHed_filepath[0], headerSplitRegex, gz=True)
+                header_ordered_idx_uncomb = [orig2idx_dict[i] for i in header_ordered_uncomb]
+                with open("_".join([outdir+"/FLASH/headers.uncomb.pkl"]),mode="wb") as p:
+                    pickle.dump(header_ordered_idx_uncomb, p)
+
+                header_ordered_merged = segmentImporter.get_header(FLASHed_filepath[2], headerSplitRegex, gz=True)
+                header_ordered_idx_merged = [orig2idx_dict[i] for i in header_ordered_merged]
+                with open("_".join([outdir+"/FLASH/headers.merged.pkl"]),mode="wb") as p:
+                    pickle.dump(header_ordered_idx_merged, p)
+
+
+            
+
+            # Go through READ1, READ2, ... which are not used for read merging.
+            for readKey in self.settings.readPathDict:
+                if readKey in merge_reads:
+                    continue
+
+                print("Extracting segments: "+readKey,flush=True)
+                segment_parsed=segmentImporter.parseSegmentFromRegex(self.settings.regexDict[readKey])
+                readKeys.append(readKey)
                 
+                # Go through chunks of FASTQ
+                # Chunks will be again split by 4 lines in the wrapper function to handle one record with a single job
+                for n_chunk,fastq_chunk in enumerate(self.fastqDict[readKey]):
+                    # Non-FLASH reads are processed as they are
+                    print("Processing file chunk",n_chunk)
+                    outdir_tmp = tmpdir+"/Chunk"+str(n_chunk)
+                    header_ordered_idx_uncomb = pd.read_pickle(outdir_tmp + "/FLASH/headers.uncomb.pkl")
+                    header_ordered_idx_merged = pd.read_pickle(outdir_tmp + "/FLASH/headers.merged.pkl")
+                                        
+                    n_records,counterDict_tmp = segmentImporter.segmentation_parallel_wrapper(
+                        fastq_chunk= fastq_chunk,
+                        settings= self.settings,
+                        headerSplitRegex= headerSplitRegex,
+                        readKey= readKey,
+                        segment_parsed= segment_parsed,
+                        outdir= outdir_tmp,
+                        ncore = self.settings.ncore,
+                        sort_idx_order_uncomb=header_ordered_idx_uncomb,
+                        sort_idx_order_merged=header_ordered_idx_merged)
+                
+                    for i in self.settings.barcodes:
+                        if counterDict_tmp.get(i):
+                            if i in counterDict:
+                                counterDict[i].update(counterDict_tmp[i])
+                            else:
+                                counterDict[i]=copy.deepcopy(counterDict_tmp[i])
+
+                    numSeqDict[readKey] += n_records
+                    print(numSeqDict[readKey],"reads were processed for",readKey,"\n",flush=True)
+
+                # Store number of chunks
+                if n_chunk >= n_chunk_max:
+                    self.n_chunk = copy.deepcopy(n_chunk)
+                    n_chunk_max = copy.deepcopy(n_chunk)
+
+                # Sequence number check - Interstellar requires the paired end reads and index reads are all sorted and correspond each other.
+                if numSeqDict[readKey] != numSeqDict[readKeys[0]]:
+                    if not self.settings.flash:
+                        errmsg="Numbers of sequences between input files are inconsistent! Please check all the sequences are sorted in the same order across the input files."
+                        raise InputError(errmsg)
+                
+
+
 
         self.counterDict=counterDict
         self.tmpdir=tmpdir+"/"
