@@ -264,7 +264,6 @@ class BARISTA_IMPORT(object):
                             else:
                                 counterDict[i]=copy.deepcopy(counterDict_tmp[i])
                     
-                    print(n_records)
                     numSeqDict[readKey] += n_records
                     print(numSeqDict[readKey],"reads were processed for",readKey,"\n",flush=True)
 
