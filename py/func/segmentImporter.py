@@ -262,9 +262,6 @@ def sort_fastq(fastq_chunk, sort_idx_order):
         ordered_list[4*pos+1] = fastq_chunk[4*i+1]
         ordered_list[4*pos+2] = fastq_chunk[4*i+2]
         ordered_list[4*pos+3] = fastq_chunk[4*i+3]
-    with open("hoge.fastq", mode = "wt") as w:
-        for x in ordered_list:
-            w.write(x+"\n")
     return ordered_list
 
 
@@ -404,6 +401,8 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
             # Load FLASHed segment sequences
             with open(to_be_processed,mode="rb") as pchunk:
                 parsedDict_chunk = pickle.load(pchunk)
+            nrow_combined = len(parsedDict_chunk["Header"])
+            nrow_full = nrow_uncombined+nrow_combined
             
             # Puck the FLASHed segments but also put segments from uncombined segments
             for component in ["Header"]+settings.components:
@@ -411,9 +410,8 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
                     if component not in dict_merged:
                         dict_merged[component] = ["-"]*nrow_uncombined
                     dict_merged[component] += parsedDict_chunk[component]
-
-                if component not in parsedDict_chunk:
-                    continue
+                elif component not in parsedDict_chunk and len(dict_merged[component]) != nrow_full:
+                    dict_merged[component] += ["-"]*nrow_combined
         
         # # FLASH data merging; if the chunk only contains non-flash reads
         # if settings.flash and to_be_processed == "":
@@ -422,6 +420,11 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
         #     # Puck the non-FLASH segments
         #     for component in ["Header"]+settings.components:
         #         if component not in dict_merged:
+
+        for i in dict_merged:
+            if len(dict_merged[i]) != nrow_full:
+                msg = i+": Number of records is inconsistent!"
+                raise(ValueError(msg))
 
         dict_merged_key=["Header"]+settings.components
         dict_merged_val=[dict_merged[i] for i in ["Header"]+settings.components]
