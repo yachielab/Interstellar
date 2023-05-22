@@ -412,19 +412,12 @@ def merge_parsed_data_process(input_dir,cpu_idx,settings):
                     dict_merged[component] += parsedDict_chunk[component]
                 elif component not in parsedDict_chunk and len(dict_merged[component]) != nrow_full:
                     dict_merged[component] += ["-"]*nrow_combined
-        
-        # # FLASH data merging; if the chunk only contains non-flash reads
-        # if settings.flash and to_be_processed == "":
-        #     nrow_uncombined=len(dict_merged["Header"])
 
-        #     # Puck the non-FLASH segments
-        #     for component in ["Header"]+settings.components:
-        #         if component not in dict_merged:
-
-        for i in dict_merged:
-            if len(dict_merged[i]) != nrow_full:
-                msg = i+": Number of records is inconsistent!"
-                raise(ValueError(msg))
+            # Final check of record numbers
+            for i in dict_merged:
+                if len(dict_merged[i]) != nrow_full:
+                    msg = i+": Number of records is inconsistent!"
+                    raise(ValueError(msg))
 
         dict_merged_key=["Header"]+settings.components
         dict_merged_val=[dict_merged[i] for i in ["Header"]+settings.components]
