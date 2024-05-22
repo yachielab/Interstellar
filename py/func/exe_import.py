@@ -44,6 +44,7 @@ class settings_import(object):
         # self.simple=self.opt.simple
         self.components=cfg_value_ext["segments"]
         self.flash=cfg_value_ext["FLASH"]
+        self.chunksize = int(cfg_value_ext["SPLIT_CHUNKSIZE"])
         self.outFilePath_and_Prefix=self.opt.outdir+"/"+self.opt.outname
         today_now=str(datetime.datetime.today())
         today_now=regex.sub(r"\.|:| ","-",today_now)
@@ -100,6 +101,7 @@ class BARISTA_IMPORT(object):
         self.settings=settings
 
     def importFastq(self):
+        print("File chunk size: "+self.settings.chunksize)
         fastqDict={}
         for readKey in self.settings.readPathDict:
             fq_path=self.settings.readPathDict[readKey]
@@ -108,9 +110,9 @@ class BARISTA_IMPORT(object):
             # else:
             #     fastqDict[readKey]=segmentImporter.sequenceGenerator(fq_path,self.settings)
             if readKey in self.settings.flash_gzipped_reads:
-                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=2000000,from_flash=True)
+                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,from_flash=True)
             else:
-                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings,chunksize=2000000)
+                fastqDict[readKey]=segmentImporter.splitSequenceGenerator(fq_path,self.settings)
         self.fastqDict=fastqDict
 
 

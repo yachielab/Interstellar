@@ -99,19 +99,19 @@ def sequenceGenerator(fq_path,settings,from_flash=False):
                 yield i
 
 
-def splitSequenceGenerator(fq_path,settings,chunksize,from_flash=False):  # Generator function.
+def splitSequenceGenerator(fq_path, settings, from_flash=False):  # Generator function.
     FILLER = object()  # Unique object
     
     if settings.input_fastq_gzipped or from_flash:
         with gzip.open(fq_path,mode="rt") as input_file:
             lines = (line.rstrip() for line in input_file)
-            for group in zip_longest(*([iter(lines)]*chunksize), fillvalue=FILLER):
+            for group in zip_longest(*([iter(lines)]*settings.chunksize*4), fillvalue=FILLER):
                 limit = group.index(FILLER) if group[-1] is FILLER else len(group)
                 yield group[:limit]  # Sliced to remove any filler.
     else:
         with open(fq_path,mode="rt") as input_file:
             lines = (line.rstrip() for line in input_file)
-            for group in zip_longest(*([iter(lines)]*chunksize), fillvalue=FILLER):
+            for group in zip_longest(*([iter(lines)]*settings.chunksize*4), fillvalue=FILLER):
                 limit = group.index(FILLER) if group[-1] is FILLER else len(group)
                 yield group[:limit]  # Sliced to remove any filler.
 

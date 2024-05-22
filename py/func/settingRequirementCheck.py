@@ -87,6 +87,7 @@ def setDefaultConfig(cfg):
         cfg["value_extraction"]["READ2_STRUCTURE"]=tryAndFill(cfg,"value_extraction","READ2_STRUCTURE","")
         cfg["value_extraction"]["INDEX1_STRUCTURE"]=tryAndFill(cfg,"value_extraction","INDEX1_STRUCTURE","")
         cfg["value_extraction"]["INDEX2_STRUCTURE"]=tryAndFill(cfg,"value_extraction","INDEX2_STRUCTURE","")
+        cfg["value_extraction"]["SPLIT_CHUNKSIZE"]=tryAndFill(cfg,"value_extraction","SPLIT_CHUNKSIZE","500000")
 
     #Section=value_translation
     if "value_translation" in cfg:
