@@ -100,7 +100,6 @@ def concat_extended_process(cfg_value_ext,untreated_segment_pool):
         line_now=cfg_value_ext[seg]
         func_blocks=line_now.split(">>")
         first_block=func_blocks[0]
-        print(first_block)
         fisrt_block_contents=re.search(r"[^\(]+\(([^\)]*)\)",first_block)
         fisrt_block_contents=fisrt_block_contents.group(1)
         for i in fisrt_block_contents.split(","):
@@ -192,7 +191,7 @@ def config_extract_value_ext(cfg_raw):
     all_keys =set(cfg_value_ext.keys())
     keys_tmp =set([i for i in cfg_value_ext if "READ1_STRUCTURE" in i or "READ2_STRUCTURE" in i or "INDEX1_STRUCTURE" in i or "INDEX2_STRUCTURE" in i or "READ_FLASH" in i])
     keys_tmp|=set(["READ1_PATH","READ2_PATH","INDEX1_PATH","INDEX2_PATH"])
-    keys_tmp|=set(["FLASH","FLASH_MIN_OVERLAP","FLASH_MAX_OVERLAP"])
+    keys_tmp|=set(["FLASH","FLASH_MIN_OVERLAP","FLASH_MAX_OVERLAP","SPLIT_CHUNKSIZE"])
     keys_tmp|=set(cfg_value_ext["segments"]+["segments","parent"]+list(cfg_value_ext["parent"].keys()))
 
     untreated_segment_pool=list(all_keys-keys_tmp)
