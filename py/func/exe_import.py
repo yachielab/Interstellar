@@ -101,7 +101,7 @@ class BARISTA_IMPORT(object):
         self.settings=settings
 
     def importFastq(self):
-        print("File chunk size: "+self.settings.chunksize)
+        print("File chunk size: " + str(self.settings.chunksize))
         fastqDict={}
         for readKey in self.settings.readPathDict:
             fq_path=self.settings.readPathDict[readKey]
