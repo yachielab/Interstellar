@@ -100,6 +100,7 @@ def concat_extended_process(cfg_value_ext,untreated_segment_pool):
         line_now=cfg_value_ext[seg]
         func_blocks=line_now.split(">>")
         first_block=func_blocks[0]
+        print(first_block)
         fisrt_block_contents=re.search(r"[^\(]+\(([^\)]*)\)",first_block)
         fisrt_block_contents=fisrt_block_contents.group(1)
         for i in fisrt_block_contents.split(","):
